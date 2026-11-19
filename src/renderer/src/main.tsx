@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './editor/monacoSetup'

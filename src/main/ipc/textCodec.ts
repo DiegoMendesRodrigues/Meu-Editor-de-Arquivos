@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import type { Encoding, Eol } from '@shared/ipc'
 
 const UTF8_BOM = Buffer.from([0xef, 0xbb, 0xbf])

@@ -1,3 +1,5 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
+import { tm } from '../i18n'
 import { realpath } from 'node:fs/promises'
 import { isAbsolute, relative, resolve } from 'node:path'
 
@@ -44,6 +46,6 @@ export async function isAuthorized(target: string): Promise<boolean> {
 
 export async function assertAuthorized(target: string): Promise<string> {
   const abs = resolve(target)
-  if (!(await isAuthorized(abs))) throw new Error('Acesso negado: o caminho não foi aberto pelo usuário.')
+  if (!(await isAuthorized(abs))) throw new Error(tm('err.notAuthorized'))
   return abs
 }

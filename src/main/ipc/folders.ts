@@ -1,9 +1,11 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { readdir, stat } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { BrowserWindow, dialog } from 'electron'
 import { z } from 'zod'
 import { IpcChannels, type FolderEntry, type FolderInfo } from '@shared/ipc'
 import { assertAuthorized, authorizeRoot } from './access'
+import { tm } from '../i18n'
 import { handle } from './secure'
 
 /** Limite de itens listados por pasta, para não travar a interface em diretórios enormes. */
@@ -14,7 +16,7 @@ const collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base'
 export function registerFolderHandlers(): void {
   handle(IpcChannels.openFolder, async (e): Promise<FolderInfo | null> => {
     const win = BrowserWindow.fromWebContents(e.sender)
-    const options: Electron.OpenDialogOptions = { title: 'Abrir pasta', properties: ['openDirectory'] }
+    const options: Electron.OpenDialogOptions = { title: tm('dlg.openFolder'), properties: ['openDirectory'] }
     const result = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options)
     if (result.canceled || result.filePaths.length === 0) return null
     const path = result.filePaths[0]

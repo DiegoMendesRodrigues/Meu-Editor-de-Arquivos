@@ -1,4 +1,6 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { memo, useCallback, useMemo, useState } from 'react'
+import { useLocale, useT } from '@/i18n'
 import { ChevronRight, ChevronsDownUp, ChevronsUpDown, Copy, Pencil, TriangleAlert } from 'lucide-react'
 import {
   childEntries,
@@ -46,6 +48,7 @@ const Node = memo(function Node({
   depth: number
   ctx: TreeContext
 }) {
+  const t = useT()
   const key = pathKey(path)
   const container = isContainer(value)
   const open = container && ctx.isOpen(key, depth)
@@ -93,7 +96,7 @@ const Node = memo(function Node({
               style={{ marginLeft: (depth + 1) * 18 + 28 }}
               className="my-0.5 rounded border border-border px-2 py-0.5 text-xs text-zinc-600 hover:bg-zinc-100"
             >
-              Mostrar mais {Math.min(PAGE_SIZE, entries.length - visible)} de {entries.length - visible} restantes
+              {t('json.showMore', { n: Math.min(PAGE_SIZE, entries.length - visible), rest: entries.length - visible })}
             </button>
           )}
           <div style={{ paddingLeft: depth * 18 + 28 }} className="text-zinc-500">
@@ -119,11 +122,15 @@ function ToolButton({ icon: Icon, label, onClick, disabled }: { icon: typeof Cop
 }
 
 export function JsonViewer({ content, onEdit }: { content: string; onEdit: (line?: number, column?: number) => void }) {
-  const parsed = useMemo(() => parseJson(content), [content])
+  const t = useT()
+  const locale = useLocale((s) => s.locale)
+  // As mensagens de erro do JSON são montadas no idioma atual; por isso o idioma entra nas dependências.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const parsed = useMemo(() => parseJson(content), [content, locale])
   const [mode, setMode] = useState<ExpandMode>('default')
   const [overrides, setOverrides] = useState<Map<string, boolean>>(() => new Map())
   const [selected, setSelected] = useState<PathSegment[] | null>(null)
-  const [copied, setCopied] = useState<string | null>(null)
+  const [copied, setCopied] = useState<'path' | 'value' | null>(null)
 
   const isOpen = useCallback(
     (key: string, depth: number) =>
@@ -142,7 +149,7 @@ export function JsonViewer({ content, onEdit }: { content: string; onEdit: (line
     setOverrides(new Map())
   }
 
-  const copy = (label: string, text: string) => {
+  const copy = (label: 'path' | 'value', text: string) => {
     void navigator.clipboard.writeText(text).then(() => {
       setCopied(label)
       setTimeout(() => setCopied(null), 1500)
@@ -154,18 +161,18 @@ export function JsonViewer({ content, onEdit }: { content: string; onEdit: (line
       <div className="grid h-full place-items-center bg-white p-6">
         <div className="max-w-lg rounded-md border border-amber-300 bg-amber-50 p-4 text-zinc-800">
           <p className="mb-1 flex items-center gap-2 font-semibold">
-            <TriangleAlert size={16} className="text-amber-600" /> Este arquivo não é um JSON válido
+            <TriangleAlert size={16} className="text-amber-600" /> {t('json.invalid')}
           </p>
           <p className="mb-3 select-text">
             {parsed.message}
-            {parsed.line !== undefined && ` (linha ${parsed.line}, coluna ${parsed.column})`}
+            {parsed.line !== undefined && ` ${t('json.position', { line: parsed.line, col: parsed.column ?? 1 })}`}
           </p>
           <button
             type="button"
             onClick={() => onEdit(parsed.line, parsed.column)}
             className="flex items-center gap-1.5 rounded border border-border bg-white px-3 py-1.5 hover:bg-zinc-100"
           >
-            <Pencil size={14} /> {parsed.line !== undefined ? 'Editar e ir até o erro' : 'Editar texto'}
+            <Pencil size={14} /> {parsed.line !== undefined ? t('json.editGoToError') : t('toolbar.editText')}
           </button>
         </div>
       </div>
@@ -177,19 +184,19 @@ export function JsonViewer({ content, onEdit }: { content: string; onEdit: (line
   return (
     <div className="flex h-full flex-col bg-white">
       <div className="flex h-9 shrink-0 items-center gap-1 border-b border-border bg-chrome px-2 text-[13px]">
-        <ToolButton icon={ChevronsUpDown} label="Expandir tudo" onClick={() => expandAll('all')} />
-        <ToolButton icon={ChevronsDownUp} label="Recolher tudo" onClick={() => expandAll('none')} />
+        <ToolButton icon={ChevronsUpDown} label={t('menu.view.unfoldAll')} onClick={() => expandAll('all')} />
+        <ToolButton icon={ChevronsDownUp} label={t('menu.view.foldAll')} onClick={() => expandAll('none')} />
         <div className="mx-1 h-5 w-px bg-zinc-300" />
-        <code className="min-w-0 flex-1 truncate font-mono text-xs text-zinc-600 select-text" title="Caminho do item selecionado">
-          {selected ? formatPath(selected) : 'Clique em um item para ver o caminho'}
+        <code className="min-w-0 flex-1 truncate font-mono text-xs text-zinc-600 select-text" title={t('json.pathOfSelected')}>
+          {selected ? formatPath(selected) : t('json.clickHint')}
         </code>
-        {copied && <span className="text-xs text-emerald-700">{copied} copiado</span>}
-        <ToolButton icon={Copy} label="Caminho" disabled={!selected} onClick={() => selected && copy('Caminho', formatPath(selected))} />
+        {copied && <span className="text-xs text-emerald-700">{t('json.copied', { what: copied === 'path' ? t('json.path') : t('json.value') })}</span>}
+        <ToolButton icon={Copy} label={t('json.path')} disabled={!selected} onClick={() => selected && copy('path', formatPath(selected))} />
         <ToolButton
           icon={Copy}
-          label="Valor"
+          label={t('json.value')}
           disabled={selectedValue === undefined}
-          onClick={() => selectedValue !== undefined && copy('Valor', JSON.stringify(selectedValue, null, 2))}
+          onClick={() => selectedValue !== undefined && copy('value', JSON.stringify(selectedValue, null, 2))}
         />
       </div>
       <div role="tree" className="min-h-0 flex-1 overflow-auto py-2 font-mono text-[13px] leading-5">

@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useEffect, useRef } from 'react'
 import Editor, { type OnMount } from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
@@ -10,6 +11,7 @@ import { MarkdownPreview } from '@/markdown/MarkdownPreview'
 import { canPreview, modelPath, useActiveDocument, useDocuments, type EditorDocument } from '@/store/documents'
 import { useView } from '@/store/view'
 import { newFile, openFile } from '@/commands'
+import { useT } from '@/i18n'
 
 function CodeEditor({ doc }: { doc: EditorDocument }) {
   const updateContent = useDocuments((s) => s.updateContent)
@@ -42,6 +44,34 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
   // Ao sair do modo de edição, os comandos de editor deixam de ter alvo.
   useEffect(() => () => setActiveEditor(null), [])
 
+  // Marca o fim de cada linha com ¶ quando os caracteres invisíveis estão ligados
+  // (o Monaco só desenha espaços e tabulações). Em arquivos enormes, fica de fora.
+  useEffect(() => {
+    const ed = editorRef.current
+    if (!ed || !view.showInvisibles) return
+    const collection = ed.createDecorationsCollection()
+    const MAX_LINES = 50000
+    const apply = (): void => {
+      const model = ed.getModel()
+      if (!model || model.getLineCount() > MAX_LINES) return collection.clear()
+      collection.set(
+        Array.from({ length: model.getLineCount() }, (_, i) => {
+          const line = i + 1
+          const col = model.getLineMaxColumn(line)
+          return { range: { startLineNumber: line, startColumn: col, endLineNumber: line, endColumn: col }, options: { afterContentClassName: 'eol-mark' } }
+        })
+      )
+    }
+    apply()
+    const sub = ed.onDidChangeModelContent(apply)
+    const modelSub = ed.onDidChangeModel(apply)
+    return () => {
+      sub.dispose()
+      modelSub.dispose()
+      collection.clear()
+    }
+  }, [view.showInvisibles, doc.id])
+
   // Aplica a quebra de linha do documento ao modelo do Monaco.
   useEffect(() => {
     const model = editorRef.current?.getModel()
@@ -55,7 +85,7 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
       path={modelPath(doc)}
       defaultValue={doc.content}
       language={doc.language}
-      theme="vs"
+      theme="meu-claro"
       // Mantém o modelo (e o histórico de desfazer) ao alternar para a visualização.
       keepCurrentModel
       onMount={handleMount}
@@ -83,6 +113,7 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
 }
 
 export function EditorPane() {
+  const t = useT()
   const doc = useActiveDocument()
   const documents = useDocuments((s) => s.documents)
   const setMode = useDocuments((s) => s.setMode)
@@ -101,13 +132,13 @@ export function EditorPane() {
     return (
       <div className="grid h-full place-items-center bg-white text-zinc-500">
         <div className="text-center">
-          <p className="mb-3 text-base">Nenhum documento aberto</p>
+          <p className="mb-3 text-base">{t('editor.noDocument')}</p>
           <div className="flex justify-center gap-2">
-            <button type="button" onClick={newFile} className="rounded border border-border px-3 py-1.5 hover:bg-zinc-100">
-              Novo documento
+            <button type="button" onClick={() => newFile()} className="rounded border border-border px-3 py-1.5 hover:bg-zinc-100">
+              {t('editor.newDocument')}
             </button>
             <button type="button" onClick={() => void openFile()} className="rounded border border-border px-3 py-1.5 hover:bg-zinc-100">
-              Abrir arquivo
+              {t('editor.openFile')}
             </button>
           </div>
         </div>

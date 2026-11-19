@@ -1,7 +1,9 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, ipcMain, type IpcMainInvokeEvent } from 'electron'
 import log from 'electron-log/main'
+import { tm } from '../i18n'
 
 /**
  * Só aceita chamadas IPC vindas da página do próprio aplicativo (quadro principal).
@@ -33,7 +35,7 @@ export function handle(channel: string, listener: Listener): void {
   ipcMain.handle(channel, (e, ...args) => {
     if (!isTrustedSender(e)) {
       log.warn(`IPC recusado em "${channel}": remetente não confiável (${e.senderFrame?.url ?? 'desconhecido'})`)
-      throw new Error('Origem não autorizada.')
+      throw new Error(tm('err.untrustedOrigin'))
     }
     return listener(e, ...args)
   })

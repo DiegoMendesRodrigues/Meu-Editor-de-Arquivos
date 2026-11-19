@@ -1,3 +1,4 @@
+/* Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/ */
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
@@ -22,4 +23,13 @@ body {
   font-family: var(--font-sans);
   font-size: 13px;
   user-select: none;
+}
+
+/* Marca de fim de linha (caracteres invisíveis) */
+.eol-mark::after {
+  content: '¶';
+  color: #7c8591;
+  margin-left: 2px;
+  opacity: 0.8;
+  pointer-events: none;
 }

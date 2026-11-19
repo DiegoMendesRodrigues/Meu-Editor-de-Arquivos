@@ -1,7 +1,27 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { beforeEach, describe, expect, it } from 'vitest'
 import { isDirty, useDocuments } from './documents'
 
 const file = { path: '/p/a.md', name: 'a.md', content: 'um\ndois\n', encoding: 'UTF-8' as const, eol: 'LF' as const, size: 8 }
+
+describe('novo documento por tipo', () => {
+  beforeEach(() => useDocuments.setState({ documents: [], activeId: null, untitledCounter: 0 }))
+
+  it('usa Markdown por padrão e a extensão escolhida define a linguagem', () => {
+    const s = useDocuments.getState()
+    s.newDocument()
+    s.newDocument('txt')
+    s.newDocument('py')
+    s.newDocument('sql')
+    const docs = useDocuments.getState().documents
+    expect(docs.map((d) => [d.name, d.language, d.mode])).toEqual([
+      ['Sem título 1.md', 'markdown', 'edit'],
+      ['Sem título 2.txt', 'plaintext', 'edit'],
+      ['Sem título 3.py', 'python', 'edit'],
+      ['Sem título 4.sql', 'sql', 'edit']
+    ])
+  })
+})
 
 describe('conversões do documento', () => {
   beforeEach(() => useDocuments.setState({ documents: [], activeId: null, untitledCounter: 0 }))

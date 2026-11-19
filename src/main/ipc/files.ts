@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
 import { BrowserWindow, dialog, type IpcMainInvokeEvent } from 'electron'
@@ -8,6 +9,7 @@ import { decodeText, encodeText } from './textCodec'
 import { assertAuthorized, authorizeFile } from './access'
 import { addRecent } from './recent'
 import { stopWatching, watchFile } from '../watcher'
+import { tm } from '../i18n'
 import { handle } from './secure'
 
 /** Acima deste tamanho o arquivo não é aberto (o suporte a arquivos grandes vem depois). */
@@ -18,11 +20,11 @@ const pathSchema = z.string().min(1)
 const saveSchema = z.object({ path: pathSchema, content: z.string(), encoding: encodingSchema })
 const saveAsSchema = z.object({ suggestedName: z.string().max(1024), content: z.string(), encoding: encodingSchema })
 
-const FILTERS: Electron.FileFilter[] = [
-  { name: 'Todos os arquivos', extensions: ['*'] },
+const filters = (): Electron.FileFilter[] => [
+  { name: tm('dlg.filter.all'), extensions: ['*'] },
   { name: 'Markdown', extensions: ['md', 'markdown'] },
-  { name: 'Texto', extensions: ['txt', 'log'] },
-  { name: 'Dados', extensions: ['json', 'csv', 'yaml', 'yml', 'toml', 'ini', 'xml', 'sql'] }
+  { name: tm('lang.plaintext'), extensions: ['txt', 'log'] },
+  { name: tm('dlg.filter.data'), extensions: ['json', 'csv', 'yaml', 'yml', 'toml', 'ini', 'xml', 'sql'] }
 ]
 
 const ownerWindow = (e: IpcMainInvokeEvent): BrowserWindow | undefined =>
@@ -30,9 +32,9 @@ const ownerWindow = (e: IpcMainInvokeEvent): BrowserWindow | undefined =>
 
 async function readOne(path: string): Promise<OpenedFile> {
   const info = await stat(path)
-  if (info.isDirectory()) throw new Error(`${basename(path)} é uma pasta.`)
+  if (info.isDirectory()) throw new Error(tm('err.isFolder', { name: basename(path) }))
   if (info.size > MAX_OPEN_BYTES) {
-    throw new Error(`O arquivo ${basename(path)} tem mais de 50 MB e ainda não pode ser aberto.`)
+    throw new Error(tm('err.tooBig', { name: basename(path) }))
   }
   const decoded = decodeText(await readFile(path))
   authorizeFile(path)
@@ -61,9 +63,9 @@ export function registerFileHandlers(): void {
   handle(IpcChannels.openFiles, async (e): Promise<OpenedFile[]> => {
     const win = ownerWindow(e)
     const options: Electron.OpenDialogOptions = {
-      title: 'Abrir arquivos',
+      title: tm('dlg.openFiles'),
       properties: ['openFile', 'multiSelections'],
-      filters: FILTERS
+      filters: filters()
     }
     const result = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options)
     if (result.canceled) return []
@@ -78,7 +80,7 @@ export function registerFileHandlers(): void {
     const req = saveSchema.parse(raw)
     const target = await assertAuthorized(req.path).catch(() => {
       log.warn(`Gravação recusada em caminho não autorizado: ${resolve(req.path)}`)
-      throw new Error('Caminho não autorizado. Use "Salvar como".')
+      throw new Error(tm('err.saveNotAuthorized'))
     })
     return writeOne(target, req.content, req.encoding)
   })
@@ -87,9 +89,9 @@ export function registerFileHandlers(): void {
     const req = saveAsSchema.parse(raw)
     const win = ownerWindow(e)
     const options: Electron.SaveDialogOptions = {
-      title: 'Salvar como',
-      defaultPath: req.suggestedName || 'Sem título.md',
-      filters: FILTERS
+      title: tm('dlg.saveAs'),
+      defaultPath: req.suggestedName || 'untitled.md',
+      filters: filters()
     }
     const result = win ? await dialog.showSaveDialog(win, options) : await dialog.showSaveDialog(options)
     if (result.canceled || !result.filePath) return null
@@ -104,12 +106,10 @@ export function registerFileHandlers(): void {
     const single = names.length === 1
     const response = await messageBox(e, {
       type: 'warning',
-      title: 'Alterações não salvas',
-      message: single
-        ? `Deseja salvar as alterações em "${names[0]}"?`
-        : `Deseja salvar as alterações em ${names.length} documentos?`,
-      detail: (single ? '' : names.map((n) => `• ${n}`).join('\n') + '\n\n') + 'As alterações serão perdidas se você não salvar.',
-      buttons: [single ? 'Salvar' : 'Salvar todos', 'Não salvar', 'Cancelar'],
+      title: tm('dlg.unsaved.title'),
+      message: single ? tm('dlg.unsaved.single', { name: names[0] }) : tm('dlg.unsaved.many', { n: names.length }),
+      detail: (single ? '' : names.map((n) => `• ${n}`).join('\n') + '\n\n') + tm('dlg.unsaved.detail'),
+      buttons: [single ? tm('common.save') : tm('menu.file.saveAll'), tm('dlg.unsaved.discard'), tm('common.cancel')],
       defaultId: 0,
       cancelId: 2,
       noLink: true
@@ -121,10 +121,10 @@ export function registerFileHandlers(): void {
     const name = z.string().parse(raw)
     const response = await messageBox(e, {
       type: 'question',
-      title: 'Arquivo alterado',
-      message: `"${name}" foi alterado por outro programa.`,
-      detail: 'Você tem alterações não salvas neste documento. Deseja recarregar o arquivo do disco e descartar suas alterações?',
-      buttons: ['Manter minhas alterações', 'Recarregar do disco'],
+      title: tm('dlg.reload.title'),
+      message: tm('dlg.reload.message', { name }),
+      detail: tm('dlg.reload.detail'),
+      buttons: [tm('dlg.reload.keep'), tm('dlg.reload.reload')],
       defaultId: 0,
       cancelId: 0,
       noLink: true

@@ -1,7 +1,9 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { memo } from 'react'
 import Markdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Pencil } from 'lucide-react'
+import { t, useT } from '@/i18n'
 
 /**
  * Renderização segura: react-markdown não interpreta HTML embutido no documento,
@@ -17,7 +19,7 @@ const components: Components = {
         {children}
       </a>
     ) : (
-      <span className="text-accent underline decoration-dotted" title={`Link local: ${href ?? ''}`}>
+      <span className="text-accent underline decoration-dotted" title={t('md.localLink', { href: href ?? '' })}>
         {children}
       </span>
     )
@@ -26,12 +28,13 @@ const components: Components = {
 }
 
 export const MarkdownPreview = memo(function MarkdownPreview({ content, onEdit }: { content: string; onEdit: () => void }) {
+  const translate = useT() // redesenha a visualização quando o idioma muda
   return (
     <div className="h-full overflow-y-auto bg-white">
       {content.trim() === '' ? (
         <div className="grid h-full place-items-center text-zinc-400">
           <button type="button" onClick={onEdit} className="flex items-center gap-2 rounded border border-border px-3 py-1.5 hover:bg-zinc-100">
-            <Pencil size={14} /> Documento vazio. Clique para editar.
+            <Pencil size={14} /> {translate('md.emptyDoc')}
           </button>
         </div>
       ) : (

@@ -1,5 +1,7 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { create } from 'zustand'
 import type { SearchResponse } from '@shared/ipc'
+import { t } from '@/i18n'
 import { isDirty, useDocuments } from './documents'
 import { useWorkspace } from './workspace'
 
@@ -64,7 +66,7 @@ export const useSearch = create<SearchState>((set, get) => ({
   async run() {
     const s = get()
     const folder = useWorkspace.getState().folder
-    if (!folder) return set({ status: 'error', error: 'Abra uma pasta para pesquisar em arquivos.', response: null })
+    if (!folder) return set({ status: 'error', error: t('search.openFolderHint'), response: null })
     if (s.query === '') return set({ status: 'idle', response: null, error: null, notice: null })
     const req = { folder: folder.path, include: s.include, query: s.query, caseSensitive: s.caseSensitive, wholeWord: s.wholeWord, regex: s.regex }
     const id = ++requestId
@@ -93,20 +95,18 @@ export const useSearch = create<SearchState>((set, get) => ({
     const targets = chosen.filter((f) => !dirtyPaths.has(f.path))
     const skipped = chosen.length - targets.length
     const count = targets.reduce((n, f) => n + f.matches.length, 0)
-    if (targets.length === 0) return set({ notice: 'Nenhum arquivo para substituir (marque arquivos sem alterações não salvas).' })
+    if (targets.length === 0) return set({ notice: t('search.noneToReplace') })
 
-    const msg =
-      `Substituir ${count} ocorrência(s) em ${targets.length} arquivo(s) por "${replacement}"?\n\n` +
-      'As alterações serão gravadas direto nos arquivos e não poderão ser desfeitas pelo editor.' +
-      (skipped > 0 ? `\n\n${skipped} arquivo(s) abertos com alterações não salvas serão ignorados.` : '')
+    const summary = `${t('search.matches', { n: count })} ${t('search.inFiles', { n: targets.length })}`
+    const msg = t('search.confirmReplace', { summary, text: replacement }) + (skipped > 0 ? t('search.confirmSkipped', { n: skipped }) : '')
     if (!window.confirm(msg)) return
 
     try {
       const res = await window.api.replaceInFiles({ ...searched, replacement, regex, paths: targets.map((f) => f.path) })
       await get().run()
-      const parts = [`${res.replacements} substituição(ões) em ${res.filesChanged} arquivo(s).`]
-      if (skipped > 0) parts.push(`${skipped} ignorado(s) por terem alterações não salvas.`)
-      if (res.errors.length > 0) parts.push(`Erros: ${res.errors.join('; ')}`)
+      const parts = [`${t('search.replacements', { n: res.replacements })} ${t('search.inFiles', { n: res.filesChanged })}.`]
+      if (skipped > 0) parts.push(t('search.doneSkipped', { n: skipped }))
+      if (res.errors.length > 0) parts.push(t('search.errorsPrefix', { list: res.errors.join('; ') }))
       set({ notice: parts.join(' ') })
     } catch (err) {
       set({ notice: null, error: clean(err), status: 'error' })

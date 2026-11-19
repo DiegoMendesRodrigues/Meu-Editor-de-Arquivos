@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { Group, Panel, Separator } from 'react-resizable-panels'
@@ -14,11 +15,13 @@ import { useWorkspace } from '@/store/workspace'
 import { startFileSync } from '@/fileSync'
 import { restoreSession, startSessionAutosave } from '@/session'
 import * as cmd from '@/commands'
+import { AboutDialog, ShortcutsDialog } from '@/components/AboutDialogs'
 import { AccountDialog } from '@/components/AccountDialog'
 import { CloudOpenDialog, CloudSaveDialog } from '@/components/CloudDialogs'
 import { MacrosDialog } from '@/components/MacrosDialog'
 import { SnippetsDialog } from '@/components/SnippetsDialog'
 import { useDialogs } from '@/store/dialogs'
+import { applyLocale, useLocale, useT } from '@/i18n'
 import { useAccount } from '@/store/account'
 import { useLibrary } from '@/store/library'
 
@@ -33,7 +36,8 @@ function useGlobalShortcuts(): void {
         e.stopPropagation()
         void fn()
       }
-      if (key === 'n' && !e.shiftKey) run(cmd.newFile)
+      if (key === 'n' && !e.shiftKey) run(() => cmd.newFile())
+      else if (key === 'b' && e.shiftKey) run(() => useView.getState().toggle('sidebarVisible'))
       else if (key === 'f' && e.shiftKey) run(() => cmd.openSearch())
       else if (key === 'r' && e.shiftKey) run(cmd.toggleMacroRecording)
       else if (key === 'm' && e.shiftKey) run(cmd.playLastMacro)
@@ -58,23 +62,21 @@ export function App() {
   const sidebarVisible = useView((s) => s.sidebarVisible)
   const bottomPanelVisible = useView((s) => s.bottomPanelVisible)
   const dialog = useDialogs((s) => s.open)
-  const [notice, setNotice] = useState<string | null>(null)
+  const t = useT()
+  // Quantos documentos voltaram com texto não salvo (o texto do aviso é montado ao desenhar, no idioma atual).
+  const [restoredCount, setRestoredCount] = useState(0)
   useGlobalShortcuts()
 
   // Restaura a sessão anterior; sem nada para restaurar, começa com um documento em branco.
   useEffect(() => {
+    // Avisa o processo principal do idioma inicial (o do sistema, ou inglês se não houver tradução).
+    applyLocale(useLocale.getState().locale)
     let stopAutosave = () => {}
     let cancelled = false
     void restoreSession().then(({ restored, recovered }) => {
       if (cancelled) return
       if (!restored) useDocuments.getState().newDocument()
-      if (recovered > 0) {
-        setNotice(
-          recovered === 1
-            ? '1 documento teve alterações não salvas recuperadas da última sessão.'
-            : `${recovered} documentos tiveram alterações não salvas recuperadas da última sessão.`
-        )
-      }
+      setRestoredCount(recovered)
       stopAutosave = startSessionAutosave()
     })
     void useWorkspace.getState().refreshRecent()
@@ -94,10 +96,10 @@ export function App() {
     <div className="flex h-full flex-col">
       <MenuBar />
       <Toolbar />
-      {notice && (
+      {restoredCount > 0 && (
         <div role="status" className="flex shrink-0 items-center gap-2 border-b border-amber-200 bg-amber-50 px-3 py-1.5 text-amber-900">
-          <span className="flex-1">{notice} Salve para manter as alterações.</span>
-          <button type="button" aria-label="Fechar aviso" onClick={() => setNotice(null)} className="rounded p-0.5 hover:bg-amber-100">
+          <span className="flex-1">{t('app.restored', { n: restoredCount })} {t('app.restoredHint')}</span>
+          <button type="button" aria-label={t('app.closeNotice')} onClick={() => setRestoredCount(0)} className="rounded p-0.5 hover:bg-amber-100">
             <X size={14} />
           </button>
         </div>
@@ -138,6 +140,8 @@ export function App() {
       {dialog === 'account' && <AccountDialog />}
       {dialog === 'cloudOpen' && <CloudOpenDialog />}
       {dialog === 'cloudSave' && <CloudSaveDialog />}
+      {dialog === 'shortcuts' && <ShortcutsDialog />}
+      {dialog === 'about' && <AboutDialog />}
     </div>
   )
 }

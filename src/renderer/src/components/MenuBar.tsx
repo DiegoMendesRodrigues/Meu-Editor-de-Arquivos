@@ -1,8 +1,11 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { Check } from 'lucide-react'
 import * as cmd from '@/commands'
-import { LANGUAGE_LABELS, LANGUAGE_MENU } from '@/editor/languages'
+import { languageLabel, languageMenu } from '@/editor/languages'
+import { useT } from '@/i18n'
 import { useActiveDocument } from '@/store/documents'
+import { NEW_TYPES } from '@/newTypes'
 import { useAccount } from '@/store/account'
 import { useLibrary } from '@/store/library'
 import { useView } from '@/store/view'
@@ -52,6 +55,7 @@ function Menu({ title, items }: { title: string; items: Entry[] }) {
 
 /** Itens sem "action" aparecem desabilitados: estão previstos no roadmap. */
 export function MenuBar() {
+  const t = useT()
   const view = useView()
   const folderOpen = useWorkspace((s) => s.folder !== null)
   const doc = useActiveDocument()
@@ -62,125 +66,122 @@ export function MenuBar() {
 
   const menus: { title: string; items: Entry[] }[] = [
     {
-      title: 'Arquivo',
+      title: t('menu.file'),
       items: [
-        { label: 'Novo', shortcut: 'Ctrl+N', action: cmd.newFile },
-        { label: 'Abrir...', shortcut: 'Ctrl+O', action: () => void cmd.openFile() },
-        { label: 'Abrir pasta...', shortcut: 'Ctrl+Shift+K', action: () => void cmd.openFolder() },
-        { label: 'Fechar pasta', action: folderOpen ? cmd.closeFolder : undefined },
+        { label: t('menu.file.newMd'), shortcut: 'Ctrl+N', action: () => cmd.newFile() },
+        ...NEW_TYPES.filter((type) => type.ext !== 'md').map((type) => ({ label: t('menu.file.newOfType', { label: type.nameKey ? t(type.nameKey) : type.name, ext: type.ext }), action: () => cmd.newFile(type.ext) })),
+        { label: t('menu.file.open'), shortcut: 'Ctrl+O', action: () => void cmd.openFile() },
+        { label: t('menu.file.openFolder'), shortcut: 'Ctrl+Shift+K', action: () => void cmd.openFolder() },
+        { label: t('menu.file.closeFolder'), action: folderOpen ? cmd.closeFolder : undefined },
         'separator',
-        { label: 'Salvar', shortcut: 'Ctrl+S', action: () => void cmd.save() },
-        { label: 'Salvar como...', shortcut: 'Ctrl+Shift+S', action: () => void cmd.saveAs() },
-        { label: 'Salvar todos', action: () => void cmd.saveAll() },
+        { label: t('menu.file.save'), shortcut: 'Ctrl+S', action: () => void cmd.save() },
+        { label: t('menu.file.saveAs'), shortcut: 'Ctrl+Shift+S', action: () => void cmd.saveAs() },
+        { label: t('menu.file.saveAll'), action: () => void cmd.saveAll() },
         'separator',
-        { label: 'Abrir da nuvem...', action: cmd.openCloudFiles },
-        { label: 'Salvar na nuvem...', action: withDoc(cmd.saveToCloudDialog) },
+        { label: t('menu.file.openCloud'), action: cmd.openCloudFiles },
+        { label: t('menu.file.saveCloud'), action: withDoc(cmd.saveToCloudDialog) },
         'separator',
-        { label: 'Imprimir...' },
+        { label: t('menu.file.print') },
         'separator',
-        { label: 'Fechar aba', shortcut: 'Ctrl+W', action: () => void cmd.closeFile() },
-        { label: 'Fechar todas as abas', action: () => void cmd.closeAll() },
+        { label: t('menu.file.closeTab'), shortcut: 'Ctrl+W', action: () => void cmd.closeFile() },
+        { label: t('menu.file.closeAllTabs'), action: () => void cmd.closeAll() },
         'separator',
-        { label: 'Sair', shortcut: 'Alt+F4', action: () => void cmd.requestQuit() }
+        { label: t('menu.file.exit'), shortcut: 'Alt+F4', action: () => void cmd.requestQuit() }
       ]
     },
     {
-      title: 'Editar',
+      title: t('menu.edit'),
       items: [
-        { label: 'Desfazer', shortcut: 'Ctrl+Z', action: cmd.undo },
-        { label: 'Refazer', shortcut: 'Ctrl+Y', action: cmd.redo },
+        { label: t('menu.edit.undo'), shortcut: 'Ctrl+Z', action: cmd.undo },
+        { label: t('menu.edit.redo'), shortcut: 'Ctrl+Y', action: cmd.redo },
         'separator',
-        { label: 'Selecionar tudo', shortcut: 'Ctrl+A', action: cmd.selectAll },
-        { label: 'Seleção por coluna', shortcut: 'Shift+Alt+Arrastar', action: cmd.toggleColumnSelection },
+        { label: t('menu.edit.selectAll'), shortcut: 'Ctrl+A', action: cmd.selectAll },
+        { label: t('menu.edit.columnSelection'), shortcut: t('menu.edit.columnSelectionKeys'), action: cmd.toggleColumnSelection },
         'separator',
-        { label: 'Ordenar linhas (A-Z)', action: cmd.sortLinesAsc },
-        { label: 'Ordenar linhas (Z-A)', action: cmd.sortLinesDesc },
-        { label: 'Remover linhas duplicadas', action: cmd.removeDuplicateLines },
-        { label: 'Remover espaços no fim das linhas', action: cmd.trimWhitespace },
+        { label: t('menu.edit.sortAsc'), action: cmd.sortLinesAsc },
+        { label: t('menu.edit.sortDesc'), action: cmd.sortLinesDesc },
+        { label: t('menu.edit.removeDuplicates'), action: cmd.removeDuplicateLines },
+        { label: t('menu.edit.trimWhitespace'), action: cmd.trimWhitespace },
         'separator',
-        { label: 'Indentar com espaços', checked: view.insertSpaces, action: () => view.toggle('insertSpaces') },
-        ...[2, 4, 8].map((n) => ({ label: `Tabulação: ${n} colunas`, checked: view.tabSize === n, action: () => view.setTabSize(n) }))
+        { label: t('menu.edit.indentSpaces'), checked: view.insertSpaces, action: () => view.toggle('insertSpaces') },
+        ...[2, 4, 8].map((n) => ({ label: t('menu.edit.tabSize', { n }), checked: view.tabSize === n, action: () => view.setTabSize(n) }))
       ]
     },
     {
-      title: 'Pesquisar',
+      title: t('menu.search'),
       items: [
-        { label: 'Localizar...', shortcut: 'Ctrl+F', action: cmd.find },
-        { label: 'Substituir...', shortcut: 'Ctrl+H', action: cmd.replace },
-        { label: 'Localizar em arquivos...', shortcut: 'Ctrl+Shift+F', action: () => cmd.openSearch() },
+        { label: t('menu.search.find'), shortcut: 'Ctrl+F', action: cmd.find },
+        { label: t('menu.search.replace'), shortcut: 'Ctrl+H', action: cmd.replace },
+        { label: t('menu.search.findInFiles'), shortcut: 'Ctrl+Shift+F', action: () => cmd.openSearch() },
         'separator',
-        { label: 'Ir para linha...', shortcut: 'Ctrl+G', action: cmd.goToLine }
+        { label: t('menu.search.goToLine'), shortcut: 'Ctrl+G', action: cmd.goToLine }
       ]
     },
     {
-      title: 'Exibir',
+      title: t('menu.view'),
       items: [
-        { label: 'Alternar visualização (Markdown / JSON)', shortcut: 'Ctrl+Shift+E', action: cmd.togglePreview },
+        { label: t('menu.view.togglePreview'), shortcut: 'Ctrl+Shift+E', action: cmd.togglePreview },
         'separator',
-        { label: 'Barra lateral', checked: view.sidebarVisible, action: () => view.toggle('sidebarVisible') },
-        { label: 'Painel inferior', checked: view.bottomPanelVisible, action: () => view.toggle('bottomPanelVisible') },
+        { label: t('menu.view.sidebar'), shortcut: 'Ctrl+Shift+B', checked: view.sidebarVisible, action: () => view.toggle('sidebarVisible') },
+        { label: t('menu.view.bottomPanel'), checked: view.bottomPanelVisible, action: () => view.toggle('bottomPanelVisible') },
         'separator',
-        { label: 'Quebra automática de linha', checked: view.wordWrap, action: () => view.toggle('wordWrap') },
-        { label: 'Caracteres invisíveis', checked: view.showInvisibles, action: () => view.toggle('showInvisibles') },
+        { label: t('menu.view.wordWrap'), checked: view.wordWrap, action: () => view.toggle('wordWrap') },
+        { label: t('menu.view.invisibles'), checked: view.showInvisibles, action: () => view.toggle('showInvisibles') },
         'separator',
-        { label: 'Aumentar fonte', shortcut: 'Ctrl++', action: cmd.zoomIn },
-        { label: 'Diminuir fonte', shortcut: 'Ctrl+-', action: cmd.zoomOut },
-        { label: 'Tamanho padrão da fonte', shortcut: 'Ctrl+0', action: cmd.zoomReset },
+        { label: t('menu.view.fontIncrease'), shortcut: 'Ctrl++', action: cmd.zoomIn },
+        { label: t('menu.view.fontDecrease'), shortcut: 'Ctrl+-', action: cmd.zoomOut },
+        { label: t('menu.view.fontReset'), shortcut: 'Ctrl+0', action: cmd.zoomReset },
         'separator',
-        { label: 'Recolher tudo', action: cmd.foldAll },
-        { label: 'Expandir tudo', action: cmd.unfoldAll }
+        { label: t('menu.view.foldAll'), action: cmd.foldAll },
+        { label: t('menu.view.unfoldAll'), action: cmd.unfoldAll }
       ]
     },
     {
-      title: 'Codificação',
+      title: t('menu.encoding'),
       items: [
         { label: 'UTF-8', checked: doc?.encoding === 'UTF-8', action: withDoc(() => cmd.convertEncoding('UTF-8')) },
-        { label: 'UTF-8 com BOM', checked: doc?.encoding === 'UTF-8 BOM', action: withDoc(() => cmd.convertEncoding('UTF-8 BOM')) },
+        { label: t('menu.encoding.utf8bom'), checked: doc?.encoding === 'UTF-8 BOM', action: withDoc(() => cmd.convertEncoding('UTF-8 BOM')) },
         'separator',
-        { label: 'Quebra de linha Windows (CRLF)', checked: doc?.eol === 'CRLF', action: withDoc(() => cmd.convertEol('CRLF')) },
-        { label: 'Quebra de linha Unix/Mac (LF)', checked: doc?.eol === 'LF', action: withDoc(() => cmd.convertEol('LF')) }
+        { label: t('menu.encoding.crlf'), checked: doc?.eol === 'CRLF', action: withDoc(() => cmd.convertEol('CRLF')) },
+        { label: t('menu.encoding.lf'), checked: doc?.eol === 'LF', action: withDoc(() => cmd.convertEol('LF')) }
       ]
     },
     {
-      title: 'Linguagem',
-      items: LANGUAGE_MENU.map((id) => ({
-        label: LANGUAGE_LABELS[id],
+      title: t('menu.language'),
+      items: languageMenu(t).map((id) => ({
+        label: languageLabel(id),
         checked: doc?.language === id,
         action: withDoc(() => cmd.setLanguage(id))
       }))
     },
     {
-      title: 'Ferramentas',
+      title: t('menu.tools'),
       items: [
-        { label: 'Paleta de comandos', shortcut: 'F1', action: cmd.commandPalette },
+        { label: t('menu.tools.commandPalette'), shortcut: 'F1', action: cmd.commandPalette },
         'separator',
-        { label: 'Snippets...', action: cmd.openSnippets },
-        { label: recording ? 'Parar gravação de macro' : 'Gravar macro', shortcut: 'Ctrl+Shift+R', action: cmd.toggleMacroRecording },
-        { label: 'Executar última macro', shortcut: 'Ctrl+Shift+M', action: hasRecording && !recording ? cmd.playLastMacro : undefined },
-        { label: 'Macros...', action: cmd.openMacros },
+        { label: t('menu.tools.snippets'), action: cmd.openSnippets },
+        { label: recording ? t('menu.tools.macroStop') : t('menu.tools.macroRecord'), shortcut: 'Ctrl+Shift+R', action: cmd.toggleMacroRecording },
+        { label: t('menu.tools.macroRunLast'), shortcut: 'Ctrl+Shift+M', action: hasRecording && !recording ? cmd.playLastMacro : undefined },
+        { label: t('menu.tools.macros'), action: cmd.openMacros },
         'separator',
-        { label: 'Comparar arquivos...' },
-        { label: 'Assistente de IA (Ollama)' }
+        { label: t('menu.tools.compare') },
+        { label: t('menu.tools.ai') }
       ]
     },
     {
-      title: 'Conta',
+      title: t('menu.account'),
       items: [
-        account ? { label: `Meu perfil (${account.name})...`, action: cmd.openAccount } : { label: 'Entrar ou criar conta...', action: cmd.openAccount },
-        { label: 'Arquivos da nuvem...', action: cmd.openCloudFiles }
+        account ? { label: t('menu.account.profile', { name: account.name }), action: cmd.openAccount } : { label: t('menu.account.signIn'), action: cmd.openAccount },
+        { label: t('menu.account.cloudFiles'), action: cmd.openCloudFiles }
       ]
     },
-    { title: 'Plugins', items: [{ label: 'Gerenciar plugins...' }] },
     {
-      title: 'Ajuda',
+      title: t('menu.help'),
       items: [
-        {
-          label: 'Sobre',
-          action: () =>
-            void window.api.getAppInfo().then((info) =>
-              window.alert(`Meu Editor de Arquivos\nVersão ${info.version} (${info.platform})\n\nAutor: Diego Mendes Rodrigues`)
-            )
-        }
+        { label: t('menu.help.manual') }, // ainda não disponível
+        { label: t('menu.help.shortcuts'), action: cmd.openShortcuts },
+        { label: t('menu.help.about'), action: cmd.openAbout },
+        { label: t('menu.help.support') } // ainda não disponível
       ]
     }
   ]

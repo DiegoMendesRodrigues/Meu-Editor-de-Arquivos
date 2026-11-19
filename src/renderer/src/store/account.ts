@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { create } from 'zustand'
 import type { AccountStatus } from '@shared/ipc'
 

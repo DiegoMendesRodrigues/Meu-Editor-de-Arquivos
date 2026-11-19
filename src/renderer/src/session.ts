@@ -1,14 +1,16 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 /**
  * Sessão e recuperação.
  * - Gravação automática (com atraso curto) sempre que abas, pasta ou preferências mudam,
  *   incluindo o texto não salvo: se o app travar, nada se perde.
- * - Ao fechar normalmente, o usuário já decidiu sobre os não salvos; a sessão
- *   final guarda só abas, pasta e preferências.
+ * - Fechar o app não pergunta nem descarta nada: a sessão final também guarda o texto
+ *   não salvo (inclusive de documentos que nunca foram salvos), independente de o usuário salvar.
  * - Ao iniciar, restaura tudo; textos recuperados voltam marcados como não salvos.
  */
-import type { SessionData, SessionDocument } from '@shared/ipc'
+import { SESSION_MAX_UNSAVED_CHARS, type SessionData, type SessionDocument } from '@shared/ipc'
 import { languageFromName } from '@/editor/languages'
 import { isDirty, useDocuments, type EditorDocument } from '@/store/documents'
+import { applyLocale, useLocale } from '@/i18n'
 import { useView } from '@/store/view'
 import { useWorkspace } from '@/store/workspace'
 
@@ -48,17 +50,33 @@ export function snapshot(includeUnsaved: boolean): SessionData {
       showInvisibles: view.showInvisibles,
       insertSpaces: view.insertSpaces,
       fontSize: view.fontSize,
-      tabSize: view.tabSize
+      tabSize: view.tabSize,
+      locale: useLocale.getState().locale
     }
   }
 }
 
-async function write(includeUnsaved: boolean): Promise<void> {
+async function write(includeUnsaved: boolean): Promise<boolean> {
   try {
     await window.api.saveSession(snapshot(includeUnsaved))
+    return true
   } catch {
     // Falha de gravação da sessão não deve interromper a edição; o Main registra no log.
+    return false
   }
+}
+
+/** Há texto não salvo (alterações ou documentos sem arquivo) que a sessão precisa guardar? */
+export function hasUnsavedText(): boolean {
+  return useDocuments.getState().documents.some((d) => isDirty(d) || (d.path === null && d.content !== ''))
+}
+
+/** O texto não salvo cabe no limite da sessão? */
+export function unsavedFitsInSession(): boolean {
+  const total = useDocuments
+    .getState()
+    .documents.reduce((n, d) => n + (isDirty(d) || (d.path === null && d.content !== '') ? d.content.length : 0), 0)
+  return total <= SESSION_MAX_UNSAVED_CHARS
 }
 
 function schedule(): void {
@@ -70,12 +88,17 @@ function schedule(): void {
   }, AUTOSAVE_DELAY_MS)
 }
 
-/** Grava a sessão imediatamente (usado ao fechar a janela). */
-export async function flushSession(includeUnsaved: boolean): Promise<void> {
+/**
+ * Grava a sessão imediatamente (usado ao fechar a janela). Devolve false se a gravação falhou;
+ * nesse caso a gravação automática continua ligada.
+ */
+export async function flushSession(includeUnsaved: boolean): Promise<boolean> {
   if (timer) clearTimeout(timer)
   timer = null
   ready = false // nada mais é gravado depois da sessão final
-  await write(includeUnsaved)
+  const ok = await write(includeUnsaved)
+  if (!ok) ready = true
+  return ok
 }
 
 /** Reconstrói um documento da sessão; devolve null se não houver como recuperá-lo. */
@@ -115,7 +138,10 @@ export async function restoreSession(): Promise<{ restored: boolean; recovered: 
 
   let recovered = 0
   if (data) {
-    useView.getState().setAll(data.view)
+    // O idioma escolhido antes volta; sem escolha salva, vale o do sistema (já aplicado ao iniciar).
+    const { locale, ...viewValues } = data.view
+    useView.getState().setAll(viewValues)
+    if (locale) applyLocale(locale)
 
     if (data.folder) {
       try {
@@ -145,6 +171,6 @@ export async function restoreSession(): Promise<{ restored: boolean; recovered: 
 
 /** Liga a gravação automática; devolve a função que a desliga. */
 export function startSessionAutosave(): () => void {
-  const unsubscribers = [useDocuments.subscribe(schedule), useWorkspace.subscribe(schedule), useView.subscribe(schedule)]
+  const unsubscribers = [useDocuments.subscribe(schedule), useWorkspace.subscribe(schedule), useView.subscribe(schedule), useLocale.subscribe(schedule)]
   return () => unsubscribers.forEach((u) => u())
 }

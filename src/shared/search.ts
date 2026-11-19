@@ -1,7 +1,10 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 /**
  * Lógica pura de busca e substituição em texto (sem acesso a disco).
  * Usada pelo Main na busca em pastas e coberta por testes unitários.
  */
+
+import { translate, type MessageKey, type Params } from './i18n'
 
 export interface SearchOptions {
   query: string
@@ -24,15 +27,18 @@ export const PREVIEW_MAX = 240
 
 const WORD = '[\\p{L}\\p{N}_]'
 
-/** Monta a expressão; lança Error com mensagem em português se o padrão for inválido. */
-export function buildRegex(opts: SearchOptions): RegExp {
-  if (opts.query === '') throw new Error('Digite o texto a procurar.')
+type Translate = (key: MessageKey, params?: Params) => string
+
+/** Monta a expressão; lança Error (com a mensagem no idioma de `tr`) se o padrão for inválido. */
+export function buildRegex(opts: SearchOptions, tr: Translate = (key, params) => translate('pt-BR', key, params)): RegExp {
+  if (opts.query === '') throw new Error(tr('search.err.empty'))
   let source = opts.regex ? opts.query : opts.query.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
   if (opts.wholeWord) source = `(?<!${WORD})(?:${source})(?!${WORD})`
   try {
     return new RegExp(source, `gmu${opts.caseSensitive ? '' : 'i'}`)
   } catch (err) {
-    throw new Error(`Expressão regular inválida: ${(err as Error).message.replace(/^Invalid regular expression: (?:\/.*\/[a-z]*: )?/, '')}`)
+    const detail = (err as Error).message.replace(/^Invalid regular expression: (?:\/.*\/[a-z]*: )?/, '')
+    throw new Error(tr('search.err.badRegex', { detail }))
   }
 }
 

@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useLibrary } from '@/store/library'
 import { isRecording, play, recordCommand, startRecording, stopRecording } from './macros'

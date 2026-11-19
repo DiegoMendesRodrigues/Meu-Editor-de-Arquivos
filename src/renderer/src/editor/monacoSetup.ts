@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 /**
  * Carrega o Monaco a partir do pacote local (sem CDN), para o editor funcionar offline.
  */
@@ -35,6 +36,14 @@ self.MonacoEnvironment = {
 
 registerExtraLanguages(monaco)
 registerSnippetCompletion(monaco)
+
+// Tema claro do app: o "vs" com espaços e tabulações visíveis o bastante para serem notados.
+monaco.editor.defineTheme('meu-claro', {
+  base: 'vs',
+  inherit: true,
+  rules: [],
+  colors: { 'editorWhitespace.foreground': '#7c8591' }
+})
 loader.config({ monaco })
 
 export { monaco }

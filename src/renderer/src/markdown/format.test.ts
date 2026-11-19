@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { describe, expect, it } from 'vitest'
 import { makeLink, setHeading, stripFormatting, tableTemplate, toggleBulletList, toggleNumberedList, toggleWrap } from './format'
 

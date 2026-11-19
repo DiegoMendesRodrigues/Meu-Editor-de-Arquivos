@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app } from 'electron'

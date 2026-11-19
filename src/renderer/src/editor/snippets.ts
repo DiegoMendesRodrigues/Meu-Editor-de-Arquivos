@@ -1,9 +1,10 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import type * as Monaco from 'monaco-editor'
 import type { Snippet } from '@shared/ipc'
-import { BUILTIN_SNIPPETS, useLibrary } from '@/store/library'
+import { builtinSnippets, useLibrary } from '@/store/library'
 import { getActiveEditor } from './editorRef'
 
-export const allSnippets = (): Snippet[] => [...BUILTIN_SNIPPETS, ...useLibrary.getState().snippets]
+export const allSnippets = (): Snippet[] => [...builtinSnippets(), ...useLibrary.getState().snippets]
 
 /** Sugere os snippets (do app e do usuário) no autocompletar de qualquer linguagem. */
 export function registerSnippetCompletion(monaco: typeof Monaco): void {

@@ -1,6 +1,8 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useEffect, useRef } from 'react'
 import { CaseSensitive, Regex, Search, WholeWord } from 'lucide-react'
 import { openMatch } from '@/commands'
+import { useT } from '@/i18n'
 import { useSearch } from '@/store/search'
 import { useWorkspace } from '@/store/workspace'
 
@@ -33,6 +35,7 @@ function Preview({ text, start, length }: { text: string; start: number; length:
 }
 
 export function SearchPanel() {
+  const t = useT()
   const s = useSearch()
   const folder = useWorkspace((w) => w.folder)
   const queryRef = useRef<HTMLInputElement>(null)
@@ -56,28 +59,28 @@ export function SearchPanel() {
           ref={queryRef}
           value={s.query}
           onChange={(e) => s.setField('query', e.target.value)}
-          placeholder="Localizar em arquivos"
-          aria-label="Texto a localizar"
+          placeholder={t('search.placeholder')}
+          aria-label={t('search.queryLabel')}
           className={`${inputClass} w-64`}
         />
-        <Toggle icon={CaseSensitive} label="Diferenciar maiúsculas" on={s.caseSensitive} onClick={() => s.toggleFlag('caseSensitive')} />
-        <Toggle icon={WholeWord} label="Palavra inteira" on={s.wholeWord} onClick={() => s.toggleFlag('wholeWord')} />
-        <Toggle icon={Regex} label="Expressão regular" on={s.regex} onClick={() => s.toggleFlag('regex')} />
+        <Toggle icon={CaseSensitive} label={t('search.caseSensitive')} on={s.caseSensitive} onClick={() => s.toggleFlag('caseSensitive')} />
+        <Toggle icon={WholeWord} label={t('search.wholeWord')} on={s.wholeWord} onClick={() => s.toggleFlag('wholeWord')} />
+        <Toggle icon={Regex} label={t('search.regex')} on={s.regex} onClick={() => s.toggleFlag('regex')} />
         <input
           value={s.include}
           onChange={(e) => s.setField('include', e.target.value)}
-          placeholder="Arquivos: *.ts, docs/**"
-          aria-label="Filtro de arquivos"
+          placeholder={t('search.includePlaceholder')}
+          aria-label={t('search.includeLabel')}
           className={`${inputClass} w-44`}
         />
         <button type="submit" disabled={s.status === 'searching'} className="rounded bg-accent px-3 py-1 text-white disabled:opacity-60">
-          {s.status === 'searching' ? 'Buscando…' : 'Buscar'}
+          {s.status === 'searching' ? t('search.searching') : t('search.run')}
         </button>
         <input
           value={s.replacement}
           onChange={(e) => s.setField('replacement', e.target.value)}
-          placeholder="Substituir por"
-          aria-label="Texto de substituição"
+          placeholder={t('search.replacePlaceholder')}
+          aria-label={t('search.replaceLabel')}
           className={`${inputClass} w-64`}
         />
         <button
@@ -86,19 +89,19 @@ export function SearchPanel() {
           disabled={selectedFiles.length === 0 || s.status === 'searching'}
           className="rounded border border-border px-3 py-1 hover:bg-zinc-100 disabled:opacity-50"
         >
-          Substituir tudo
+          {t('search.replaceAll')}
         </button>
       </form>
 
       <div className="shrink-0 px-3 py-1 text-zinc-600" role="status">
         {s.error && <span className="text-red-700">{s.error}</span>}
-        {!s.error && !folder && 'Abra uma pasta para pesquisar em arquivos.'}
-        {!s.error && folder && s.status === 'idle' && `Pasta: ${folder.name}`}
+        {!s.error && !folder && t('search.openFolderHint')}
+        {!s.error && folder && s.status === 'idle' && t('search.folderLabel', { name: folder.name })}
         {!s.error && res && (
           <span>
-            {res.totalMatches} ocorrência(s) em {res.files.length} arquivo(s) ({res.filesScanned} verificados
-            {res.filesSkipped > 0 ? `, ${res.filesSkipped} ignorados: binários ou grandes` : ''})
-            {res.truncated && <strong className="text-amber-700"> — resultado parcial: refine a busca.</strong>}
+            {t('search.matches', { n: res.totalMatches })} {t('search.inFiles', { n: res.files.length })} ({t('search.scanned', { n: res.filesScanned })}
+            {res.filesSkipped > 0 ? `, ${t('search.skipped', { n: res.filesSkipped })}` : ''})
+            {res.truncated && <strong className="text-amber-700">{t('search.partial')}</strong>}
           </span>
         )}
         {s.notice && <div className="font-medium text-emerald-800">{s.notice}</div>}
@@ -108,7 +111,7 @@ export function SearchPanel() {
         {res?.files.map((f) => (
           <div key={f.path}>
             <label className="flex cursor-pointer items-center gap-2 bg-zinc-50 px-3 py-0.5 font-semibold text-zinc-700">
-              <input type="checkbox" checked={!s.excluded[f.path]} onChange={() => s.toggleFile(f.path)} aria-label={`Incluir ${f.relPath} na substituição`} />
+              <input type="checkbox" checked={!s.excluded[f.path]} onChange={() => s.toggleFile(f.path)} aria-label={t('search.includeFile', { path: f.relPath })} />
               <span className="truncate">{f.relPath}</span>
               <span className="font-normal text-zinc-500">({f.matches.length})</span>
             </label>
@@ -125,7 +128,7 @@ export function SearchPanel() {
             ))}
           </div>
         ))}
-        {res && res.files.length === 0 && <div className="p-3 text-zinc-400">Nenhum resultado.</div>}
+        {res && res.files.length === 0 && <div className="p-3 text-zinc-400">{t('search.noResults')}</div>}
       </div>
     </div>
   )

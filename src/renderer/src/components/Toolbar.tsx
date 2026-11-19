@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import {
   Bold,
@@ -26,6 +27,10 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import * as cmd from '@/commands'
+import { LOCALES } from '@shared/i18n'
+import { applyLocale, useLocale, useT } from '@/i18n'
+import { NEW_TYPES } from '@/newTypes'
+import { Flag } from './Flags'
 import * as md from '@/markdown/editorFormatting'
 import { canPreview, useActiveDocument } from '@/store/documents'
 
@@ -59,22 +64,59 @@ function ToolButton({
 const Divider = () => <div className="mx-1 h-5 w-px bg-zinc-300" />
 
 const HEADINGS = [
-  { level: 1, label: 'Título 1', className: 'text-xl font-semibold' },
-  { level: 2, label: 'Título 2', className: 'text-lg font-semibold' },
-  { level: 3, label: 'Título 3', className: 'text-base font-semibold' },
-  { level: 4, label: 'Título 4', className: 'font-semibold' },
-  { level: 5, label: 'Título 5', className: 'text-sm font-semibold' },
-  { level: 6, label: 'Título 6', className: 'text-xs font-semibold' },
-  { level: 0, label: 'Texto normal', className: '' }
+  { level: 1, className: 'text-xl font-semibold' },
+  { level: 2, className: 'text-lg font-semibold' },
+  { level: 3, className: 'text-base font-semibold' },
+  { level: 4, className: 'font-semibold' },
+  { level: 5, className: 'text-sm font-semibold' },
+  { level: 6, className: 'text-xs font-semibold' },
+  { level: 0, className: '' }
 ]
 
+/** Botão "Novo" (Markdown) com seta para escolher o tipo do documento. */
+function NewMenu() {
+  const t = useT()
+  return (
+    <div className="flex items-center">
+      <ToolButton icon={FilePlus} label={`${t('toolbar.new')} (Ctrl+N)`} onClick={() => cmd.newFile()} />
+      <DropdownMenu.Root modal={false}>
+        <DropdownMenu.Trigger
+          title={t('toolbar.newOtherType')}
+          aria-label={t('toolbar.newTypeChoose')}
+          className="-ml-1 flex items-center rounded p-1 text-zinc-700 outline-none hover:bg-zinc-200 data-[state=open]:bg-zinc-200"
+        >
+          <ChevronDown size={12} />
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content
+            align="start"
+            sideOffset={2}
+            className="z-50 min-w-44 rounded-md border border-border bg-white py-1 shadow-lg"
+          >
+            {NEW_TYPES.map((type) => (
+              <DropdownMenu.Item
+                key={type.ext}
+                onSelect={() => cmd.newFile(type.ext)}
+                className="cursor-default px-3 py-1.5 text-[13px] outline-none data-[highlighted]:bg-accent data-[highlighted]:text-white"
+              >
+                {`.${type.ext} (${type.nameKey ? t(type.nameKey) : type.name})`}
+              </DropdownMenu.Item>
+            ))}
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
+    </div>
+  )
+}
+
 function HeadingMenu({ disabled }: { disabled: boolean }) {
+  const t = useT()
   return (
     <DropdownMenu.Root modal={false}>
       <DropdownMenu.Trigger
         disabled={disabled}
-        title="Títulos"
-        aria-label="Títulos"
+        title={t('toolbar.headings')}
+        aria-label={t('toolbar.headings')}
         onMouseDown={(e) => e.preventDefault()}
         className="flex items-center rounded p-1.5 text-zinc-700 outline-none hover:bg-zinc-200 disabled:pointer-events-none disabled:text-zinc-300 data-[state=open]:bg-zinc-200"
       >
@@ -94,7 +136,7 @@ function HeadingMenu({ disabled }: { disabled: boolean }) {
               onSelect={() => md.heading(h.level)}
               className={`cursor-default px-3 py-1.5 outline-none data-[highlighted]:bg-accent data-[highlighted]:text-white ${h.className}`}
             >
-              {h.label}
+              {h.level === 0 ? t('toolbar.normalText') : t('toolbar.heading', { n: h.level })}
             </DropdownMenu.Item>
           ))}
         </DropdownMenu.Content>
@@ -103,7 +145,31 @@ function HeadingMenu({ disabled }: { disabled: boolean }) {
   )
 }
 
+/** Bandeiras dos idiomas disponíveis: clicar em uma troca o idioma do aplicativo. */
+function LanguageSwitcher() {
+  const t = useT()
+  const current = useLocale((s) => s.locale)
+  return (
+    <div role="group" aria-label={t('toolbar.language')} className="flex items-center gap-1">
+      {LOCALES.map((l) => (
+        <button
+          key={l.code}
+          type="button"
+          title={l.name}
+          aria-label={l.name}
+          aria-pressed={current === l.code}
+          onClick={() => applyLocale(l.code)}
+          className={`rounded p-1 hover:bg-zinc-200 ${current === l.code ? 'bg-blue-100 ring-1 ring-accent' : 'opacity-80'}`}
+        >
+          <Flag locale={l.code} />
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export function Toolbar() {
+  const t = useT()
   const doc = useActiveDocument()
   const hasPreview = canPreview(doc)
   const isMarkdown = doc?.language === 'markdown'
@@ -113,55 +179,55 @@ export function Toolbar() {
 
   return (
     <div className="flex h-9 shrink-0 items-center gap-0.5 border-b border-border bg-white px-2">
-      <ToolButton icon={FilePlus} label="Novo (Ctrl+N)" onClick={cmd.newFile} />
-      <ToolButton icon={FolderOpen} label="Abrir (Ctrl+O)" onClick={() => void cmd.openFile()} />
-      <ToolButton icon={Save} label="Salvar (Ctrl+S)" onClick={() => void cmd.save()} />
+      <NewMenu />
+      <ToolButton icon={FolderOpen} label={`${t('toolbar.open')} (Ctrl+O)`} onClick={() => void cmd.openFile()} />
+      <ToolButton icon={Save} label={`${t('toolbar.save')} (Ctrl+S)`} onClick={() => void cmd.save()} />
       <Divider />
-      <ToolButton icon={Undo2} label="Desfazer (Ctrl+Z)" onClick={cmd.undo} disabled={previewing} />
-      <ToolButton icon={Redo2} label="Refazer (Ctrl+Y)" onClick={cmd.redo} disabled={previewing} />
+      <ToolButton icon={Undo2} label={`${t('toolbar.undo')} (Ctrl+Z)`} onClick={cmd.undo} disabled={previewing} />
+      <ToolButton icon={Redo2} label={`${t('toolbar.redo')} (Ctrl+Y)`} onClick={cmd.redo} disabled={previewing} />
       <Divider />
-      <ToolButton icon={Search} label="Localizar (Ctrl+F)" onClick={cmd.find} disabled={previewing} />
-      <ToolButton icon={Replace} label="Substituir (Ctrl+H)" onClick={cmd.replace} disabled={previewing} />
+      <ToolButton icon={Search} label={`${t('toolbar.find')} (Ctrl+F)`} onClick={cmd.find} disabled={previewing} />
+      <ToolButton icon={Replace} label={`${t('toolbar.replace')} (Ctrl+H)`} onClick={cmd.replace} disabled={previewing} />
 
       {isMarkdown && (
         <>
           <Divider />
           <HeadingMenu disabled={formatOff} />
-          <ToolButton icon={List} label="Lista com marcadores" onClick={md.bulletList} disabled={formatOff} />
-          <ToolButton icon={ListOrdered} label="Lista numerada" onClick={md.numberedList} disabled={formatOff} />
-          <ToolButton icon={ListIndentDecrease} label="Diminuir recuo (Shift+Tab)" onClick={md.outdent} disabled={formatOff} />
-          <ToolButton icon={ListIndentIncrease} label="Aumentar recuo (Tab)" onClick={md.indent} disabled={formatOff} />
+          <ToolButton icon={List} label={t('toolbar.bulletList')} onClick={md.bulletList} disabled={formatOff} />
+          <ToolButton icon={ListOrdered} label={t('toolbar.numberedList')} onClick={md.numberedList} disabled={formatOff} />
+          <ToolButton icon={ListIndentDecrease} label={`${t('toolbar.outdent')} (Shift+Tab)`} onClick={md.outdent} disabled={formatOff} />
+          <ToolButton icon={ListIndentIncrease} label={`${t('toolbar.indent')} (Tab)`} onClick={md.indent} disabled={formatOff} />
           <Divider />
-          <ToolButton icon={Bold} label="Negrito (Ctrl+B)" onClick={md.bold} disabled={formatOff} />
-          <ToolButton icon={Italic} label="Itálico (Ctrl+I)" onClick={md.italic} disabled={formatOff} />
-          <ToolButton icon={Strikethrough} label="Tachado (Ctrl+Shift+X)" onClick={md.strikethrough} disabled={formatOff} />
-          <ToolButton icon={Link} label="Link" onClick={md.link} disabled={formatOff} />
-          <ToolButton icon={Table} label="Tabela" onClick={md.table} disabled={formatOff} />
-          <ToolButton icon={RemoveFormatting} label="Remover formatação" onClick={md.removeFormatting} disabled={formatOff} />
+          <ToolButton icon={Bold} label={`${t('toolbar.bold')} (Ctrl+B)`} onClick={md.bold} disabled={formatOff} />
+          <ToolButton icon={Italic} label={`${t('toolbar.italic')} (Ctrl+I)`} onClick={md.italic} disabled={formatOff} />
+          <ToolButton icon={Strikethrough} label={`${t('toolbar.strike')} (Ctrl+Shift+X)`} onClick={md.strikethrough} disabled={formatOff} />
+          <ToolButton icon={Link} label={t('toolbar.link')} onClick={md.link} disabled={formatOff} />
+          <ToolButton icon={Table} label={t('toolbar.table')} onClick={md.table} disabled={formatOff} />
+          <ToolButton icon={RemoveFormatting} label={t('toolbar.clearFormat')} onClick={md.removeFormatting} disabled={formatOff} />
         </>
       )}
 
       {doc?.language === 'json' && !previewing && (
         <>
           <Divider />
-          <ToolButton icon={Braces} label="Formatar JSON (Shift+Alt+F)" onClick={cmd.formatDocument} />
+          <ToolButton icon={Braces} label={`${t('toolbar.formatJson')} (Shift+Alt+F)`} onClick={cmd.formatDocument} />
         </>
       )}
 
-      {hasPreview && (
-        <>
-
+      <div className="ml-auto flex items-center gap-2">
+        <LanguageSwitcher />
+        {hasPreview && (
           <button
             type="button"
             onClick={cmd.togglePreview}
-            title="Alternar visualização (Ctrl+Shift+E)"
-            className="ml-auto flex items-center gap-1.5 rounded border border-border px-2.5 py-1 text-zinc-700 hover:bg-zinc-100"
+            title={`${t('toolbar.togglePreview')} (Ctrl+Shift+E)`}
+            className="flex items-center gap-1.5 rounded border border-border px-2.5 py-1 text-zinc-700 hover:bg-zinc-100"
           >
             {previewing ? <Pencil size={14} /> : isMarkdown ? <Eye size={14} /> : <ListTree size={14} />}
-            {previewing ? 'Editar texto' : isMarkdown ? 'Visualizar' : 'Ver em árvore'}
+            {previewing ? t('toolbar.editText') : isMarkdown ? t('toolbar.preview') : t('toolbar.tree')}
           </button>
-        </>
-      )}
+        )}
+      </div>
     </div>
   )
 }

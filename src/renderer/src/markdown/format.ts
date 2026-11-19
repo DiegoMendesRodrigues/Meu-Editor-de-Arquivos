@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 /**
  * Transformações de texto Markdown, sem dependência do Monaco (testáveis isoladamente).
  */
@@ -50,13 +51,13 @@ export function toggleWrap(text: string, marker: string): string {
   return `${marker}${text}${marker}`
 }
 
-export function makeLink(text: string): string {
-  const label = text.trim() || 'texto do link'
+export function makeLink(text: string, placeholder = 'texto do link'): string {
+  const label = text.trim() || placeholder
   return /^https?:\/\//.test(label) ? `[${label}](${label})` : `[${label}](https://)`
 }
 
-export function tableTemplate(columns = 3, rows = 2): string {
-  const header = Array.from({ length: columns }, (_, i) => `Coluna ${i + 1}`)
+export function tableTemplate(columns = 3, rows = 2, columnLabel = 'Coluna'): string {
+  const header = Array.from({ length: columns }, (_, i) => `${columnLabel} ${i + 1}`)
   const line = (cells: string[]) => `| ${cells.join(' | ')} |`
   return [
     line(header),

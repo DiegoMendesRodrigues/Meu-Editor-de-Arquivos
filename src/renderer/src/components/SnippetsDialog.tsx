@@ -1,14 +1,17 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useMemo, useState } from 'react'
 import type { Snippet } from '@shared/ipc'
 import { allSnippets, insertSnippet } from '@/editor/snippets'
-import { BUILTIN_SNIPPETS, newId, useLibrary } from '@/store/library'
+import { useT } from '@/i18n'
+import { builtinSnippets, newId, useLibrary } from '@/store/library'
 import { useDialogs } from '@/store/dialogs'
 import { Modal, buttonClass, fieldClass, primaryButtonClass } from './Modal'
 
-const isBuiltin = (s: Snippet): boolean => BUILTIN_SNIPPETS.some((b) => b.id === s.id)
+const isBuiltin = (s: Snippet): boolean => s.id.startsWith('builtin-')
 const emptySnippet = (): Snippet => ({ id: newId(), name: '', prefix: '', body: '' })
 
 export function SnippetsDialog() {
+  const t = useT()
   const close = useDialogs((s) => s.close)
   const user = useLibrary((s) => s.snippets)
   const saveSnippets = useLibrary((s) => s.saveSnippets)
@@ -32,8 +35,8 @@ export function SnippetsDialog() {
 
   const save = async (): Promise<void> => {
     if (!draft) return
-    if (!draft.name.trim() || !draft.prefix.trim() || !draft.body) return setError('Preencha nome, atalho e texto.')
-    if (/\s/.test(draft.prefix)) return setError('O atalho não pode ter espaços.')
+    if (!draft.name.trim() || !draft.prefix.trim() || !draft.body) return setError(t('snippets.errFill'))
+    if (/\s/.test(draft.prefix)) return setError(t('snippets.errSpaces'))
     const clean = { ...draft, name: draft.name.trim(), prefix: draft.prefix.trim() }
     await saveSnippets(isNew ? [...user, clean] : user.map((s) => (s.id === clean.id ? clean : s)))
     setError(null)
@@ -41,21 +44,21 @@ export function SnippetsDialog() {
   }
 
   const remove = async (): Promise<void> => {
-    if (!draft || builtin || !window.confirm(`Excluir o snippet "${draft.name}"?`)) return
+    if (!draft || builtin || !window.confirm(t('snippets.confirmDelete', { name: draft.name }))) return
     await saveSnippets(user.filter((s) => s.id !== draft.id))
     setDraft(null)
   }
 
   return (
     <Modal
-      title="Snippets"
-      description="Digite o atalho no editor e escolha a sugestão (Ctrl+Espaço), ou insira daqui. No texto, use $1, ${2:padrão} e $0 para as posições do cursor."
+      title={t('snippets.title')}
+      description={t('snippets.description')}
       onClose={close}
     >
       <div className="flex gap-4">
         <div className="flex w-64 shrink-0 flex-col gap-2">
-          <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filtrar" aria-label="Filtrar snippets" className={fieldClass} />
-          <ul className="max-h-72 overflow-auto rounded border border-border" aria-label="Lista de snippets">
+          <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder={t('snippets.filter')} aria-label={t('snippets.filterLabel')} className={fieldClass} />
+          <ul className="max-h-72 overflow-auto rounded border border-border" aria-label={t('snippets.list')}>
             {list.map((s) => (
               <li key={s.id}>
                 <button
@@ -69,10 +72,10 @@ export function SnippetsDialog() {
                 </button>
               </li>
             ))}
-            {list.length === 0 && <li className="p-2 text-sm text-zinc-400">Nenhum snippet.</li>}
+            {list.length === 0 && <li className="p-2 text-sm text-zinc-400">{t('snippets.none')}</li>}
           </ul>
           <button type="button" className={buttonClass} onClick={() => { setDraft(emptySnippet()); setError(null) }}>
-            Novo snippet
+            {t('snippets.new')}
           </button>
         </div>
 
@@ -80,28 +83,28 @@ export function SnippetsDialog() {
           {draft ? (
             <form onSubmit={(e) => { e.preventDefault(); void save() }} className="flex flex-col gap-2">
               <label className="text-xs text-zinc-600">
-                Nome
+                {t('snippets.name')}
                 <input value={draft.name} readOnly={builtin} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className={fieldClass} />
               </label>
               <label className="text-xs text-zinc-600">
-                Atalho (prefixo)
+                {t('snippets.prefix')}
                 <input value={draft.prefix} readOnly={builtin} onChange={(e) => setDraft({ ...draft, prefix: e.target.value })} className={`${fieldClass} font-mono`} />
               </label>
               <label className="text-xs text-zinc-600">
-                Texto
+                {t('snippets.body')}
                 <textarea value={draft.body} readOnly={builtin} rows={8} onChange={(e) => setDraft({ ...draft, body: e.target.value })} className={`${fieldClass} font-mono`} />
               </label>
               {error && <p role="alert" className="text-xs text-red-700">{error}</p>}
-              {builtin && <p className="text-xs text-zinc-500">Snippet do app (somente leitura). Para personalizar, crie um novo com o mesmo texto.</p>}
+              {builtin && <p className="text-xs text-zinc-500">{t('snippets.builtinNote')}</p>}
               <div className="flex gap-2">
-                <button type="button" className={buttonClass} onClick={() => insert(draft)} disabled={!draft.body}>Inserir no editor</button>
-                {!builtin && <button type="submit" className={primaryButtonClass}>Salvar</button>}
-                {builtin && <button type="button" className={buttonClass} onClick={() => setDraft({ ...draft, id: newId(), name: `${draft.name} (cópia)`, prefix: `${draft.prefix}2` })}>Duplicar para editar</button>}
-                {!builtin && !isNew && <button type="button" className={`${buttonClass} ml-auto`} onClick={() => void remove()}>Excluir</button>}
+                <button type="button" className={buttonClass} onClick={() => insert(draft)} disabled={!draft.body}>{t('snippets.insert')}</button>
+                {!builtin && <button type="submit" className={primaryButtonClass}>{t('common.save')}</button>}
+                {builtin && <button type="button" className={buttonClass} onClick={() => setDraft({ ...draft, id: newId(), name: `${draft.name} ${t('snippets.copySuffix')}`, prefix: `${draft.prefix}2` })}>{t('snippets.duplicate')}</button>}
+                {!builtin && !isNew && <button type="button" className={`${buttonClass} ml-auto`} onClick={() => void remove()}>{t('common.delete')}</button>}
               </div>
             </form>
           ) : (
-            <p className="text-sm text-zinc-400">Selecione um snippet ou crie um novo.</p>
+            <p className="text-sm text-zinc-400">{t('snippets.select')}</p>
           )}
         </div>
       </div>

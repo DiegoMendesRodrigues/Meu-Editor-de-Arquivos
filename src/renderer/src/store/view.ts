@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { create } from 'zustand'
 
 /** Preferências de exibição e de edição (guardadas na sessão). */

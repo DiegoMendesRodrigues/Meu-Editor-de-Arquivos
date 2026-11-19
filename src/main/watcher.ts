@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { watch, type FSWatcher } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import type { WebContents } from 'electron'

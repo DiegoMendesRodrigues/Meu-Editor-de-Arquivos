@@ -1,5 +1,7 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useMemo } from 'react'
-import { LANGUAGE_LABELS } from '@/editor/languages'
+import { languageLabel } from '@/editor/languages'
+import { useT } from '@/i18n'
 import { useActiveDocument, useDocuments } from '@/store/documents'
 import { useLibrary } from '@/store/library'
 
@@ -9,6 +11,7 @@ const formatSize = (bytes: number): string =>
 const encoder = new TextEncoder()
 
 export function StatusBar() {
+  const t = useT()
   const doc = useActiveDocument()
   const cursor = useDocuments((s) => s.cursor)
   const recording = useLibrary((s) => s.recording)
@@ -20,22 +23,22 @@ export function StatusBar() {
     <footer className="flex h-6 shrink-0 items-center gap-4 border-t border-border bg-chrome px-3 text-xs text-zinc-600">
       {recording && (
         <span role="status" className="font-medium text-red-700">
-          ● Gravando macro (Ctrl+Shift+R para parar)
+          {t('status.recording')}
         </span>
       )}
       {doc ? (
         <>
           <span>
-            Ln {cursor.line}, Col {cursor.column}
+            {t('status.lineCol', { line: cursor.line, col: cursor.column })}
           </span>
-          {cursor.selectedChars > 0 && <span>({cursor.selectedChars} selecionados)</span>}
+          {cursor.selectedChars > 0 && <span>{t('status.selected', { n: cursor.selectedChars })}</span>}
           <span className="ml-auto">{formatSize(size)}</span>
           <span>{doc.encoding}</span>
           <span>{doc.eol}</span>
-          <span>{LANGUAGE_LABELS[doc.language] ?? doc.language}</span>
+          <span>{languageLabel(doc.language)}</span>
         </>
       ) : (
-        <span>Pronto</span>
+        <span>{t('status.ready')}</span>
       )}
     </footer>
   )

@@ -1,3 +1,6 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
+import { t } from '@/i18n'
+
 /** Linguagem do Monaco a partir da extensão do arquivo. */
 const BY_EXTENSION: Record<string, string> = {
   md: 'markdown', markdown: 'markdown', txt: 'plaintext', log: 'plaintext', tex: 'latex',
@@ -14,16 +17,19 @@ export function languageFromName(name: string): string {
   return BY_EXTENSION[ext] ?? 'plaintext'
 }
 
-/** Nomes amigáveis para a barra de status. */
-export const LANGUAGE_LABELS: Record<string, string> = {
-  markdown: 'Markdown', plaintext: 'Texto', latex: 'LaTeX', python: 'Python', c: 'C', cpp: 'C++',
+/** Nomes das linguagens na barra de status e no menu (só "Texto" depende do idioma do aplicativo). */
+const LANGUAGE_NAMES: Record<string, string> = {
+  markdown: 'Markdown', latex: 'LaTeX', python: 'Python', c: 'C', cpp: 'C++',
   csharp: 'C#', java: 'Java', javascript: 'JavaScript', typescript: 'TypeScript', php: 'PHP',
   go: 'Go', rust: 'Rust', powershell: 'PowerShell', shell: 'Shell', bat: 'Batch', lua: 'Lua',
   html: 'HTML', css: 'CSS', scss: 'SCSS', less: 'Less', xml: 'XML', json: 'JSON', sql: 'SQL',
   yaml: 'YAML', ini: 'INI', toml: 'TOML'
 }
 
+export const languageLabel = (id: string): string => (id === 'plaintext' ? t('lang.plaintext') : (LANGUAGE_NAMES[id] ?? id))
+
 /** Linguagens oferecidas no menu, em ordem alfabética pelo nome exibido. */
-export const LANGUAGE_MENU: string[] = Object.keys(LANGUAGE_LABELS).sort((a, b) =>
-  LANGUAGE_LABELS[a].localeCompare(LANGUAGE_LABELS[b], 'pt-BR')
-)
+export const languageMenu = (translate: typeof t = t): string[] => {
+  const name = (id: string): string => (id === 'plaintext' ? translate('lang.plaintext') : LANGUAGE_NAMES[id])
+  return ['plaintext', ...Object.keys(LANGUAGE_NAMES)].sort((a, b) => name(a).localeCompare(name(b), 'pt-BR'))
+}

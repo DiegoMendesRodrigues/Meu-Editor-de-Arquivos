@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import type { editor } from 'monaco-editor'
 import { recordCommand } from './macros'
 

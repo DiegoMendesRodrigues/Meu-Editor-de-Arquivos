@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -32,7 +33,7 @@ export const test = base.extend<Fixtures>({
   app: async ({ workspace: _workspace }, use) => {
     const userData = mkdtempSync(join(tmpdir(), 'editor-e2e-data-'))
     const app = await electron.launch({
-      args: [resolve('out/main/index.js'), `--user-data-dir=${userData}`]
+      args: [resolve('out/main/index.js'), `--user-data-dir=${userData}`, '--lang=pt-BR']
     })
     await use(app)
     // Se o teste deixou texto não salvo, o app pergunta ao fechar: responde "Não salvar".

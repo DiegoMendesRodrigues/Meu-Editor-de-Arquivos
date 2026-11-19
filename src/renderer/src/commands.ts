@@ -1,7 +1,10 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 /**
  * Comandos da aplicação. Menus, toolbar e atalhos chamam estas funções,
  * para que cada ação tenha uma única implementação.
  */
+import type { MessageKey } from '@shared/i18n'
+import { t } from '@/i18n'
 import { useDocuments, isDirty, canPreview, type EditorDocument } from '@/store/documents'
 import { useWorkspace } from '@/store/workspace'
 import { getActiveEditor, revealInDocument, runEditorAction } from '@/editor/editorRef'
@@ -11,7 +14,7 @@ import { pushToCloud } from '@/cloud'
 import { useDialogs } from '@/store/dialogs'
 import { useLibrary } from '@/store/library'
 import { playMacro, startRecording, stopRecording } from '@/editor/macros'
-import { flushSession } from '@/session'
+import { flushSession, hasUnsavedText, unsavedFitsInSession } from '@/session'
 
 const docs = () => useDocuments.getState()
 const active = (): EditorDocument | undefined => {
@@ -19,17 +22,15 @@ const active = (): EditorDocument | undefined => {
   return s.documents.find((d) => d.id === s.activeId)
 }
 
-function reportError(action: string, err: unknown): void {
+function reportError(titleKey: MessageKey, err: unknown): void {
   const message = err instanceof Error ? err.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '') : String(err)
-  window.alert(`Não foi possível ${action}.
-
-${message}`)
+  window.alert(t(titleKey) + '\n\n' + message)
 }
 
 const refreshRecent = (): void => void useWorkspace.getState().refreshRecent()
 
-export function newFile(): void {
-  docs().newDocument()
+export function newFile(extension?: string): void {
+  docs().newDocument(extension)
 }
 
 export async function openFile(): Promise<void> {
@@ -37,7 +38,7 @@ export async function openFile(): Promise<void> {
     docs().addOpenedFiles(await window.api.openFiles())
     refreshRecent()
   } catch (err) {
-    reportError('abrir o arquivo', err)
+    reportError('err.openFile', err)
   }
 }
 
@@ -49,7 +50,7 @@ export async function openPath(path: string): Promise<void> {
     docs().addOpenedFiles([await window.api.readFile(path)])
     refreshRecent()
   } catch (err) {
-    reportError('abrir o arquivo', err)
+    reportError('err.openFile', err)
   }
 }
 
@@ -58,7 +59,7 @@ export async function openFolder(): Promise<void> {
     const folder = await window.api.openFolder()
     if (folder) useWorkspace.getState().setFolder(folder)
   } catch (err) {
-    reportError('abrir a pasta', err)
+    reportError('err.openFolder', err)
   }
 }
 
@@ -75,7 +76,7 @@ export async function saveAs(doc = active()): Promise<boolean> {
     refreshRecent()
     return true
   } catch (err) {
-    reportError('salvar o arquivo', err)
+    reportError('err.saveFile', err)
     return false
   }
 }
@@ -91,7 +92,7 @@ export async function save(doc = active()): Promise<boolean> {
     docs().markSaved(doc.id, saved, content)
     return true
   } catch (err) {
-    reportError('salvar o arquivo', err)
+    reportError('err.saveFile', err)
     return false
   }
 }
@@ -141,9 +142,16 @@ export async function closeAll(): Promise<void> {
 }
 
 /** Chamado quando o usuário fecha a janela (botão X, Alt+F4 ou menu Sair). */
+/**
+ * Fecha o app sem perguntar: os documentos, inclusive o texto não salvo, ficam guardados na
+ * sessão e voltam na próxima abertura. Só se isso não for possível (texto grande demais ou
+ * falha ao gravar) é que o app pergunta o que fazer com os não salvos.
+ */
 export async function requestQuit(): Promise<void> {
+  if (!hasUnsavedText() || unsavedFitsInSession()) {
+    if (await flushSession(true)) return window.api.closeWindow()
+  }
   if (!(await resolveUnsaved(docs().documents))) return
-  // O usuário já decidiu sobre os não salvos: a sessão final guarda só abas, pasta e preferências.
   await flushSession(false)
   await window.api.closeWindow()
 }
@@ -230,3 +238,6 @@ export const openCloudFiles = (): void => useDialogs.getState().show('cloudOpen'
 export const saveToCloudDialog = (): void => {
   if (active()) useDialogs.getState().show('cloudSave')
 }
+
+export const openShortcuts = (): void => useDialogs.getState().show('shortcuts')
+export const openAbout = (): void => useDialogs.getState().show('about')

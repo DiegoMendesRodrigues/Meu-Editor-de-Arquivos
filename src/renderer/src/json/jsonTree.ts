@@ -1,6 +1,8 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 /**
  * Funções puras do JSON Viewer (sem React), testáveis isoladamente.
  */
+import { t } from '@/i18n'
 
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue }
 export type PathSegment = string | number
@@ -33,9 +35,9 @@ export function locateJsonError(text: string): { offset: number; message: string
   const ws = () => {
     while (i < text.length && ' \t\n\r'.includes(text[i])) i++
   }
-  const describe = () => (i >= text.length ? 'fim do arquivo' : `"${text[i]}"`)
+  const describe = () => (i >= text.length ? t('json.err.endOfFile') : `"${text[i]}"`)
   const expect = (ch: string) => {
-    if (text[i] !== ch) throw new Fail(`Esperado "${ch}", encontrado ${describe()}`)
+    if (text[i] !== ch) throw new Fail(t('json.err.expected', { ch, found: describe() }))
     i++
   }
   const string = () => {
@@ -44,13 +46,13 @@ export function locateJsonError(text: string): { offset: number; message: string
       if (text[i] === '\\') {
         i++
         if (text[i] === 'u') {
-          if (!/^[0-9a-fA-F]{4}$/.test(text.slice(i + 1, i + 5))) throw new Fail('Escape \\u inválido')
+          if (!/^[0-9a-fA-F]{4}$/.test(text.slice(i + 1, i + 5))) throw new Fail(t('json.err.badUnicode'))
           i += 4
-        } else if (!'"\\/bfnrt'.includes(text[i] ?? '')) throw new Fail('Sequência de escape inválida')
-      } else if (text.charCodeAt(i) < 0x20) throw new Fail('Caractere de controle dentro de texto')
+        } else if (!'"\\/bfnrt'.includes(text[i] ?? '')) throw new Fail(t('json.err.badEscape'))
+      } else if (text.charCodeAt(i) < 0x20) throw new Fail(t('json.err.control'))
       i++
     }
-    if (i >= text.length) throw new Fail('Texto sem aspas de fechamento')
+    if (i >= text.length) throw new Fail(t('json.err.unterminated'))
     i++
   }
   const value = (): void => {
@@ -62,7 +64,7 @@ export function locateJsonError(text: string): { offset: number; message: string
       if (text[i] === '}') return void i++
       for (;;) {
         ws()
-        if (text[i] !== '"') throw new Fail(`Esperada uma chave entre aspas, encontrado ${describe()}`)
+        if (text[i] !== '"') throw new Fail(t('json.err.expectedKey', { found: describe() }))
         string()
         ws()
         expect(':')
@@ -71,7 +73,7 @@ export function locateJsonError(text: string): { offset: number; message: string
         if (text[i] === ',') {
           i++
           ws()
-          if (text[i] === '}') throw new Fail('Vírgula sobrando antes de "}"')
+          if (text[i] === '}') throw new Fail(t('json.err.commaObj'))
           continue
         }
         expect('}')
@@ -88,7 +90,7 @@ export function locateJsonError(text: string): { offset: number; message: string
         if (text[i] === ',') {
           i++
           ws()
-          if (text[i] === ']') throw new Fail('Vírgula sobrando antes de "]"')
+          if (text[i] === ']') throw new Fail(t('json.err.commaArr'))
           continue
         }
         expect(']')
@@ -98,12 +100,12 @@ export function locateJsonError(text: string): { offset: number; message: string
     if (ch === '"') return string()
     const literal = /^(true|false|null|-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?)/.exec(text.slice(i, i + 400))
     if (literal) return void (i += literal[0].length)
-    throw new Fail(`Valor inesperado: ${describe()}`)
+    throw new Fail(t('json.err.unexpected', { found: describe() }))
   }
   try {
     value()
     ws()
-    if (i < text.length) throw new Fail(`Conteúdo após o fim do JSON: ${describe()}`)
+    if (i < text.length) throw new Fail(t('json.err.trailing', { found: describe() }))
     return null
   } catch (e) {
     if (e instanceof Fail) return { offset: e.offset, message: e.message }
@@ -144,10 +146,10 @@ export function getAtPath(root: JsonValue, path: PathSegment[]): JsonValue | und
 
 /** Resumo exibido ao lado de um nó recolhido. */
 export function summary(v: JsonValue): string {
-  if (Array.isArray(v)) return `[ ${v.length} ${v.length === 1 ? 'item' : 'itens'} ]`
+  if (Array.isArray(v)) return t('json.items', { n: v.length })
   if (isContainer(v)) {
     const n = Object.keys(v).length
-    return `{ ${n} ${n === 1 ? 'chave' : 'chaves'} }`
+    return t('json.keys', { n })
   }
   return ''
 }

@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import type * as Monaco from 'monaco-editor'
 
 /** Linguagens que o Monaco não traz de fábrica: LaTeX e TOML (realce simples). */

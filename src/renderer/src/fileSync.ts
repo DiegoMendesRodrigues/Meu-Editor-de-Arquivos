@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 /**
  * Reage a alterações feitas por outros programas nos arquivos abertos.
  * - Documento sem alterações: recarrega em silêncio.

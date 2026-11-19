@@ -1,6 +1,8 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 /**
  * Aplica as transformações de format.ts à seleção atual do Monaco.
  */
+import { t } from '@/i18n'
 import type { editor } from 'monaco-editor'
 import { monaco } from '@/editor/monacoSetup'
 import { getActiveEditor } from '@/editor/editorRef'
@@ -65,7 +67,7 @@ export const bold = wrap('**')
 export const italic = wrap('*')
 export const strikethrough = wrap('~~')
 
-export const link = (): void => transformSelections(fmt.makeLink)
+export const link = (): void => transformSelections((text) => fmt.makeLink(text, t('md.linkText')))
 export const removeFormatting = (): void => transformSelections(fmt.stripFormatting)
 
 export function indent(): void {
@@ -86,7 +88,7 @@ export function table(): void {
     const lineIsEmpty = model.getLineContent(pos.lineNumber).trim() === ''
     const col = lineIsEmpty ? 1 : model.getLineMaxColumn(pos.lineNumber)
     const prefix = lineIsEmpty ? '' : eol + eol
-    const text = prefix + fmt.tableTemplate().split('\n').join(eol) + eol
+    const text = prefix + fmt.tableTemplate(3, 2, t('md.column')).split('\n').join(eol) + eol
     ed.pushUndoStop()
     ed.executeEdits('markdown-format', [{ range: new monaco.Range(pos.lineNumber, col, pos.lineNumber, col), text }])
     ed.pushUndoStop()
@@ -97,8 +99,8 @@ export function table(): void {
 export function registerMarkdownKeybindings(ed: Editor): void {
   const { KeyMod, KeyCode } = monaco
   const when = "editorLangId == 'markdown'"
-  ed.addAction({ id: 'md.bold', label: 'Markdown: Negrito', precondition: when, keybindings: [KeyMod.CtrlCmd | KeyCode.KeyB], run: bold })
-  ed.addAction({ id: 'md.italic', label: 'Markdown: Itálico', precondition: when, keybindings: [KeyMod.CtrlCmd | KeyCode.KeyI], run: italic })
+  ed.addAction({ id: 'md.bold', label: `Markdown: ${t('toolbar.bold')}`, precondition: when, keybindings: [KeyMod.CtrlCmd | KeyCode.KeyB], run: bold })
+  ed.addAction({ id: 'md.italic', label: `Markdown: ${t('toolbar.italic')}`, precondition: when, keybindings: [KeyMod.CtrlCmd | KeyCode.KeyI], run: italic })
   // Ctrl+K fica livre: no Monaco ele inicia combinações como Ctrl+K Ctrl+C.
-  ed.addAction({ id: 'md.strike', label: 'Markdown: Tachado', precondition: when, keybindings: [KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyX], run: strikethrough })
+  ed.addAction({ id: 'md.strike', label: `Markdown: ${t('toolbar.strike')}`, precondition: when, keybindings: [KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyX], run: strikethrough })
 }

@@ -1,9 +1,11 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app } from 'electron'
 import log from 'electron-log/main'
 import { z } from 'zod'
-import { IpcChannels, type SessionData } from '@shared/ipc'
+import { LOCALES, type Locale } from '@shared/i18n'
+import { IpcChannels, SESSION_MAX_UNSAVED_CHARS, type SessionData } from '@shared/ipc'
 import { authorizeFile, authorizeRoot } from './access'
 import { handle } from './secure'
 
@@ -12,8 +14,6 @@ import { handle } from './secure'
  * Fica na pasta de dados do usuário e é gravada de forma atômica
  * (arquivo temporário + renomear), para não corromper se o app travar no meio.
  */
-const MAX_SESSION_CHARS = 100 * 1024 * 1024
-
 export const sessionSchema = z.object({
   version: z.literal(1),
   folder: z.string().min(1).nullable(),
@@ -39,7 +39,8 @@ export const sessionSchema = z.object({
     showInvisibles: z.boolean(),
     insertSpaces: z.boolean().optional(),
     fontSize: z.number().int().min(8).max(40).optional(),
-    tabSize: z.number().int().min(1).max(16).optional()
+    tabSize: z.number().int().min(1).max(16).optional(),
+    locale: z.enum(LOCALES.map((l) => l.code) as [Locale, ...Locale[]]).optional()
   })
 })
 
@@ -73,12 +74,14 @@ export function registerSessionHandlers(): void {
   handle(IpcChannels.sessionSave, async (_e, raw: unknown): Promise<void> => {
     const data = sessionSchema.parse(raw)
     const size = data.documents.reduce((n, d) => n + (d.unsavedContent?.length ?? 0), 0)
-    if (size > MAX_SESSION_CHARS) {
+    if (size > SESSION_MAX_UNSAVED_CHARS) {
       // Textos não salvos muito grandes não entram no backup; o restante da sessão sim.
       log.warn('Textos não salvos acima do limite; backup salvo sem o conteúdo.')
       data.documents = data.documents.map(({ unsavedContent: _, ...d }) => d)
     }
-    writing = writing.then(() => persist(data)).catch((err) => log.error(`Falha ao gravar a sessão: ${String(err)}`))
-    await writing
+    // Falhas chegam ao Renderer (que decide o que fazer, ex.: perguntar antes de fechar), sem travar a fila.
+    const job = writing.then(() => persist(data))
+    writing = job.catch((err) => log.error(`Falha ao gravar a sessão: ${String(err)}`))
+    await job
   })
 }

@@ -1,7 +1,9 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useCallback, useEffect, useState } from 'react'
 import { ChevronRight, FileText, Folder, FolderOpen, FolderPlus, RefreshCw, Trash2, X } from 'lucide-react'
 import type { FolderEntry } from '@shared/ipc'
 import { closeFolder, openFolder, openPath } from '@/commands'
+import { useT } from '@/i18n'
 import { isDirty, useDocuments } from '@/store/documents'
 import { useWorkspace } from '@/store/workspace'
 
@@ -38,6 +40,7 @@ const parentDir = (path: string): string => path.split(/[\\/]/).slice(0, -1).joi
 
 /** Um nível do explorador; as subpastas só são lidas quando abertas. */
 function FolderNode({ entry, depth, activePath, reloadKey }: { entry: FolderEntry; depth: number; activePath: string | null; reloadKey: number }) {
+  const t = useT()
   const [open, setOpen] = useState(depth === 0)
   const [children, setChildren] = useState<FolderEntry[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -49,7 +52,7 @@ function FolderNode({ entry, depth, activePath, reloadKey }: { entry: FolderEntr
         setChildren(list)
         setError(null)
       })
-      .catch(() => setError('Não foi possível ler a pasta.'))
+      .catch(() => setError(t('sidebar.cannotRead')))
   }, [entry.path])
 
   useEffect(() => {
@@ -92,7 +95,7 @@ function FolderNode({ entry, depth, activePath, reloadKey }: { entry: FolderEntr
       {open && (
         <div role="group">
           {error && <p style={{ paddingLeft: (depth + 1) * 12 + 8 }} className="py-0.5 text-red-600">{error}</p>}
-          {children?.length === 0 && <p style={{ paddingLeft: (depth + 1) * 12 + 30 }} className="py-0.5 text-zinc-400">Pasta vazia</p>}
+          {children?.length === 0 && <p style={{ paddingLeft: (depth + 1) * 12 + 30 }} className="py-0.5 text-zinc-400">{t('sidebar.emptyFolder')}</p>}
           {children?.map((child) => (
             <FolderNode key={child.path} entry={child} depth={depth + 1} activePath={activePath} reloadKey={reloadKey} />
           ))}
@@ -103,6 +106,7 @@ function FolderNode({ entry, depth, activePath, reloadKey }: { entry: FolderEntr
 }
 
 export function Sidebar() {
+  const t = useT()
   const documents = useDocuments((s) => s.documents)
   const activeId = useDocuments((s) => s.activeId)
   const setActive = useDocuments((s) => s.setActive)
@@ -114,8 +118,8 @@ export function Sidebar() {
 
   return (
     <aside className="h-full overflow-y-auto bg-chrome pt-2">
-      <Section title="Documentos abertos">
-        {documents.length === 0 && <p className="px-3 text-zinc-400">Nenhum documento aberto.</p>}
+      <Section title={t('sidebar.openDocs')}>
+        {documents.length === 0 && <p className="px-3 text-zinc-400">{t('sidebar.noOpenDocs')}</p>}
         <ul>
           {documents.map((d) => (
             <li key={d.id}>
@@ -137,18 +141,18 @@ export function Sidebar() {
       </Section>
 
       <Section
-        title={folder ? `Explorador: ${folder.name}` : 'Explorador'}
+        title={folder ? t('sidebar.explorerWithFolder', { name: folder.name }) : t('sidebar.explorer')}
         actions={
           folder ? (
             <>
-              <IconButton icon={RefreshCw} label="Atualizar" onClick={() => setReloadKey((k) => k + 1)} />
-              <IconButton icon={X} label="Fechar pasta" onClick={closeFolder} />
+              <IconButton icon={RefreshCw} label={t('sidebar.refresh')} onClick={() => setReloadKey((k) => k + 1)} />
+              <IconButton icon={X} label={t('sidebar.closeFolder')} onClick={closeFolder} />
             </>
           ) : undefined
         }
       >
         {folder ? (
-          <div role="tree" aria-label={`Arquivos de ${folder.name}`}>
+          <div role="tree" aria-label={t('sidebar.filesOf', { name: folder.name })}>
             <FolderNode key={folder.path} entry={{ name: folder.name, path: folder.path, isDirectory: true }} depth={0} activePath={activePath} reloadKey={reloadKey} />
           </div>
         ) : (
@@ -158,17 +162,17 @@ export function Sidebar() {
               onClick={() => void openFolder()}
               className="flex items-center gap-1.5 rounded border border-border bg-white px-2.5 py-1 hover:bg-zinc-100"
             >
-              <FolderPlus size={14} /> Abrir pasta
+              <FolderPlus size={14} /> {t('sidebar.openFolder')}
             </button>
           </div>
         )}
       </Section>
 
       <Section
-        title="Recentes"
-        actions={recentFiles.length > 0 ? <IconButton icon={Trash2} label="Limpar lista" onClick={() => void clearRecent()} /> : undefined}
+        title={t('sidebar.recent')}
+        actions={recentFiles.length > 0 ? <IconButton icon={Trash2} label={t('sidebar.clearList')} onClick={() => void clearRecent()} /> : undefined}
       >
-        {recentFiles.length === 0 && <p className="px-3 text-zinc-400">Nenhum arquivo recente.</p>}
+        {recentFiles.length === 0 && <p className="px-3 text-zinc-400">{t('sidebar.noRecent')}</p>}
         <ul>
           {recentFiles.map((path) => (
             <li key={path}>

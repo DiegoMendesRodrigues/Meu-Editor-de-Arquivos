@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IpcChannels, type EditorApi, type FileChange } from '@shared/ipc'
 
@@ -51,6 +52,7 @@ const api: EditorApi = {
   cloudSave: (req) => ipcRenderer.invoke(IpcChannels.cloudSave, req),
   cloudDelete: (id) => ipcRenderer.invoke(IpcChannels.cloudDelete, id),
 
+  setLocale: (locale) => ipcRenderer.invoke(IpcChannels.setLocale, locale),
   getAppInfo: () => ipcRenderer.invoke(IpcChannels.appInfo),
   onBeforeClose: (listener) => {
     const handler = () => listener()

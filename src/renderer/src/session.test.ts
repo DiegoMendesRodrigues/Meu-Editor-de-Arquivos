@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { beforeEach, describe, expect, it } from 'vitest'
 import { snapshot } from './session'
 import { useDocuments } from './store/documents'

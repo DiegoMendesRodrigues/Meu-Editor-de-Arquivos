@@ -1,6 +1,9 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { create } from 'zustand'
 import type { CloudFileContent, Encoding, Eol, OpenedFile, SavedFile } from '@shared/ipc'
+import { untitledNumber } from '@shared/i18n'
 import { languageFromName } from '@/editor/languages'
+import { t } from '@/i18n'
 
 export interface EditorDocument {
   id: string
@@ -43,7 +46,8 @@ interface DocumentsState {
   cursor: CursorInfo
   untitledCounter: number
 
-  newDocument(): void
+  /** Cria um documento sem título; a extensão define a linguagem (padrão: Markdown). */
+  newDocument(extension?: string): void
   addOpenedFiles(files: OpenedFile[]): void
   setActive(id: string): void
   updateContent(id: string, content: string): void
@@ -85,16 +89,17 @@ export const useDocuments = create<DocumentsState>((set) => ({
   cursor: { line: 1, column: 1, selectedChars: 0 },
   untitledCounter: 0,
 
-  newDocument: () =>
+  newDocument: (extension = 'md') =>
     set((s) => {
       const n = s.untitledCounter + 1
+      const name = `${t('doc.untitled', { n })}.${extension}`
       const doc: EditorDocument = {
         id: nextId(),
         path: null,
-        name: `Sem título ${n}.md`,
+        name,
         content: '',
         savedContent: '',
-        language: 'markdown',
+        language: languageFromName(name),
         encoding: 'UTF-8',
         eol: defaultEol,
         mode: 'edit'
@@ -172,10 +177,10 @@ export const useDocuments = create<DocumentsState>((set) => ({
 
   restore: (restored, activeIndex) => {
     const documents = restored.map((d) => ({ ...d, id: nextId() }))
-    // Continua a numeração de "Sem título N" a partir do maior número restaurado.
+    // Continua a numeração dos documentos sem título (em qualquer idioma) a partir do maior número restaurado.
     const untitledCounter = Math.max(
       0,
-      ...documents.filter((d) => !d.path).map((d) => Number(/Sem título (\d+)/.exec(d.name)?.[1] ?? 0))
+      ...documents.filter((d) => !d.path).map((d) => untitledNumber(d.name))
     )
     const active = documents[Math.min(Math.max(activeIndex, 0), documents.length - 1)]
     set({ documents, activeId: active?.id ?? null, untitledCounter })

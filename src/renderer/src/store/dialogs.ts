@@ -1,6 +1,7 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { create } from 'zustand'
 
-export type DialogName = 'snippets' | 'macros' | 'account' | 'cloudOpen' | 'cloudSave'
+export type DialogName = 'snippets' | 'macros' | 'account' | 'cloudOpen' | 'cloudSave' | 'shortcuts' | 'about'
 
 interface DialogsState {
   open: DialogName | null

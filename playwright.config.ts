@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { defineConfig } from '@playwright/test'
 
 /** Testes de interface do app Electron. Antes de rodar: npm run build. */

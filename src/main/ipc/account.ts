@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, safeStorage } from 'electron'
@@ -12,6 +13,8 @@ import {
   type CloudSaveResult
 } from '@shared/ipc'
 import { detectEol } from './textCodec'
+import type { MessageKey } from '@shared/i18n'
+import { tm } from '../i18n'
 import { handle } from './secure'
 
 /**
@@ -79,10 +82,20 @@ const serverUrlSchema = z
     } catch {
       return false
     }
-  }, 'Endereço inválido. Use https:// (ou http:// apenas para localhost).')
+  }, { error: () => tm('acct.badUrl') })
 
 const emailSchema = z.string().trim().min(3).max(254)
-const nameSchema = z.string().trim().min(1, 'Informe o nome.').max(100)
+const nameSchema = z.string().trim().min(1, { error: () => tm('acct.nameRequired') }).max(100)
+
+/** Valida e, se falhar, lança um Error só com a mensagem (sem o JSON técnico do zod). */
+function check<T>(schema: z.ZodType<T>, value: unknown): T {
+  const result = schema.safeParse(value)
+  if (!result.success) throw new Error(result.error.issues[0]?.message ?? tm('api.invalid_request'))
+  return result.data
+}
+
+/** Códigos de erro da API que têm mensagem traduzida. */
+const API_CODES = new Set(['invalid_request', 'email_in_use', 'invalid_credentials', 'too_many_attempts', 'wrong_password', 'invalid_token', 'not_found', 'too_large', 'internal'])
 const passwordSchema = z.string().min(1).max(200)
 
 class ApiError extends Error {
@@ -97,8 +110,8 @@ class ApiError extends Error {
 
 /** Chama a API. Com auth=true envia o token; 401 encerra a sessão local. */
 async function api<T>(method: string, path: string, opts: { body?: unknown; auth?: boolean; allow?: number[] } = {}): Promise<T> {
-  if (!serverUrl) throw new Error('Configure o endereço do servidor primeiro.')
-  if (opts.auth && !token) throw new Error('Entre na sua conta para continuar.')
+  if (!serverUrl) throw new Error(tm('acct.needServer'))
+  if (opts.auth && !token) throw new Error(tm('acct.needLogin'))
   const headers: Record<string, string> = {}
   if (opts.auth) headers.authorization = `Bearer ${token}`
   if (opts.body !== undefined) headers['content-type'] = 'application/json'
@@ -113,7 +126,7 @@ async function api<T>(method: string, path: string, opts: { body?: unknown; auth
       redirect: 'error'
     })
   } catch {
-    throw new Error('Não foi possível conectar ao servidor. Verifique o endereço e a conexão.')
+    throw new Error(tm('acct.cannotConnect'))
   }
   const text = await res.text()
   let json: unknown = null
@@ -124,14 +137,15 @@ async function api<T>(method: string, path: string, opts: { body?: unknown; auth
   }
   if (res.ok || opts.allow?.includes(res.status)) return json as T
 
-  const message = (json as { error?: { message?: string } } | null)?.error?.message
+  const error = (json as { error?: { code?: string; message?: string } } | null)?.error
+  const message = error?.code && API_CODES.has(error.code) ? tm(`api.${error.code}` as MessageKey) : error?.message
   if (res.status === 401 && opts.auth) {
     token = null
     user = null
     await persist()
-    throw new ApiError('Sua sessão expirou. Entre novamente.', 401, json)
+    throw new ApiError(tm('acct.sessionExpired'), 401, json)
   }
-  throw new ApiError(message ?? `O servidor respondeu com erro ${res.status}.`, res.status, json)
+  throw new ApiError(message ?? tm('acct.serverError', { status: res.status }), res.status, json)
 }
 
 async function startSession(res: { token: string; user: AccountUser }): Promise<AccountStatus> {
@@ -147,7 +161,7 @@ export function registerAccountHandlers(): void {
   handle(IpcChannels.accountStatus, () => status())
 
   handle(IpcChannels.accountSetServer, async (_e, raw: unknown) => {
-    const url = serverUrlSchema.parse(raw)
+    const url = check(serverUrlSchema, raw)
     if (url !== serverUrl) {
       serverUrl = url
       token = null // a sessão pertence ao servidor anterior
@@ -158,7 +172,7 @@ export function registerAccountHandlers(): void {
   })
 
   handle(IpcChannels.accountRegister, async (_e, email: unknown, name: unknown, password: unknown) => {
-    const body = { email: emailSchema.parse(email), name: nameSchema.parse(name), password: passwordSchema.parse(password) }
+    const body = { email: emailSchema.parse(email), name: check(nameSchema, name), password: passwordSchema.parse(password) }
     return startSession(await api('POST', '/v1/auth/register', { body }))
   })
 
@@ -176,7 +190,7 @@ export function registerAccountHandlers(): void {
   })
 
   handle(IpcChannels.accountUpdateProfile, async (_e, name: unknown) => {
-    const res = await api<{ user: AccountUser }>('PATCH', '/v1/me', { auth: true, body: { name: nameSchema.parse(name) } })
+    const res = await api<{ user: AccountUser }>('PATCH', '/v1/me', { auth: true, body: { name: check(nameSchema, name) } })
     user = { id: res.user.id, email: res.user.email, name: res.user.name }
     await persist()
     return status()

@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { open, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { join, relative, resolve } from 'node:path'
 import log from 'electron-log/main'
@@ -11,6 +12,7 @@ import {
 import { buildGlobFilter, buildRegex, replaceText, searchText } from '@shared/search'
 import { assertAuthorized, isInside } from './access'
 import { decodeText, encodeText } from './textCodec'
+import { tm } from '../i18n'
 import { handle } from './secure'
 
 /** Limites para manter a interface responsiva em pastas grandes. */
@@ -75,7 +77,7 @@ async function* walk(root: string): AsyncGenerator<string> {
 async function searchFolder(raw: unknown): Promise<SearchResponse> {
   const req = requestSchema.parse(raw)
   const root = await assertAuthorized(req.folder)
-  const re = buildRegex(req)
+  const re = buildRegex(req, tm)
   const matchesInclude = buildGlobFilter(req.include)
 
   const files: SearchFileResult[] = []
@@ -117,7 +119,7 @@ async function searchFolder(raw: unknown): Promise<SearchResponse> {
 async function replaceInFiles(raw: unknown): Promise<ReplaceResponse> {
   const req = replaceSchema.parse(raw)
   const root = await assertAuthorized(req.folder)
-  const re = buildRegex(req)
+  const re = buildRegex(req, tm)
   const result: ReplaceResponse = { filesChanged: 0, replacements: 0, errors: [] }
 
   for (const target of req.paths) {
@@ -125,10 +127,10 @@ async function replaceInFiles(raw: unknown): Promise<ReplaceResponse> {
     const label = toPosix(relative(root, path))
     try {
       // Só arquivos dentro da pasta pesquisada (e autorizados, inclusive após resolver links).
-      if (!isInside(root, path)) throw new Error('fora da pasta pesquisada')
+      if (!isInside(root, path)) throw new Error(tm('err.outsideFolder'))
       await assertAuthorized(path)
       const buf = await readFile(path)
-      if ((await stat(path)).size > MAX_FILE_BYTES || buf.subarray(0, 8192).includes(0)) throw new Error('arquivo binário ou grande demais')
+      if ((await stat(path)).size > MAX_FILE_BYTES || buf.subarray(0, 8192).includes(0)) throw new Error(tm('err.binaryOrLarge'))
       const decoded = decodeText(buf)
       const replaced = replaceText(decoded.content.replace(/\r\n/g, '\n'), re, req.replacement, req.regex)
       if (replaced.count === 0) continue

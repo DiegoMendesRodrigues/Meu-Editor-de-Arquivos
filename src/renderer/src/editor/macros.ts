@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 /**
  * Gravação e reprodução de macros.
  * Grava o que o usuário digita (onDidType) e as teclas de navegação/edição, mais os

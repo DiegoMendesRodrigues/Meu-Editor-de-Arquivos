@@ -1,3 +1,5 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
+import type { Locale } from './i18n'
 import type { SearchMatch, SearchOptions } from './search'
 export type { SearchMatch, SearchOptions } from './search'
 
@@ -41,8 +43,12 @@ export const IpcChannels = {
   librarySave: 'library:save',
   appInfo: 'app:info',
   beforeClose: 'app:before-close',
-  closeWindow: 'app:close-window'
+  closeWindow: 'app:close-window',
+  setLocale: 'app:set-locale'
 } as const
+
+/** Limite de texto não salvo guardado na sessão (acima disso o app volta a perguntar ao fechar). */
+export const SESSION_MAX_UNSAVED_CHARS = 100 * 1024 * 1024
 
 export type Eol = 'LF' | 'CRLF'
 export type Encoding = 'UTF-8' | 'UTF-8 BOM'
@@ -154,6 +160,8 @@ export interface SessionData {
     insertSpaces?: boolean
     fontSize?: number
     tabSize?: number
+    /** Idioma escolhido pelo usuário; ausente = idioma do sistema. */
+    locale?: Locale
   }
 }
 
@@ -268,6 +276,9 @@ export interface EditorApi {
   cloudRead(id: string): Promise<CloudFileContent>
   cloudSave(req: CloudSaveRequest): Promise<CloudSaveResult>
   cloudDelete(id: string): Promise<void>
+
+  /** Avisa o processo principal do idioma da interface (diálogos nativos e mensagens de erro). */
+  setLocale(locale: Locale): Promise<void>
 
   getAppInfo(): Promise<AppInfo>
   /** O Main avisa que o usuário quer fechar a janela; o Renderer decide e chama closeWindow(). */

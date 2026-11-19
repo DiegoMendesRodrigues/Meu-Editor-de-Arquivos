@@ -1,6 +1,11 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { setMainLocale } from '../i18n'
 import { assertAuthorized, authorizeFile, authorizeRoot, isInside } from './access'
+
+// A mensagem de acesso negado é conferida em português do Brasil.
+setMainLocale('pt-BR')
 
 describe('controle de acesso', () => {
   const root = resolve('pasta-de-teste')
