@@ -1,5 +1,6 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { join } from 'node:path'
-import { app, BrowserWindow, Menu, session, shell } from 'electron'
+import { app, BrowserWindow, Menu, nativeImage, session, shell } from 'electron'
 import log from 'electron-log/main'
 import { registerFileHandlers } from './ipc/files'
 import { guardWindowClose, registerAppHandlers } from './ipc/app'
@@ -33,8 +34,16 @@ app.on('web-contents-created', (_e, contents) => {
 })
 log.info(`Iniciando Meu Editor de Arquivos ${app.getVersion()} em ${process.platform}`)
 
+/** Ícone da janela e da barra de tarefas (em desenvolvimento e no pacote; vazio se o arquivo não existir). */
+function windowIcon(): Electron.NativeImage | undefined {
+  const file = process.platform === 'win32' ? 'icon.ico' : 'icon.png'
+  const image = nativeImage.createFromPath(join(app.getAppPath(), 'build', file))
+  return image.isEmpty() ? undefined : image
+}
+
 function createWindow(): void {
   const win = new BrowserWindow({
+    icon: windowIcon(),
     width: 1280,
     height: 800,
     minWidth: 800,

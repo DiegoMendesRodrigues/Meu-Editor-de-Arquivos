@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Solução desenvolvida por Diego Mendes Rodrigues (drodrigues@img.com.br / diego.m.rodrigues@gmail.com). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Meu Editor de Arquivos">
+  <title>Meu Editor de Arquivos</title>
+  <defs>
+    <!-- Faixas sólidas inclinadas a 30°: superior clara, meio e inferior escura -->
+    <linearGradient id="faixas" gradientUnits="userSpaceOnUse" x1="128" y1="34.3" x2="384" y2="477.7">
+      <stop offset="0" stop-color="#42A5F5"/>
+      <stop offset="0.3333" stop-color="#42A5F5"/>
+      <stop offset="0.3333" stop-color="#1E7BE0"/>
+      <stop offset="0.6667" stop-color="#1E7BE0"/>
+      <stop offset="0.6667" stop-color="#1452B0"/>
+      <stop offset="1" stop-color="#1452B0"/>
+    </linearGradient>
+  </defs>
+  <circle cx="256" cy="256" r="256" fill="url(#faixas)"/>
+  <g transform="translate(118.5 118.5) scale(11.4583)" fill="none" stroke="#FFFFFF" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
+    <path d="M14 3v5h5"/>
+    <path d="M10 12.5l-2 2.5 2 2.5"/>
+    <path d="M14 12.5l2 2.5-2 2.5"/>
+  </g>
+</svg>
