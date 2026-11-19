@@ -7,6 +7,9 @@ import { useWorkspace } from '@/store/workspace'
 import { getActiveEditor, revealInDocument, runEditorAction } from '@/editor/editorRef'
 import { useSearch } from '@/store/search'
 import { useView } from '@/store/view'
+import { useDialogs } from '@/store/dialogs'
+import { useLibrary } from '@/store/library'
+import { playMacro, startRecording, stopRecording } from '@/editor/macros'
 import { flushSession } from '@/session'
 
 const docs = () => useDocuments.getState()
@@ -203,3 +206,18 @@ export function convertEol(eol: 'LF' | 'CRLF'): void {
 export const zoomIn = (): void => useView.getState().zoomFont(1)
 export const zoomOut = (): void => useView.getState().zoomFont(-1)
 export const zoomReset = (): void => useView.getState().resetFont()
+
+export const openSnippets = (): void => useDialogs.getState().show('snippets')
+export const openMacros = (): void => useDialogs.getState().show('macros')
+
+/** Inicia ou encerra a gravação de macro. */
+export function toggleMacroRecording(): void {
+  if (useLibrary.getState().recording) stopRecording()
+  else startRecording()
+}
+
+/** Executa de novo a última gravação. */
+export function playLastMacro(): void {
+  const { steps, recording } = useLibrary.getState()
+  if (!recording && steps.length > 0) playMacro({ id: 'last', name: '', steps })
+}

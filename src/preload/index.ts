@@ -32,6 +32,11 @@ const api: EditorApi = {
   loadSession: () => ipcRenderer.invoke(IpcChannels.sessionLoad),
   saveSession: (data) => ipcRenderer.invoke(IpcChannels.sessionSave, data),
 
+  loadSnippets: () => ipcRenderer.invoke(IpcChannels.libraryLoad, 'snippets'),
+  saveSnippets: (items) => ipcRenderer.invoke(IpcChannels.librarySave, 'snippets', items),
+  loadMacros: () => ipcRenderer.invoke(IpcChannels.libraryLoad, 'macros'),
+  saveMacros: (items) => ipcRenderer.invoke(IpcChannels.librarySave, 'macros', items),
+
   getAppInfo: () => ipcRenderer.invoke(IpcChannels.appInfo),
   onBeforeClose: (listener) => {
     const handler = () => listener()

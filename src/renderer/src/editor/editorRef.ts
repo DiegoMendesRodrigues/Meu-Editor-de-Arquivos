@@ -1,4 +1,5 @@
 import type { editor } from 'monaco-editor'
+import { recordCommand } from './macros'
 
 /**
  * Referência à instância ativa do Monaco, usada pelos menus e pela toolbar
@@ -56,6 +57,7 @@ export function runEditorAction(actionId: string): void {
   const ed = current
   if (!ed) return
   ed.focus()
+  recordCommand(actionId)
   const action = ed.getAction(actionId)
   if (action) void action.run()
   else ed.trigger('menu', actionId, null)

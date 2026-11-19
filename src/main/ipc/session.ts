@@ -33,7 +33,6 @@ export const sessionSchema = z.object({
   view: z.object({
     sidebarVisible: z.boolean(),
     bottomPanelVisible: z.boolean(),
-    minimap: z.boolean(),
     wordWrap: z.boolean(),
     showInvisibles: z.boolean(),
     insertSpaces: z.boolean().optional(),

@@ -14,6 +14,10 @@ import { useWorkspace } from '@/store/workspace'
 import { startFileSync } from '@/fileSync'
 import { restoreSession, startSessionAutosave } from '@/session'
 import * as cmd from '@/commands'
+import { MacrosDialog } from '@/components/MacrosDialog'
+import { SnippetsDialog } from '@/components/SnippetsDialog'
+import { useDialogs } from '@/store/dialogs'
+import { useLibrary } from '@/store/library'
 
 /** Atalhos globais da aplicação (os de edição ficam com o próprio Monaco). */
 function useGlobalShortcuts(): void {
@@ -28,6 +32,8 @@ function useGlobalShortcuts(): void {
       }
       if (key === 'n' && !e.shiftKey) run(cmd.newFile)
       else if (key === 'f' && e.shiftKey) run(() => cmd.openSearch())
+      else if (key === 'r' && e.shiftKey) run(cmd.toggleMacroRecording)
+      else if (key === 'm' && e.shiftKey) run(cmd.playLastMacro)
       else if (key === 'k' && e.shiftKey) run(cmd.openFolder)
       else if (key === 'o' && !e.shiftKey) run(cmd.openFile)
       else if (key === 's' && e.shiftKey) run(cmd.saveAs)
@@ -48,6 +54,7 @@ const separatorClass = 'bg-border transition-colors data-[separator]:hover:bg-ac
 export function App() {
   const sidebarVisible = useView((s) => s.sidebarVisible)
   const bottomPanelVisible = useView((s) => s.bottomPanelVisible)
+  const dialog = useDialogs((s) => s.open)
   const [notice, setNotice] = useState<string | null>(null)
   useGlobalShortcuts()
 
@@ -76,6 +83,7 @@ export function App() {
 
   // Monitoramento de alterações externas e confirmação ao fechar a janela.
   useEffect(() => startFileSync(), [])
+  useEffect(() => void useLibrary.getState().load(), [])
   useEffect(() => window.api.onBeforeClose(() => void cmd.requestQuit()), [])
 
   return (
@@ -121,6 +129,8 @@ export function App() {
         </Panel>
       </Group>
       <StatusBar />
+      {dialog === 'snippets' && <SnippetsDialog />}
+      {dialog === 'macros' && <MacrosDialog />}
     </div>
   )
 }

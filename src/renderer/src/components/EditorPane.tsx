@@ -4,6 +4,7 @@ import type { editor } from 'monaco-editor'
 import { monaco } from '@/editor/monacoSetup'
 import { consumeReveal, requestReveal, setActiveEditor } from '@/editor/editorRef'
 import { JsonViewer } from '@/json/JsonViewer'
+import { attachRecorder } from '@/editor/macros'
 import { registerMarkdownKeybindings } from '@/markdown/editorFormatting'
 import { MarkdownPreview } from '@/markdown/MarkdownPreview'
 import { canPreview, modelPath, useActiveDocument, useDocuments, type EditorDocument } from '@/store/documents'
@@ -20,6 +21,7 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
     editorRef.current = ed
     setActiveEditor(ed)
     registerMarkdownKeybindings(ed)
+    attachRecorder(ed)
 
     const reportCursor = () => {
       const pos = ed.getPosition()
@@ -62,7 +64,7 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
         automaticLayout: true,
         fontSize: view.fontSize,
         fontFamily: "'Cascadia Code', 'Consolas', 'DejaVu Sans Mono', 'Ubuntu Mono', monospace",
-        minimap: { enabled: view.minimap },
+        minimap: { enabled: false },
         wordWrap: view.wordWrap ? 'on' : 'off',
         renderWhitespace: view.showInvisibles ? 'all' : 'selection',
         renderControlCharacters: view.showInvisibles,

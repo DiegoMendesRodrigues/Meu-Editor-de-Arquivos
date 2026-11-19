@@ -3,6 +3,7 @@
  */
 import * as monaco from 'monaco-editor'
 import { registerExtraLanguages } from './extraLanguages'
+import { registerSnippetCompletion } from './snippets'
 import { loader } from '@monaco-editor/react'
 import EditorWorker from 'monaco-editor/editor/editor.worker?worker'
 import JsonWorker from 'monaco-editor/language/json/json.worker?worker'
@@ -33,6 +34,7 @@ self.MonacoEnvironment = {
 }
 
 registerExtraLanguages(monaco)
+registerSnippetCompletion(monaco)
 loader.config({ monaco })
 
 export { monaco }

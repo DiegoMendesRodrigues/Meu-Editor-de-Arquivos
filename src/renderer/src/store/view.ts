@@ -4,7 +4,6 @@ import { create } from 'zustand'
 export interface ViewValues {
   sidebarVisible: boolean
   bottomPanelVisible: boolean
-  minimap: boolean
   wordWrap: boolean
   showInvisibles: boolean
   /** Tab insere espaços (true) ou o caractere de tabulação (false). */
@@ -32,7 +31,6 @@ const clamp = (n: number, min: number, max: number): number => Math.min(max, Mat
 export const useView = create<ViewState>((set) => ({
   sidebarVisible: true,
   bottomPanelVisible: false,
-  minimap: true,
   wordWrap: false,
   showInvisibles: false,
   insertSpaces: true,

@@ -7,6 +7,7 @@ import { registerFolderHandlers } from './ipc/folders'
 import { registerSearchHandlers } from './ipc/search'
 import { loadRecent, registerRecentHandlers } from './ipc/recent'
 import { setWatchTarget } from './watcher'
+import { registerLibraryHandlers } from './ipc/library'
 import { registerSessionHandlers } from './ipc/session'
 
 log.initialize()
@@ -70,6 +71,7 @@ app.whenReady().then(async () => {
   registerSearchHandlers()
   registerRecentHandlers()
   registerSessionHandlers()
+  registerLibraryHandlers()
   registerAppHandlers()
   createWindow()
 

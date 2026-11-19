@@ -43,7 +43,6 @@ export function snapshot(includeUnsaved: boolean): SessionData {
     view: {
       sidebarVisible: view.sidebarVisible,
       bottomPanelVisible: view.bottomPanelVisible,
-      minimap: view.minimap,
       wordWrap: view.wordWrap,
       showInvisibles: view.showInvisibles,
       insertSpaces: view.insertSpaces,

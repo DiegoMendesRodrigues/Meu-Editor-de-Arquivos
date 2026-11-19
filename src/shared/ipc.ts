@@ -24,6 +24,8 @@ export const IpcChannels = {
   confirmReload: 'dialog:confirm-reload',
   sessionLoad: 'session:load',
   sessionSave: 'session:save',
+  libraryLoad: 'library:load',
+  librarySave: 'library:save',
   appInfo: 'app:info',
   beforeClose: 'app:before-close',
   closeWindow: 'app:close-window'
@@ -132,7 +134,6 @@ export interface SessionData {
   view: {
     sidebarVisible: boolean
     bottomPanelVisible: boolean
-    minimap: boolean
     wordWrap: boolean
     showInvisibles: boolean
     insertSpaces?: boolean
@@ -140,6 +141,26 @@ export interface SessionData {
     tabSize?: number
   }
 }
+
+/** Trecho de texto reutilizável, na sintaxe de snippets do Monaco ($1, ${2:padrão}, $0). */
+export interface Snippet {
+  id: string
+  name: string
+  /** Texto que, digitado, sugere o snippet no autocompletar. */
+  prefix: string
+  body: string
+}
+
+/** Passo de uma macro: texto digitado ou comando do editor (cursorLeft, deleteLeft, ...). */
+export type MacroStep = { type: 'text'; text: string } | { type: 'command'; id: string }
+
+export interface Macro {
+  id: string
+  name: string
+  steps: MacroStep[]
+}
+
+export type LibraryKind = 'snippets' | 'macros'
 
 export interface AppInfo {
   version: string
@@ -172,6 +193,12 @@ export interface EditorApi {
   /** Sessão anterior (abas, pasta, preferências e textos não salvos), ou null. */
   loadSession(): Promise<SessionData | null>
   saveSession(data: SessionData): Promise<void>
+
+  /** Snippets e macros do usuário (guardados na pasta de dados do app). */
+  loadSnippets(): Promise<Snippet[]>
+  saveSnippets(items: Snippet[]): Promise<void>
+  loadMacros(): Promise<Macro[]>
+  saveMacros(items: Macro[]): Promise<void>
 
   getAppInfo(): Promise<AppInfo>
   /** O Main avisa que o usuário quer fechar a janela; o Renderer decide e chama closeWindow(). */

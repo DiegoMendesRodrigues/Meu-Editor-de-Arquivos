@@ -3,6 +3,7 @@ import { Check } from 'lucide-react'
 import * as cmd from '@/commands'
 import { LANGUAGE_LABELS, LANGUAGE_MENU } from '@/editor/languages'
 import { useActiveDocument } from '@/store/documents'
+import { useLibrary } from '@/store/library'
 import { useView } from '@/store/view'
 import { useWorkspace } from '@/store/workspace'
 
@@ -53,6 +54,8 @@ export function MenuBar() {
   const view = useView()
   const folderOpen = useWorkspace((s) => s.folder !== null)
   const doc = useActiveDocument()
+  const recording = useLibrary((s) => s.recording)
+  const hasRecording = useLibrary((s) => s.steps.length > 0)
   const withDoc = (fn: () => void): (() => void) | undefined => (doc ? fn : undefined)
 
   const menus: { title: string; items: Entry[] }[] = [
@@ -112,7 +115,6 @@ export function MenuBar() {
         { label: 'Barra lateral', checked: view.sidebarVisible, action: () => view.toggle('sidebarVisible') },
         { label: 'Painel inferior', checked: view.bottomPanelVisible, action: () => view.toggle('bottomPanelVisible') },
         'separator',
-        { label: 'Minimap', checked: view.minimap, action: () => view.toggle('minimap') },
         { label: 'Quebra automática de linha', checked: view.wordWrap, action: () => view.toggle('wordWrap') },
         { label: 'Caracteres invisíveis', checked: view.showInvisibles, action: () => view.toggle('showInvisibles') },
         'separator',
@@ -142,7 +144,20 @@ export function MenuBar() {
         action: withDoc(() => cmd.setLanguage(id))
       }))
     },
-    { title: 'Ferramentas', items: [{ label: 'Paleta de comandos', shortcut: 'F1', action: cmd.commandPalette }, { label: 'Comparar arquivos...' }, { label: 'Macros' }, { label: 'Assistente de IA (Ollama)' }] },
+    {
+      title: 'Ferramentas',
+      items: [
+        { label: 'Paleta de comandos', shortcut: 'F1', action: cmd.commandPalette },
+        'separator',
+        { label: 'Snippets...', action: cmd.openSnippets },
+        { label: recording ? 'Parar gravação de macro' : 'Gravar macro', shortcut: 'Ctrl+Shift+R', action: cmd.toggleMacroRecording },
+        { label: 'Executar última macro', shortcut: 'Ctrl+Shift+M', action: hasRecording && !recording ? cmd.playLastMacro : undefined },
+        { label: 'Macros...', action: cmd.openMacros },
+        'separator',
+        { label: 'Comparar arquivos...' },
+        { label: 'Assistente de IA (Ollama)' }
+      ]
+    },
     { title: 'Plugins', items: [{ label: 'Gerenciar plugins...' }] },
     {
       title: 'Ajuda',
