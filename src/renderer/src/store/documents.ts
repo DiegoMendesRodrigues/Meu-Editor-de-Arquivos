@@ -12,6 +12,8 @@ export interface EditorDocument {
   savedContent: string
   language: string
   encoding: Encoding
+  /** Codificação da última gravação/leitura; se diferir de `encoding`, há conversão pendente. Ausente = igual. */
+  savedEncoding?: Encoding
   eol: Eol
   /** Markdown abre formatado ('preview'); o usuário alterna para 'edit' para editar o texto. */
   mode: DocumentMode
@@ -44,15 +46,23 @@ interface DocumentsState {
   /** Substitui o conteúdo pelo que está no disco (recarregamento). */
   reloadFromDisk(id: string, file: OpenedFile): void
   setMissingOnDisk(id: string, missing: boolean): void
+  setLanguage(id: string, language: string): void
+  setEncoding(id: string, encoding: Encoding): void
+  /** Converte as quebras de linha do texto (e do documento) para o formato escolhido. */
+  setEol(id: string, eol: Eol): void
   /** Substitui todos os documentos pelos da sessão restaurada. */
   restore(documents: Omit<EditorDocument, 'id'>[], activeIndex: number): void
 }
 
 const defaultEol: Eol = navigator.userAgent.includes('Windows') ? 'CRLF' : 'LF'
+const LF = String.fromCharCode(10)
+const CRLF = String.fromCharCode(13, 10)
+const EOL_PATTERN = new RegExp(`${CRLF}|${String.fromCharCode(13)}|${LF}`, 'g')
 let seq = 0
 const nextId = (): string => `doc-${++seq}`
 
-export const isDirty = (d: EditorDocument): boolean => d.content !== d.savedContent
+export const isDirty = (d: EditorDocument): boolean =>
+  d.content !== d.savedContent || d.encoding !== (d.savedEncoding ?? d.encoding)
 
 /** Identificador estável do modelo no Monaco (um modelo por documento). */
 export const modelPath = (d: EditorDocument): string => `inmemory://doc/${d.id}/${d.name}`
@@ -101,6 +111,7 @@ export const useDocuments = create<DocumentsState>((set) => ({
           savedContent: f.content,
           language,
           encoding: f.encoding,
+          savedEncoding: f.encoding,
           eol: f.eol,
           mode: canPreviewLanguage(language) ? 'preview' : 'edit'
         }
@@ -119,7 +130,7 @@ export const useDocuments = create<DocumentsState>((set) => ({
     set((s) => ({
       documents: s.documents.map((d) =>
         d.id === id
-          ? { ...d, path: saved.path, name: saved.name, savedContent: content, language: languageFromName(saved.name), missingOnDisk: false }
+          ? { ...d, path: saved.path, name: saved.name, savedContent: content, savedEncoding: d.encoding, language: languageFromName(saved.name), missingOnDisk: false }
           : d
       )
     })),
@@ -142,7 +153,7 @@ export const useDocuments = create<DocumentsState>((set) => ({
     set((s) => ({
       documents: s.documents.map((d) =>
         d.id === id
-          ? { ...d, content: file.content, savedContent: file.content, encoding: file.encoding, eol: file.eol, missingOnDisk: false }
+          ? { ...d, content: file.content, savedContent: file.content, encoding: file.encoding, savedEncoding: file.encoding, eol: file.eol, missingOnDisk: false }
           : d
       )
     })),
@@ -159,7 +170,24 @@ export const useDocuments = create<DocumentsState>((set) => ({
   },
 
   setMissingOnDisk: (id, missing) =>
-    set((s) => ({ documents: s.documents.map((d) => (d.id === id ? { ...d, missingOnDisk: missing } : d)) }))
+    set((s) => ({ documents: s.documents.map((d) => (d.id === id ? { ...d, missingOnDisk: missing } : d)) })),
+
+  setLanguage: (id, language) =>
+    set((s) => ({
+      documents: s.documents.map((d) =>
+        d.id !== id ? d : { ...d, language, mode: canPreviewLanguage(language) ? d.mode : 'edit' }
+      )
+    })),
+
+  setEncoding: (id, encoding) =>
+    set((s) => ({ documents: s.documents.map((d) => (d.id === id ? { ...d, encoding } : d)) })),
+
+  setEol: (id, eol) =>
+    set((s) => ({
+      documents: s.documents.map((d) =>
+        d.id === id ? { ...d, eol, content: d.content.replace(EOL_PATTERN, eol === 'CRLF' ? CRLF : LF) } : d
+      )
+    }))
 }))
 
 /** Linguagens com visualização própria: Markdown formatado e JSON em árvore. */

@@ -6,7 +6,7 @@ const BY_EXTENSION: Record<string, string> = {
   ts: 'typescript', tsx: 'typescript', php: 'php', go: 'go', rs: 'rust',
   ps1: 'powershell', psm1: 'powershell', sh: 'shell', bash: 'shell', bat: 'bat', cmd: 'bat', lua: 'lua',
   html: 'html', htm: 'html', css: 'css', scss: 'scss', less: 'less', xml: 'xml', json: 'json',
-  csv: 'plaintext', sql: 'sql', yaml: 'yaml', yml: 'yaml', toml: 'ini', ini: 'ini', conf: 'ini'
+  csv: 'plaintext', sql: 'sql', yaml: 'yaml', yml: 'yaml', toml: 'toml', ini: 'ini', conf: 'ini'
 }
 
 export function languageFromName(name: string): string {
@@ -20,5 +20,10 @@ export const LANGUAGE_LABELS: Record<string, string> = {
   csharp: 'C#', java: 'Java', javascript: 'JavaScript', typescript: 'TypeScript', php: 'PHP',
   go: 'Go', rust: 'Rust', powershell: 'PowerShell', shell: 'Shell', bat: 'Batch', lua: 'Lua',
   html: 'HTML', css: 'CSS', scss: 'SCSS', less: 'Less', xml: 'XML', json: 'JSON', sql: 'SQL',
-  yaml: 'YAML', ini: 'INI'
+  yaml: 'YAML', ini: 'INI', toml: 'TOML'
 }
+
+/** Linguagens oferecidas no menu, em ordem alfabética pelo nome exibido. */
+export const LANGUAGE_MENU: string[] = Object.keys(LANGUAGE_LABELS).sort((a, b) =>
+  LANGUAGE_LABELS[a].localeCompare(LANGUAGE_LABELS[b], 'pt-BR')
+)

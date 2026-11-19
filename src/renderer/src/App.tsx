@@ -34,6 +34,9 @@ function useGlobalShortcuts(): void {
       else if (key === 's') run(cmd.save)
       else if (key === 'w' && !e.shiftKey) run(cmd.closeFile)
       else if (key === 'e' && e.shiftKey) run(cmd.togglePreview)
+      else if (key === '=' || key === '+') run(cmd.zoomIn)
+      else if (key === '-') run(cmd.zoomOut)
+      else if (key === '0') run(cmd.zoomReset)
     }
     window.addEventListener('keydown', onKeyDown, true)
     return () => window.removeEventListener('keydown', onKeyDown, true)

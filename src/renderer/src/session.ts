@@ -31,6 +31,7 @@ export function snapshot(includeUnsaved: boolean): SessionData {
     mode: d.mode,
     encoding: d.encoding,
     eol: d.eol,
+    language: d.language,
     ...(includeUnsaved && (isDirty(d) || d.path === null) ? { unsavedContent: d.content } : {})
   }))
 
@@ -44,7 +45,10 @@ export function snapshot(includeUnsaved: boolean): SessionData {
       bottomPanelVisible: view.bottomPanelVisible,
       minimap: view.minimap,
       wordWrap: view.wordWrap,
-      showInvisibles: view.showInvisibles
+      showInvisibles: view.showInvisibles,
+      insertSpaces: view.insertSpaces,
+      fontSize: view.fontSize,
+      tabSize: view.tabSize
     }
   }
 }
@@ -76,7 +80,7 @@ export async function flushSession(includeUnsaved: boolean): Promise<void> {
 
 /** Reconstrói um documento da sessão; devolve null se não houver como recuperá-lo. */
 async function restoreDocument(s: SessionDocument): Promise<Omit<EditorDocument, 'id'> | null> {
-  const base = { name: s.name, mode: s.mode, encoding: s.encoding, eol: s.eol, language: languageFromName(s.name) }
+  const base = { name: s.name, mode: s.mode, encoding: s.encoding, eol: s.eol, language: s.language ?? languageFromName(s.name) }
   if (s.path === null) {
     return s.unsavedContent === undefined ? null : { ...base, path: null, content: s.unsavedContent, savedContent: '' }
   }
@@ -86,8 +90,10 @@ async function restoreDocument(s: SessionDocument): Promise<Omit<EditorDocument,
       ...base,
       path: file.path,
       name: file.name,
-      encoding: file.encoding,
-      eol: file.eol,
+      // Conversões de codificação/quebra de linha ainda não salvas voltam como estavam.
+      encoding: s.unsavedContent === undefined ? file.encoding : s.encoding,
+      savedEncoding: file.encoding,
+      eol: s.unsavedContent === undefined ? file.eol : s.eol,
       content: s.unsavedContent ?? file.content,
       savedContent: file.content
     }

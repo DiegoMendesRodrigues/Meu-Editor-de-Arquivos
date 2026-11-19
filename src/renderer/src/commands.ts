@@ -184,3 +184,22 @@ export async function openMatch(path: string, line: number, column: number, leng
   if (doc.mode === 'preview') docs().setMode(doc.id, 'edit')
   revealInDocument(doc.id, line, column, length)
 }
+
+export function setLanguage(language: string): void {
+  const doc = active()
+  if (doc) docs().setLanguage(doc.id, language)
+}
+
+export function convertEncoding(encoding: 'UTF-8' | 'UTF-8 BOM'): void {
+  const doc = active()
+  if (doc) docs().setEncoding(doc.id, encoding)
+}
+
+export function convertEol(eol: 'LF' | 'CRLF'): void {
+  const doc = active()
+  if (doc) docs().setEol(doc.id, eol)
+}
+
+export const zoomIn = (): void => useView.getState().zoomFont(1)
+export const zoomOut = (): void => useView.getState().zoomFont(-1)
+export const zoomReset = (): void => useView.getState().resetFont()

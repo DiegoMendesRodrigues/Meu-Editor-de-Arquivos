@@ -1,17 +1,33 @@
 import { create } from 'zustand'
 
-/** Preferências de exibição da interface (guardadas na sessão). */
-interface ViewState {
+/** Preferências de exibição e de edição (guardadas na sessão). */
+export interface ViewValues {
   sidebarVisible: boolean
   bottomPanelVisible: boolean
   minimap: boolean
   wordWrap: boolean
   showInvisibles: boolean
-  toggle(key: ViewKey): void
-  setAll(values: Record<ViewKey, boolean>): void
+  /** Tab insere espaços (true) ou o caractere de tabulação (false). */
+  insertSpaces: boolean
+  fontSize: number
+  tabSize: number
 }
 
-export type ViewKey = 'sidebarVisible' | 'bottomPanelVisible' | 'minimap' | 'wordWrap' | 'showInvisibles'
+export type ViewKey = {
+  [K in keyof ViewValues]: ViewValues[K] extends boolean ? K : never
+}[keyof ViewValues]
+
+interface ViewState extends ViewValues {
+  toggle(key: ViewKey): void
+  setAll(values: Partial<ViewValues>): void
+  /** Altera o tamanho da fonte (limitado a 8–40). */
+  zoomFont(delta: number): void
+  resetFont(): void
+  setTabSize(size: number): void
+}
+
+export const DEFAULT_FONT_SIZE = 14
+const clamp = (n: number, min: number, max: number): number => Math.min(max, Math.max(min, n))
 
 export const useView = create<ViewState>((set) => ({
   sidebarVisible: true,
@@ -19,6 +35,12 @@ export const useView = create<ViewState>((set) => ({
   minimap: true,
   wordWrap: false,
   showInvisibles: false,
+  insertSpaces: true,
+  fontSize: DEFAULT_FONT_SIZE,
+  tabSize: 4,
   toggle: (key) => set((s) => ({ [key]: !s[key] })),
-  setAll: (values) => set(values)
+  setAll: (values) => set(values),
+  zoomFont: (delta) => set((s) => ({ fontSize: clamp(s.fontSize + delta, 8, 40) })),
+  resetFont: () => set({ fontSize: DEFAULT_FONT_SIZE }),
+  setTabSize: (size) => set({ tabSize: clamp(size, 1, 16) })
 }))

@@ -25,6 +25,7 @@ export const sessionSchema = z.object({
         mode: z.enum(['preview', 'edit']),
         encoding: z.enum(['UTF-8', 'UTF-8 BOM']),
         eol: z.enum(['LF', 'CRLF']),
+        language: z.string().max(40).optional(),
         unsavedContent: z.string().optional()
       })
     )
@@ -34,7 +35,10 @@ export const sessionSchema = z.object({
     bottomPanelVisible: z.boolean(),
     minimap: z.boolean(),
     wordWrap: z.boolean(),
-    showInvisibles: z.boolean()
+    showInvisibles: z.boolean(),
+    insertSpaces: z.boolean().optional(),
+    fontSize: z.number().int().min(8).max(40).optional(),
+    tabSize: z.number().int().min(1).max(16).optional()
   })
 })
 

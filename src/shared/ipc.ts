@@ -119,6 +119,8 @@ export interface SessionDocument {
   mode: 'preview' | 'edit'
   encoding: Encoding
   eol: Eol
+  /** Linguagem escolhida manualmente; ausente = deduzida pelo nome. */
+  language?: string
   unsavedContent?: string
 }
 
@@ -133,6 +135,9 @@ export interface SessionData {
     minimap: boolean
     wordWrap: boolean
     showInvisibles: boolean
+    insertSpaces?: boolean
+    fontSize?: number
+    tabSize?: number
   }
 }
 

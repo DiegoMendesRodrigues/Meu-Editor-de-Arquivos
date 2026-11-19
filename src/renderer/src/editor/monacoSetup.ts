@@ -2,6 +2,7 @@
  * Carrega o Monaco a partir do pacote local (sem CDN), para o editor funcionar offline.
  */
 import * as monaco from 'monaco-editor'
+import { registerExtraLanguages } from './extraLanguages'
 import { loader } from '@monaco-editor/react'
 import EditorWorker from 'monaco-editor/editor/editor.worker?worker'
 import JsonWorker from 'monaco-editor/language/json/json.worker?worker'
@@ -31,6 +32,7 @@ self.MonacoEnvironment = {
   }
 }
 
+registerExtraLanguages(monaco)
 loader.config({ monaco })
 
 export { monaco }

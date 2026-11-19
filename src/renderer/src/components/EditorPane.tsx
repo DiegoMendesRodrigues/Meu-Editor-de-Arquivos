@@ -60,7 +60,7 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
       onChange={(value) => updateContent(doc.id, value ?? '')}
       options={{
         automaticLayout: true,
-        fontSize: 14,
+        fontSize: view.fontSize,
         fontFamily: "'Cascadia Code', 'Consolas', 'DejaVu Sans Mono', 'Ubuntu Mono', monospace",
         minimap: { enabled: view.minimap },
         wordWrap: view.wordWrap ? 'on' : 'off',
@@ -71,7 +71,9 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
         multiCursorModifier: 'alt',
         smoothScrolling: true,
         scrollBeyondLastLine: false,
-        tabSize: 4,
+        tabSize: view.tabSize,
+        insertSpaces: view.insertSpaces,
+        detectIndentation: false,
         unicodeHighlight: { ambiguousCharacters: false }
       }}
     />

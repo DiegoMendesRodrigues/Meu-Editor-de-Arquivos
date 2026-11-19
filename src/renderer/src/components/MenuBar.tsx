@@ -1,6 +1,8 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { Check } from 'lucide-react'
 import * as cmd from '@/commands'
+import { LANGUAGE_LABELS, LANGUAGE_MENU } from '@/editor/languages'
+import { useActiveDocument } from '@/store/documents'
 import { useView } from '@/store/view'
 import { useWorkspace } from '@/store/workspace'
 
@@ -22,7 +24,7 @@ function Menu({ title, items }: { title: string; items: Entry[] }) {
         <DropdownMenu.Content
           align="start"
           sideOffset={2}
-          className="z-50 min-w-60 rounded-md border border-border bg-white py-1 text-[13px] shadow-lg"
+          className="z-50 max-h-[75vh] min-w-60 overflow-y-auto rounded-md border border-border bg-white py-1 text-[13px] shadow-lg"
         >
           {items.map((item, i) =>
             item === 'separator' ? (
@@ -50,6 +52,8 @@ function Menu({ title, items }: { title: string; items: Entry[] }) {
 export function MenuBar() {
   const view = useView()
   const folderOpen = useWorkspace((s) => s.folder !== null)
+  const doc = useActiveDocument()
+  const withDoc = (fn: () => void): (() => void) | undefined => (doc ? fn : undefined)
 
   const menus: { title: string; items: Entry[] }[] = [
     {
@@ -84,7 +88,10 @@ export function MenuBar() {
         { label: 'Ordenar linhas (A-Z)', action: cmd.sortLinesAsc },
         { label: 'Ordenar linhas (Z-A)', action: cmd.sortLinesDesc },
         { label: 'Remover linhas duplicadas', action: cmd.removeDuplicateLines },
-        { label: 'Remover espaços no fim das linhas', action: cmd.trimWhitespace }
+        { label: 'Remover espaços no fim das linhas', action: cmd.trimWhitespace },
+        'separator',
+        { label: 'Indentar com espaços', checked: view.insertSpaces, action: () => view.toggle('insertSpaces') },
+        ...[2, 4, 8].map((n) => ({ label: `Tabulação: ${n} colunas`, checked: view.tabSize === n, action: () => view.setTabSize(n) }))
       ]
     },
     {
@@ -109,12 +116,32 @@ export function MenuBar() {
         { label: 'Quebra automática de linha', checked: view.wordWrap, action: () => view.toggle('wordWrap') },
         { label: 'Caracteres invisíveis', checked: view.showInvisibles, action: () => view.toggle('showInvisibles') },
         'separator',
+        { label: 'Aumentar fonte', shortcut: 'Ctrl++', action: cmd.zoomIn },
+        { label: 'Diminuir fonte', shortcut: 'Ctrl+-', action: cmd.zoomOut },
+        { label: 'Tamanho padrão da fonte', shortcut: 'Ctrl+0', action: cmd.zoomReset },
+        'separator',
         { label: 'Recolher tudo', action: cmd.foldAll },
         { label: 'Expandir tudo', action: cmd.unfoldAll }
       ]
     },
-    { title: 'Codificação', items: [{ label: 'Converter para UTF-8' }, { label: 'Converter para UTF-8 com BOM' }, 'separator', { label: 'Quebra de linha Windows (CRLF)' }, { label: 'Quebra de linha Unix (LF)' }] },
-    { title: 'Linguagem', items: [{ label: 'Selecionar linguagem...' }] },
+    {
+      title: 'Codificação',
+      items: [
+        { label: 'UTF-8', checked: doc?.encoding === 'UTF-8', action: withDoc(() => cmd.convertEncoding('UTF-8')) },
+        { label: 'UTF-8 com BOM', checked: doc?.encoding === 'UTF-8 BOM', action: withDoc(() => cmd.convertEncoding('UTF-8 BOM')) },
+        'separator',
+        { label: 'Quebra de linha Windows (CRLF)', checked: doc?.eol === 'CRLF', action: withDoc(() => cmd.convertEol('CRLF')) },
+        { label: 'Quebra de linha Unix/Mac (LF)', checked: doc?.eol === 'LF', action: withDoc(() => cmd.convertEol('LF')) }
+      ]
+    },
+    {
+      title: 'Linguagem',
+      items: LANGUAGE_MENU.map((id) => ({
+        label: LANGUAGE_LABELS[id],
+        checked: doc?.language === id,
+        action: withDoc(() => cmd.setLanguage(id))
+      }))
+    },
     { title: 'Ferramentas', items: [{ label: 'Paleta de comandos', shortcut: 'F1', action: cmd.commandPalette }, { label: 'Comparar arquivos...' }, { label: 'Macros' }, { label: 'Assistente de IA (Ollama)' }] },
     { title: 'Plugins', items: [{ label: 'Gerenciar plugins...' }] },
     {
