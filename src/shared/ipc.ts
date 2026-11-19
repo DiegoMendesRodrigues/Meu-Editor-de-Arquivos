@@ -6,9 +6,20 @@
 
 export const IpcChannels = {
   openFiles: 'file:open',
+  readFile: 'file:read',
   saveFile: 'file:save',
   saveFileAs: 'file:save-as',
-  appInfo: 'app:info'
+  unwatchFile: 'file:unwatch',
+  fileChanged: 'file:changed',
+  openFolder: 'folder:open',
+  listFolder: 'folder:list',
+  recentList: 'recent:list',
+  recentClear: 'recent:clear',
+  confirmUnsaved: 'dialog:confirm-unsaved',
+  confirmReload: 'dialog:confirm-reload',
+  appInfo: 'app:info',
+  beforeClose: 'app:before-close',
+  closeWindow: 'app:close-window'
 } as const
 
 export type Eol = 'LF' | 'CRLF'
@@ -41,6 +52,24 @@ export interface SavedFile {
   size: number
 }
 
+export interface FolderInfo {
+  path: string
+  name: string
+}
+
+export interface FolderEntry {
+  name: string
+  path: string
+  isDirectory: boolean
+}
+
+export interface FileChange {
+  path: string
+  kind: 'changed' | 'deleted'
+}
+
+export type UnsavedChoice = 'save' | 'discard' | 'cancel'
+
 export interface AppInfo {
   version: string
   platform: string
@@ -49,7 +78,26 @@ export interface AppInfo {
 /** API exposta ao Renderer via contextBridge (window.api). */
 export interface EditorApi {
   openFiles(): Promise<OpenedFile[]>
+  /** Lê um arquivo já autorizado (dentro de uma pasta aberta ou da lista de recentes). */
+  readFile(path: string): Promise<OpenedFile>
   saveFile(req: SaveRequest): Promise<SavedFile>
   saveFileAs(req: SaveAsRequest): Promise<SavedFile | null>
+  unwatchFile(path: string): Promise<void>
+  onFileChanged(listener: (change: FileChange) => void): () => void
+
+  openFolder(): Promise<FolderInfo | null>
+  listFolder(path: string): Promise<FolderEntry[]>
+
+  getRecentFiles(): Promise<string[]>
+  clearRecentFiles(): Promise<void>
+
+  /** Diálogo nativo para documentos com alterações não salvas. */
+  confirmUnsaved(names: string[]): Promise<UnsavedChoice>
+  /** Diálogo nativo quando um arquivo com alterações foi modificado por outro programa. */
+  confirmReload(name: string): Promise<boolean>
+
   getAppInfo(): Promise<AppInfo>
+  /** O Main avisa que o usuário quer fechar a janela; o Renderer decide e chama closeWindow(). */
+  onBeforeClose(listener: () => void): () => void
+  closeWindow(): Promise<void>
 }

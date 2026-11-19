@@ -9,6 +9,8 @@ import { BottomPanel } from '@/components/BottomPanel'
 import { StatusBar } from '@/components/StatusBar'
 import { useDocuments } from '@/store/documents'
 import { useView } from '@/store/view'
+import { useWorkspace } from '@/store/workspace'
+import { startFileSync } from '@/fileSync'
 import * as cmd from '@/commands'
 
 /** Atalhos globais da aplicação (os de edição ficam com o próprio Monaco). */
@@ -23,6 +25,7 @@ function useGlobalShortcuts(): void {
         void fn()
       }
       if (key === 'n' && !e.shiftKey) run(cmd.newFile)
+      else if (key === 'k' && e.shiftKey) run(cmd.openFolder)
       else if (key === 'o' && !e.shiftKey) run(cmd.openFile)
       else if (key === 's' && e.shiftKey) run(cmd.saveAs)
       else if (key === 's') run(cmd.save)
@@ -44,7 +47,12 @@ export function App() {
   // Começa com um documento em branco, como a maioria dos editores.
   useEffect(() => {
     if (useDocuments.getState().documents.length === 0) useDocuments.getState().newDocument()
+    void useWorkspace.getState().refreshRecent()
   }, [])
+
+  // Monitoramento de alterações externas e confirmação ao fechar a janela.
+  useEffect(() => startFileSync(), [])
+  useEffect(() => window.api.onBeforeClose(() => void cmd.requestQuit()), [])
 
   return (
     <div className="flex h-full flex-col">

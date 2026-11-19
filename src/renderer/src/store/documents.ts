@@ -15,6 +15,8 @@ export interface EditorDocument {
   eol: Eol
   /** Markdown abre formatado ('preview'); o usuário alterna para 'edit' para editar o texto. */
   mode: DocumentMode
+  /** O arquivo foi excluído ou movido por outro programa. */
+  missingOnDisk?: boolean
 }
 
 export type DocumentMode = 'preview' | 'edit'
@@ -39,6 +41,9 @@ interface DocumentsState {
   closeDocument(id: string): void
   setCursor(cursor: CursorInfo): void
   setMode(id: string, mode: DocumentMode): void
+  /** Substitui o conteúdo pelo que está no disco (recarregamento). */
+  reloadFromDisk(id: string, file: OpenedFile): void
+  setMissingOnDisk(id: string, missing: boolean): void
 }
 
 const defaultEol: Eol = navigator.userAgent.includes('Windows') ? 'CRLF' : 'LF'
@@ -112,7 +117,7 @@ export const useDocuments = create<DocumentsState>((set) => ({
     set((s) => ({
       documents: s.documents.map((d) =>
         d.id === id
-          ? { ...d, path: saved.path, name: saved.name, savedContent: content, language: languageFromName(saved.name) }
+          ? { ...d, path: saved.path, name: saved.name, savedContent: content, language: languageFromName(saved.name), missingOnDisk: false }
           : d
       )
     })),
@@ -129,7 +134,19 @@ export const useDocuments = create<DocumentsState>((set) => ({
   setCursor: (cursor) => set({ cursor }),
 
   setMode: (id, mode) =>
-    set((s) => ({ documents: s.documents.map((d) => (d.id === id ? { ...d, mode } : d)) }))
+    set((s) => ({ documents: s.documents.map((d) => (d.id === id ? { ...d, mode } : d)) })),
+
+  reloadFromDisk: (id, file) =>
+    set((s) => ({
+      documents: s.documents.map((d) =>
+        d.id === id
+          ? { ...d, content: file.content, savedContent: file.content, encoding: file.encoding, eol: file.eol, missingOnDisk: false }
+          : d
+      )
+    })),
+
+  setMissingOnDisk: (id, missing) =>
+    set((s) => ({ documents: s.documents.map((d) => (d.id === id ? { ...d, missingOnDisk: missing } : d)) }))
 }))
 
 /** Linguagens com visualização própria: Markdown formatado e JSON em árvore. */

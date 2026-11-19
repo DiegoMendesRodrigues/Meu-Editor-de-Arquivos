@@ -2,6 +2,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { Check } from 'lucide-react'
 import * as cmd from '@/commands'
 import { useView } from '@/store/view'
+import { useWorkspace } from '@/store/workspace'
 
 interface Item {
   label: string
@@ -48,6 +49,7 @@ function Menu({ title, items }: { title: string; items: Entry[] }) {
 /** Itens sem "action" aparecem desabilitados: estão previstos no roadmap. */
 export function MenuBar() {
   const view = useView()
+  const folderOpen = useWorkspace((s) => s.folder !== null)
 
   const menus: { title: string; items: Entry[] }[] = [
     {
@@ -55,15 +57,19 @@ export function MenuBar() {
       items: [
         { label: 'Novo', shortcut: 'Ctrl+N', action: cmd.newFile },
         { label: 'Abrir...', shortcut: 'Ctrl+O', action: () => void cmd.openFile() },
-        { label: 'Abrir pasta...' },
+        { label: 'Abrir pasta...', shortcut: 'Ctrl+Shift+K', action: () => void cmd.openFolder() },
+        { label: 'Fechar pasta', action: folderOpen ? cmd.closeFolder : undefined },
         'separator',
         { label: 'Salvar', shortcut: 'Ctrl+S', action: () => void cmd.save() },
         { label: 'Salvar como...', shortcut: 'Ctrl+Shift+S', action: () => void cmd.saveAs() },
+        { label: 'Salvar todos', action: () => void cmd.saveAll() },
         'separator',
         { label: 'Imprimir...' },
         'separator',
         { label: 'Fechar aba', shortcut: 'Ctrl+W', action: () => void cmd.closeFile() },
-        { label: 'Sair', action: () => window.close() }
+        { label: 'Fechar todas as abas', action: () => void cmd.closeAll() },
+        'separator',
+        { label: 'Sair', shortcut: 'Alt+F4', action: () => void cmd.requestQuit() }
       ]
     },
     {

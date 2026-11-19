@@ -3,6 +3,7 @@
  * para que cada ação tenha uma única implementação.
  */
 import { useDocuments, isDirty, canPreview, type EditorDocument } from '@/store/documents'
+import { useWorkspace } from '@/store/workspace'
 import { runEditorAction } from '@/editor/editorRef'
 
 const docs = () => useDocuments.getState()
@@ -13,8 +14,12 @@ const active = (): EditorDocument | undefined => {
 
 function reportError(action: string, err: unknown): void {
   const message = err instanceof Error ? err.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '') : String(err)
-  window.alert(`Não foi possível ${action}.\n\n${message}`)
+  window.alert(`Não foi possível ${action}.
+
+${message}`)
 }
+
+const refreshRecent = (): void => void useWorkspace.getState().refreshRecent()
 
 export function newFile(): void {
   docs().newDocument()
@@ -23,10 +28,34 @@ export function newFile(): void {
 export async function openFile(): Promise<void> {
   try {
     docs().addOpenedFiles(await window.api.openFiles())
+    refreshRecent()
   } catch (err) {
     reportError('abrir o arquivo', err)
   }
 }
+
+/** Abre um arquivo pelo caminho (explorador ou recentes); se já estiver aberto, só ativa a aba. */
+export async function openPath(path: string): Promise<void> {
+  const existing = docs().documents.find((d) => d.path === path)
+  if (existing) return docs().setActive(existing.id)
+  try {
+    docs().addOpenedFiles([await window.api.readFile(path)])
+    refreshRecent()
+  } catch (err) {
+    reportError('abrir o arquivo', err)
+  }
+}
+
+export async function openFolder(): Promise<void> {
+  try {
+    const folder = await window.api.openFolder()
+    if (folder) useWorkspace.getState().setFolder(folder)
+  } catch (err) {
+    reportError('abrir a pasta', err)
+  }
+}
+
+export const closeFolder = (): void => useWorkspace.getState().setFolder(null)
 
 export async function saveAs(doc = active()): Promise<boolean> {
   if (!doc) return false
@@ -34,7 +63,9 @@ export async function saveAs(doc = active()): Promise<boolean> {
     const content = doc.content
     const saved = await window.api.saveFileAs({ suggestedName: doc.path ?? doc.name, content, encoding: doc.encoding })
     if (!saved) return false
+    if (doc.path && doc.path !== saved.path) void window.api.unwatchFile(doc.path)
     docs().markSaved(doc.id, saved, content)
+    refreshRecent()
     return true
   } catch (err) {
     reportError('salvar o arquivo', err)
@@ -56,14 +87,53 @@ export async function save(doc = active()): Promise<boolean> {
   }
 }
 
+export async function saveAll(): Promise<boolean> {
+  for (const doc of docs().documents.filter(isDirty)) {
+    if (!(await save(doc))) return false
+  }
+  return true
+}
+
+/**
+ * Pergunta o que fazer com os documentos não salvos (Salvar / Não salvar / Cancelar).
+ * Devolve true quando é seguro prosseguir com o fechamento.
+ */
+async function resolveUnsaved(targets: EditorDocument[]): Promise<boolean> {
+  const dirty = targets.filter(isDirty)
+  if (dirty.length === 0) return true
+  const choice = await window.api.confirmUnsaved(dirty.map((d) => d.name))
+  if (choice === 'cancel') return false
+  if (choice === 'discard') return true
+  for (const doc of dirty) {
+    docs().setActive(doc.id)
+    if (!(await save(doc))) return false
+  }
+  return true
+}
+
+function discard(doc: EditorDocument): void {
+  if (doc.path) void window.api.unwatchFile(doc.path)
+  docs().closeDocument(doc.id)
+}
+
 export async function closeFile(id = docs().activeId): Promise<void> {
   const doc = docs().documents.find((d) => d.id === id)
   if (!doc) return
-  if (isDirty(doc)) {
-    const shouldSave = window.confirm(`"${doc.name}" tem alterações não salvas.\n\nOK salva antes de fechar; Cancelar descarta as alterações.`)
-    if (shouldSave && !(await save(doc))) return
-  }
-  docs().closeDocument(doc.id)
+  if (!(await resolveUnsaved([doc]))) return
+  // Relê o documento: ele pode ter sido salvo com outro caminho.
+  const current = docs().documents.find((d) => d.id === doc.id)
+  if (current) discard(current)
+}
+
+export async function closeAll(): Promise<void> {
+  const all = docs().documents
+  if (!(await resolveUnsaved(all))) return
+  docs().documents.forEach(discard)
+}
+
+/** Chamado quando o usuário fecha a janela (botão X, Alt+F4 ou menu Sair). */
+export async function requestQuit(): Promise<void> {
+  if (await resolveUnsaved(docs().documents)) await window.api.closeWindow()
 }
 
 export const undo = (): void => runEditorAction('undo')

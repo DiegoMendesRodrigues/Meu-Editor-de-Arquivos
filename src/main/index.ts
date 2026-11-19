@@ -2,7 +2,10 @@ import { join } from 'node:path'
 import { app, BrowserWindow, Menu, shell } from 'electron'
 import log from 'electron-log/main'
 import { registerFileHandlers } from './ipc/files'
-import { registerAppHandlers } from './ipc/app'
+import { guardWindowClose, registerAppHandlers } from './ipc/app'
+import { registerFolderHandlers } from './ipc/folders'
+import { loadRecent, registerRecentHandlers } from './ipc/recent'
+import { setWatchTarget } from './watcher'
 
 log.initialize()
 log.info(`Iniciando Meu Editor de Arquivos ${app.getVersion()} em ${process.platform}`)
@@ -26,6 +29,9 @@ function createWindow(): void {
   })
 
   win.once('ready-to-show', () => win.show())
+  guardWindowClose(win)
+  setWatchTarget(win.webContents)
+  win.on('closed', () => setWatchTarget(null))
 
   // Links externos abrem no navegador do sistema; nenhuma janela nova no app.
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -55,8 +61,11 @@ function createWindow(): void {
 // O menu principal é desenhado pelo Renderer (React), então o menu nativo é removido.
 Menu.setApplicationMenu(null)
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  await loadRecent()
   registerFileHandlers()
+  registerFolderHandlers()
+  registerRecentHandlers()
   registerAppHandlers()
   createWindow()
 
