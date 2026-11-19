@@ -1,0 +1,25 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+@theme {
+  --font-sans: 'Segoe UI', 'Ubuntu', 'Cantarell', system-ui, sans-serif;
+  --color-chrome: #f3f4f6;
+  --color-border: #d4d4d8;
+  --color-accent: #2563eb;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: #ffffff;
+  color: #1f2937;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  user-select: none;
+}

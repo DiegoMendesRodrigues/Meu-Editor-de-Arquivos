@@ -1,0 +1,23 @@
+appId: com.meueditor.app
+productName: Meu Editor de Arquivos
+directories:
+  buildResources: build
+  output: dist
+files:
+  - out/**/*
+  - package.json
+asarUnpack: []
+win:
+  target:
+    - nsis
+    - portable
+  artifactName: ${name}-${version}-${arch}.${ext}
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+linux:
+  target:
+    - deb
+    - AppImage
+  category: Development
+  maintainer: Diego Mendes Rodrigues
