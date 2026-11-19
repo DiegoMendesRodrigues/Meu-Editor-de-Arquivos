@@ -9,6 +9,13 @@ files:
   - package.json
   - build/icon.ico
   - build/icon.png
+extraResources:
+  # Manuais do usuário (um por idioma): só o HTML e as imagens, sem os textos-fonte
+  - from: docs/manual
+    to: manual
+    filter:
+      - '*/index.html'
+      - '*/img/**'
 asarUnpack: []
 win:
   target:

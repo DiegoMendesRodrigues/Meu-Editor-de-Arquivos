@@ -239,5 +239,6 @@ export const saveToCloudDialog = (): void => {
   if (active()) useDialogs.getState().show('cloudSave')
 }
 
+export const openManual = (): void => void window.api.openManual().catch((err) => reportError('err.openManual', err))
 export const openShortcuts = (): void => useDialogs.getState().show('shortcuts')
 export const openAbout = (): void => useDialogs.getState().show('about')

@@ -1,5 +1,5 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import type { MessageKey, Params } from '@shared/i18n'
+import type { MessageKey, Params } from '../../shared/i18n/index'
 
 /** Atalhos de teclado do aplicativo, agrupados, para a janela "Atalhos de teclado". */
 export interface ShortcutGroup {

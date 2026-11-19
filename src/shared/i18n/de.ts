@@ -42,6 +42,8 @@ export const de: Messages = {
   "api.not_found": "Datei nicht gefunden.",
   "api.too_large": "Die Datei ist größer als 10 MB.",
   "api.internal": "Interner Serverfehler.",
+  "err.manualMissing": "Das Benutzerhandbuch wurde nicht gefunden.",
+  "err.openManual": "Das Benutzerhandbuch konnte nicht geöffnet werden.",
   "menu.file": "Datei",
   "menu.edit": "Bearbeiten",
   "menu.search": "Suchen",

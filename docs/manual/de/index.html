@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'unsafe-inline'">
+<title>Meu Editor de Arquivos — Benutzerhandbuch</title>
+<style>
+:root{--ink:#1f2933;--muted:#5b6770;--line:#d9e0e6;--accent:#1e7be0;--bg:#fff;--soft:#f3f6f9}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif}
+.layout{display:flex;gap:40px;max-width:1180px;margin:0 auto;padding:24px 24px 80px}
+nav.toc{position:sticky;top:16px;align-self:flex-start;width:260px;flex:none;max-height:calc(100vh - 32px);overflow:auto;font-size:14px}
+nav.toc h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+nav.toc ol{list-style:none;margin:0;padding:0}nav.toc li{margin:0}
+nav.toc a{display:block;padding:5px 10px;border-left:3px solid transparent;color:var(--ink);text-decoration:none;border-radius:0 6px 6px 0}
+nav.toc a:hover{background:var(--soft);border-left-color:var(--accent)}
+main{min-width:0;flex:1;max-width:860px}
+h1{font-size:2rem;line-height:1.25;margin:.2em 0 .1em}
+main>p:first-of-type{color:var(--muted);margin-top:0}
+h2{font-size:1.45rem;margin:2.2em 0 .6em;padding-top:.6em;border-top:1px solid var(--line)}
+h3{font-size:1.05rem;margin:1.4em 0 .4em}
+p,li{max-width:70ch}li{margin:.3em 0}
+a{color:var(--accent)}
+code{background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:.05em .35em;font:.92em Consolas,"Cascadia Mono",monospace}
+.ui{font-weight:600;color:#0f4c92;background:#e8f1fc;border-radius:4px;padding:0 .3em}
+blockquote{margin:1em 0;padding:.2em 1em;border-left:4px solid var(--accent);background:var(--soft);color:var(--muted)}
+figure{margin:1.2em 0 1.6em}
+figure img{display:block;max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;box-shadow:0 2px 10px rgba(15,40,70,.12)}
+figcaption{margin-top:.5em;font-size:.88rem;color:var(--muted)}
+table{border-collapse:collapse;width:100%;margin:.6em 0 1.2em;font-size:.95rem}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft)}
+kbd{font:.88em Consolas,"Cascadia Mono",monospace;background:#fff;border:1px solid #b9c4cd;border-bottom-width:2px;border-radius:5px;padding:.05em .45em;white-space:nowrap}
+td:first-child{white-space:nowrap}
+strong{font-weight:650}
+@media (max-width:900px){.layout{display:block}nav.toc{position:static;width:auto;max-height:none;margin-bottom:24px}}
+@media print{nav.toc{display:none}.layout{display:block;padding:0}figure{break-inside:avoid}h2{break-after:avoid}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" aria-label="In diesem Handbuch">
+<h2>In diesem Handbuch</h2>
+<ol><li><a href="#1-willkommen">1. Willkommen</a></li><li><a href="#2-die-oberflache-kennenlernen">2. Die Oberfläche kennenlernen</a></li><li><a href="#3-dateien-erstellen-und-offnen">3. Dateien erstellen und öffnen</a></li><li><a href="#4-speichern-und-temporare-dokumente">4. Speichern und temporäre Dokumente</a></li><li><a href="#5-text-bearbeiten">5. Text bearbeiten</a></li><li><a href="#6-markdown">6. Markdown</a></li><li><a href="#7-json-dateien">7. JSON-Dateien</a></li><li><a href="#8-in-dateien-suchen">8. In Dateien suchen</a></li><li><a href="#9-sprache-kodierung-und-zeilenenden">9. Sprache, Kodierung und Zeilenenden</a></li><li><a href="#10-snippets-und-makros">10. Snippets und Makros</a></li><li><a href="#11-konto-und-cloud-dateien">11. Konto und Cloud-Dateien</a></li><li><a href="#12-sprachen">12. Sprachen</a></li><li><a href="#13-tastenkurzel">13. Tastenkürzel</a></li><li><a href="#14-haufige-fragen">14. Häufige Fragen</a></li><li><a href="#15-uber-das-programm-und-support">15. Über das Programm und Support</a></li></ol>
+</nav>
+<main>
+<h1>Meu Editor de Arquivos — Benutzerhandbuch</h1>
+<p>Version 1.0.0</p>
+<h2 id="1-willkommen">1. Willkommen</h2>
+<p><strong>Meu Editor de Arquivos</strong> ist ein schlanker Editor für alle, die mit Texten, Notizen, Skripten, Konfigurationsdateien, Protokollen und Programmcode arbeiten. Er läuft unter Windows 11, Debian 12 und 13 sowie Ubuntu 22.04 oder neuer und <strong>braucht für die Bearbeitung keine Internetverbindung</strong>.</p>
+<p>Das bietet Ihnen das Programm:</p>
+<ul>
+<li>Registerkarten für mehrere Dateien gleichzeitig, mit automatischer Wiederherstellung Ihrer Eingaben;</li>
+<li>Markdown, das <strong>formatiert</strong> geöffnet wird, mit einer Schaltfläche zum Bearbeiten des Textes;</li>
+<li>einen <strong>JSON-Viewer</strong>, in dem Sie Teile der Datei auf- und zuklappen können;</li>
+<li>Suchen und Ersetzen in einer Datei oder in einem ganzen Ordner;</li>
+<li>Syntaxfarben für Dutzende Sprachen, Snippets und Makros;</li>
+<li>ein Benutzerkonto, um Dateien in der Cloud zu speichern und auf anderen Computern zu öffnen;</li>
+<li>eine Benutzeroberfläche in sechs Sprachen.</li>
+</ul>
+<h2 id="2-die-oberflache-kennenlernen">2. Die Oberfläche kennenlernen</h2>
+<figure><img src="img/s01-main.png" alt="Hauptfenster mit geöffnetem Ordner und einem Markdown-Dokument"><figcaption>Hauptfenster mit geöffnetem Ordner und einem Markdown-Dokument</figcaption></figure><ol>
+<li><strong>Menüleiste</strong> (oben): <span class="ui">Datei</span>, <span class="ui">Bearbeiten</span>, <span class="ui">Suchen</span>, <span class="ui">Ansicht</span>, <span class="ui">Kodierung</span>, <span class="ui">Sprache</span>, <span class="ui">Extras</span>, <span class="ui">Konto</span> und <span class="ui">Hilfe</span>.</li>
+<li><strong>Symbolleiste</strong>: Schnellzugriff auf die häufigsten Befehle. Die Formatierungsschaltflächen erscheinen, wenn das Dokument Markdown ist. Rechts finden Sie die <strong>Sprachflaggen</strong> und die Schaltfläche zum Wechseln zwischen Vorschau und Bearbeitung.</li>
+<li><strong>Seitenleiste</strong> (links): die geöffneten Dokumente, der Explorer für den geöffneten Ordner und Ihre zuletzt geöffneten Dateien. Mit <strong>Ctrl+Shift+B</strong> blenden Sie sie aus oder wieder ein.</li>
+<li><strong>Registerkarten</strong>: Jedes Dokument hat eine eigene Registerkarte. Ein Punkt (●) neben dem Namen zeigt Änderungen an, die noch nicht in die Datei geschrieben wurden.</li>
+<li><strong>Bearbeitungsbereich</strong>: Hier lesen und schreiben Sie.</li>
+<li><strong>Unterer Bereich</strong>: zeigt die Ergebnisse der Suche in Dateien. Er öffnet sich von selbst, wenn Sie die Suche verwenden.</li>
+<li><strong>Statusleiste</strong> (unten): Zeile und Spalte des Cursors, Dateigröße, Kodierung, Art der Zeilenenden und die Sprache des Dokuments.</li>
+</ol>
+<h2 id="3-dateien-erstellen-und-offnen">3. Dateien erstellen und öffnen</h2>
+<figure><img src="img/s02-new-menu.png" alt="Die Schaltfläche „Neu“ mit dem Pfeil, der die Dokumenttypen auflistet"><figcaption>Die Schaltfläche „Neu“ mit dem Pfeil, der die Dokumenttypen auflistet</figcaption></figure><ul>
+<li><strong>Neues Dokument:</strong> Klicken Sie auf <strong><span class="ui">Neu</span></strong> oder drücken Sie <strong>Ctrl+N</strong>. Ein neues Dokument ist Markdown (.md). Mit dem <strong>Pfeil neben der Schaltfläche</strong> erstellen Sie einen anderen Typ: .md (Markdown), .txt (Text), .py (Python) oder .sql (SQL).</li>
+<li><strong>Dateien öffnen:</strong> <strong><span class="ui">Datei</span> → <span class="ui">Öffnen</span></strong> oder <strong>Ctrl+O</strong>. Sie können mehrere Dateien auf einmal auswählen. Die Grenze liegt bei 50 MB pro Datei.</li>
+<li><strong>Einen Ordner öffnen:</strong> <strong><span class="ui">Datei</span> → <span class="ui">Ordner öffnen</span></strong> oder <strong>Ctrl+Shift+K</strong>. Der Ordner erscheint im Explorer der Seitenleiste; ein Klick auf eine Datei öffnet sie. Mit <strong><span class="ui">Ordner schließen</span></strong> schließen Sie ihn.</li>
+<li><strong>Zuletzt geöffnete Dateien:</strong> Die zuletzt verwendeten Dateien stehen in der Liste <strong>Zuletzt geöffnet</strong> in der Seitenleiste. Klicken Sie auf eine Datei, um sie erneut zu öffnen.</li>
+</ul>
+<p>Wenn ein anderes Programm eine geöffnete Datei ändert, lädt die Anwendung sie selbstständig neu. Haben Sie in diesem Dokument eigene, noch nicht gespeicherte Änderungen, fragt sie vorher nach. Wird die Datei gelöscht oder verschoben, wird der Name der Registerkarte rot und durchgestrichen.</p>
+<figure><img src="img/s07-menu-file.png" alt="Menü Datei"><figcaption>Menü Datei</figcaption></figure><h2 id="4-speichern-und-temporare-dokumente">4. Speichern und temporäre Dokumente</h2>
+<figure><img src="img/s20-restored.png" alt="Hinweis auf wiederhergestellte Dokumente beim erneuten Öffnen der Anwendung"><figcaption>Hinweis auf wiederhergestellte Dokumente beim erneuten Öffnen der Anwendung</figcaption></figure><ul>
+<li><strong><span class="ui">Speichern</span></strong> (<strong>Ctrl+S</strong>) schreibt das Dokument in seine Datei. Bei einem neuen Dokument fragt die Anwendung nach Name und Speicherort.</li>
+<li><strong><span class="ui">Speichern unter</span></strong> (<strong>Ctrl+Shift+S</strong>) schreibt eine Kopie unter einem anderen Namen oder an einem anderen Ort.</li>
+<li><strong><span class="ui">Alle speichern</span></strong> schreibt alle Dokumente mit Änderungen.</li>
+</ul>
+<p><strong>Von Ihnen Geschriebenes geht nicht verloren.</strong> Wenige Sekunden nach jeder Änderung sichert die Anwendung automatisch alle geöffneten Dokumente, auch solche, die nie gespeichert wurden. Das geschieht unabhängig davon, ob Sie speichern oder nicht.</p>
+<p>Beim <strong>Beenden der Anwendung</strong> wird nichts gefragt und nichts verworfen. Beim nächsten Start kommen Registerkarten, Ordner und der nicht gespeicherte Text so zurück, wie sie waren, mit einem gelben Hinweis am oberen Rand. Speichern Sie, wenn Sie in die eigentliche Datei schreiben möchten.</p>
+<p>Beim <strong>Schließen einer Registerkarte</strong> mit Änderungen fragt die Anwendung, ob Sie speichern, nicht speichern oder abbrechen möchten. Zwei Hinweise: Der Rückgängig-Verlauf (Ctrl+Z) wird nicht von einer Sitzung zur nächsten aufbewahrt, und die automatische Wiederherstellung sichert bis zu 100 MB nicht gespeicherten Text.</p>
+<h2 id="5-text-bearbeiten">5. Text bearbeiten</h2>
+<figure><img src="img/s11-invisibles.png" alt="Unsichtbare Zeichen: Leerzeichen, Tabulatoren und Zeilenenden"><figcaption>Unsichtbare Zeichen: Leerzeichen, Tabulatoren und Zeilenenden</figcaption></figure><p>Die Bearbeitungsbefehle finden Sie unter <strong><span class="ui">Bearbeiten</span></strong>, die Anzeigeoptionen unter <strong><span class="ui">Ansicht</span></strong>.</p>
+<ul>
+<li><strong>Rückgängig und Wiederholen:</strong> Ctrl+Z und Ctrl+Y.</li>
+<li><strong>Suchen und Ersetzen</strong> im Dokument: Ctrl+F und Ctrl+H. Zu einer Zeile springen Sie mit Ctrl+G.</li>
+<li><strong>Mehrere Cursor:</strong> Halten Sie Alt gedrückt und klicken Sie dorthin, wo ein weiterer Cursor stehen soll, oder wählen Sie mit Ctrl+D das nächste Vorkommen des Wortes aus.</li>
+<li><strong><span class="ui">Spaltenauswahl</span>:</strong> Halten Sie Shift+Alt gedrückt und ziehen Sie mit der Maus, um mehrere Zeilen in derselben Spalte zu bearbeiten.</li>
+<li><strong>Zeilen:</strong> Alt+↑ und Alt+↓ verschieben die Zeile; Shift+Alt+↑ und Shift+Alt+↓ duplizieren sie; Ctrl+/ kommentiert sie aus oder ein.</li>
+<li><strong>Aufräumen:</strong> <span class="ui">Zeilen sortieren (A-Z)</span>, <span class="ui">Zeilen sortieren (Z-A)</span>, <span class="ui">Doppelte Zeilen entfernen</span> und <span class="ui">Leerzeichen am Zeilenende entfernen</span>.</li>
+<li><strong><span class="ui">Unsichtbare Zeichen</span>:</strong> zeigt Leerzeichen (·), Tabulatoren (→) und das Ende jeder Zeile (¶). Damit finden Sie überflüssige Leerzeichen sofort.</li>
+<li><strong><span class="ui">Zeilenumbruch</span></strong> und <strong><span class="ui">Alles einklappen</span> / <span class="ui">Alles ausklappen</span></strong> helfen beim Lesen langer Dateien.</li>
+<li><strong>Schriftgröße:</strong> Ctrl++ vergrößert, Ctrl+- verkleinert und Ctrl+0 stellt die Standardgröße wieder her.</li>
+<li><strong>Einrückung:</strong> Wählen Sie unter <strong><span class="ui">Bearbeiten</span></strong> zwischen Leerzeichen und Tabulator sowie die Größe (2, 4 oder 8 Spalten).</li>
+</ul>
+<p>Ihre Anzeigeeinstellungen werden für das nächste Mal gespeichert. Die eigenen Texte des Editors, etwa das Suchfeld (Ctrl+F) und die Befehlspalette (F1), erscheinen auf Englisch.</p>
+<h2 id="6-markdown">6. Markdown</h2>
+<figure><img src="img/s03-markdown-edit.png" alt="Markdown-Dokument im Bearbeitungsmodus mit der Formatierungsleiste"><figcaption>Markdown-Dokument im Bearbeitungsmodus mit der Formatierungsleiste</figcaption></figure><p>Markdown-Dateien (.md) werden <strong>formatiert</strong> geöffnet und sind sofort lesbar. Um den Text zu bearbeiten, klicken Sie auf <strong><span class="ui">Text bearbeiten</span></strong> (oder drücken Sie <strong>Ctrl+Shift+E</strong>); zurück zum Lesen kommen Sie mit <strong><span class="ui">Vorschau</span></strong>.</p>
+<p>Im Bearbeitungsmodus bietet die Symbolleiste die Formatierung: Überschriften, Aufzählung, nummerierte Liste, Einzug, <strong>Fett</strong> (Ctrl+B), <em>Kursiv</em> (Ctrl+I), <del>Durchgestrichen</del> (Ctrl+Shift+X), Link, Tabelle und Formatierung entfernen. Markieren Sie den Text und klicken Sie auf die Schaltfläche; ohne Markierung setzt die Anwendung eine Vorlage an die Cursorposition.</p>
+<p>Beim Lesen öffnen sich Links im Browser des Systems. Bilder im Dokument werden in der aktuellen Version nicht angezeigt.</p>
+<h2 id="7-json-dateien">7. JSON-Dateien</h2>
+<figure><img src="img/s04-json-tree.png" alt="JSON-Datei als Baum mit einem ausgewählten Element"><figcaption>JSON-Datei als Baum mit einem ausgewählten Element</figcaption></figure><p>.json-Dateien werden als <strong>Baum</strong> geöffnet. Klicken Sie auf den Pfeil eines Elements, um diesen Teil auf- oder zuzuklappen. Mit <strong><span class="ui">Alles ausklappen</span></strong> und <strong><span class="ui">Alles einklappen</span></strong> öffnen oder schließen Sie alles. Wenn Sie ein Element anklicken, zeigt die Leiste seinen Pfad, und Sie können den <strong><span class="ui">Pfad</span></strong> oder den <strong><span class="ui">Wert</span></strong> kopieren. Sehr große Listen werden nach und nach angezeigt, mit einer Schaltfläche für weitere Einträge.</p>
+<p>Zum Bearbeiten klicken Sie auf <strong><span class="ui">Text bearbeiten</span></strong>. Im Bearbeitungsmodus ordnet die Schaltfläche <strong><span class="ui">JSON formatieren</span></strong> (Shift+Alt+F) die Datei neu.</p>
+<figure><img src="img/s05-json-error.png" alt="Fehlermeldung bei ungültigem JSON mit Zeile und Spalte"><figcaption>Fehlermeldung bei ungültigem JSON mit Zeile und Spalte</figcaption></figure><p>Enthält die Datei einen Fehler, erklärt die Anwendung das Problem und nennt Zeile und Spalte. Die Schaltfläche <strong><span class="ui">Bearbeiten und zum Fehler springen</span></strong> öffnet den Editor direkt an der Fehlerstelle.</p>
+<h2 id="8-in-dateien-suchen">8. In Dateien suchen</h2>
+<figure><img src="img/s06-search.png" alt="Suchbereich mit nach Dateien gruppierten Ergebnissen"><figcaption>Suchbereich mit nach Dateien gruppierten Ergebnissen</figcaption></figure><p>Öffnen Sie einen Ordner und wählen Sie <strong><span class="ui">Suchen</span> → <span class="ui">In Dateien suchen</span></strong> (<strong>Ctrl+Shift+F</strong>). Der untere Bereich öffnet sich.</p>
+<ol>
+<li>Geben Sie den Text ein und klicken Sie auf <strong><span class="ui">Suchen</span></strong> (oder drücken Sie die Eingabetaste).</li>
+<li>Verfeinern Sie die Suche mit den drei Schaltflächen daneben: <strong><span class="ui">Groß-/Kleinschreibung beachten</span></strong>, <strong><span class="ui">Ganzes Wort</span></strong> und <strong><span class="ui">Regulärer Ausdruck</span></strong>.</li>
+<li>Um die Dateien einzugrenzen, schreiben Sie einen Filter, etwa <code>*.md, docs/**</code>.</li>
+<li>Die Ergebnisse erscheinen nach Dateien gruppiert, mit Zeile und Spalte. Klicken Sie auf ein Ergebnis, um die Datei zu öffnen und die Fundstelle zu markieren.</li>
+</ol>
+<p>Zum Ersetzen geben Sie den neuen Text im Ersetzungsfeld ein und klicken auf <strong><span class="ui">Alle ersetzen</span></strong>. Entfernen Sie das Häkchen bei Dateien, die sich nicht ändern sollen. Die Anwendung bittet um Bestätigung, denn <strong>das Ersetzen wird direkt in die Dateien geschrieben und lässt sich im Editor nicht rückgängig machen</strong>. Geöffnete Dateien mit nicht gespeicherten Änderungen werden übersprungen, damit keine Arbeit verloren geht.</p>
+<p>Die Suche durchsucht keine Ordner wie <code>node_modules</code> und <code>.git</code> und auch keine Binärdateien oder Dateien über 5 MB. Sie zeigt höchstens 5.000 Treffer auf einmal.</p>
+<h2 id="9-sprache-kodierung-und-zeilenenden">9. Sprache, Kodierung und Zeilenenden</h2>
+<figure><img src="img/s09-menu-encoding.png" alt="Menü Kodierung"><figcaption>Menü Kodierung</figcaption></figure><ul>
+<li><strong><span class="ui">Sprache</span>:</strong> Die Anwendung wählt die Sprache anhand der Dateiendung und nutzt Farben, damit der Text leichter lesbar ist. Um die Sprache eines Dokuments zu ändern, öffnen Sie das Menü und wählen eine andere.</li>
+</ul>
+<figure><img src="img/s10-menu-language.png" alt="Menü Sprache"><figcaption>Menü Sprache</figcaption></figure><ul>
+<li><strong><span class="ui">Kodierung</span>:</strong> Wandeln Sie das Dokument in <strong>UTF-8</strong> oder <strong>UTF-8 mit BOM</strong> um und wählen Sie Zeilenenden nach <strong>Windows (CRLF)</strong> oder <strong>Unix/Mac (LF)</strong>. Eine Umwandlung markiert das Dokument als geändert; zum Wirksamwerden genügt Speichern.</li>
+</ul>
+<p>Kodierung und Zeilenenden werden in der Statusleiste angezeigt.</p>
+<h2 id="10-snippets-und-makros">10. Snippets und Makros</h2>
+<figure><img src="img/s12-snippets.png" alt="Fenster „Snippets“"><figcaption>Fenster „Snippets“</figcaption></figure><p><strong>Snippets</strong> sind fertige Textbausteine. Öffnen Sie <strong><span class="ui">Extras</span> → <span class="ui">Snippets</span></strong>. Einige bringt die Anwendung schon mit: <code>data</code>, <code>hora</code>, <code>codigo</code>, <code>tarefa</code>, <code>tabela</code>, <code>link</code> und <code>cabecalho</code>. Zum Verwenden geben Sie das Kürzel im Editor ein und wählen den Vorschlag aus (oder drücken Ctrl+Leertaste), oder Sie klicken im Fenster auf <strong><span class="ui">In den Editor einfügen</span></strong>. Ein eigenes Snippet legen Sie mit <strong><span class="ui">Neues Snippet</span></strong> an: Vergeben Sie Name, Kürzel und Text. Im Text markieren <code>$1</code> und <code>${2:Standard}</code> die Stellen, an denen der Cursor anhält, und <code>$0</code> ist die Endposition. Die mitgelieferten Snippets lassen sich nicht bearbeiten, aber duplizieren.</p>
+<figure><img src="img/s13-macros.png" alt="Fenster „Makros“"><figcaption>Fenster „Makros“</figcaption></figure><p><strong>Makros</strong> wiederholen eine Abfolge, die Sie ausgeführt haben. Mit <strong>Ctrl+Shift+R</strong> starten Sie die Aufzeichnung, schreiben oder bearbeiten, was Sie möchten, und beenden sie mit <strong>Ctrl+Shift+R</strong>. Danach führt <strong>Ctrl+Shift+M</strong> die letzte Aufzeichnung aus. Unter <strong><span class="ui">Makros</span></strong> legen Sie fest, wie oft sie wiederholt wird, und können das Makro unter einem Namen speichern. Aufgezeichnet werden eingegebener Text, eingefügter Text, die Pfeiltasten, Pos1, Ende, Rücktaste, Entf, Tab, die Eingabetaste und Menübefehle. Mausklicks und Ctrl+Z werden nicht aufgezeichnet.</p>
+<h2 id="11-konto-und-cloud-dateien">11. Konto und Cloud-Dateien</h2>
+<figure><img src="img/s16a-account-server.png" alt="Erster Zugriff: Serveradresse"><figcaption>Erster Zugriff: Serveradresse</figcaption></figure><p>Mit einem Konto speichern Sie Dateien in der Cloud und öffnen sie auf anderen Computern. Öffnen Sie das Menü <strong><span class="ui">Konto</span></strong>.</p>
+<ol>
+<li><strong>Serveradresse:</strong> Geben Sie beim ersten Mal die Adresse ein, die Ihnen Ihr Unternehmen oder Ihr Administrator mitgeteilt hat. Sie beginnt mit <code>https://</code>.</li>
+<li><strong>Konto erstellen:</strong> Klicken Sie auf <strong><span class="ui">Konto erstellen</span></strong> und tragen Sie E-Mail-Adresse, Namen und ein Passwort mit mindestens 10 Zeichen ein.</li>
+</ol>
+<figure><img src="img/s16-account-login.png" alt="Anmeldebildschirm"><figcaption>Anmeldebildschirm</figcaption></figure><ol start="3">
+<li><strong>Anmelden:</strong> Verwenden Sie Ihre E-Mail-Adresse und Ihr Passwort. Wenn Sie das Passwort vergessen haben, klicken Sie auf <strong><span class="ui">Passwort vergessen</span></strong>: Sie erhalten einen Code per E-Mail und können ein neues Passwort festlegen.</li>
+</ol>
+<figure><img src="img/s18-account-profile.png" alt="Benutzerprofil"><figcaption>Benutzerprofil</figcaption></figure><ol start="4">
+<li><strong>Profil:</strong> Öffnen Sie unter <strong><span class="ui">Konto</span></strong> Ihr Profil, um den Namen oder das Passwort zu ändern oder sich abzumelden. Wenn Sie das Passwort ändern, müssen sich Ihre anderen Computer neu anmelden.</li>
+</ol>
+<figure><img src="img/s17-cloud-open.png" alt="Liste der Dateien in der Cloud"><figcaption>Liste der Dateien in der Cloud</figcaption></figure><ol start="5">
+<li><strong>In der Cloud speichern:</strong> <strong><span class="ui">Datei</span> → <span class="ui">In der Cloud speichern</span></strong>. Wählen Sie den Pfad, zum Beispiel <code>arbeit/protokoll.md</code>.</li>
+<li><strong>Aus der Cloud öffnen:</strong> <strong><span class="ui">Datei</span> → <span class="ui">Aus der Cloud öffnen</span></strong>. In der Liste öffnen oder löschen Sie Dateien. In einem aus der Cloud geöffneten Dokument speichert <strong>Ctrl+S</strong> wieder in der Cloud.</li>
+</ol>
+<p>Hat sich die Datei seit der letzten Synchronisierung in der Cloud geändert, warnt die Anwendung und fragt, ob sie überschrieben werden soll. Jede Datei darf bis zu 10 MB groß sein. Hat Ihr System keinen Tresor für Anmeldedaten, weist die Anwendung darauf hin, dass Sie sich bei jedem Start neu anmelden müssen.</p>
+<h2 id="12-sprachen">12. Sprachen</h2>
+<figure><img src="img/s08-flags.png" alt="Sprachflaggen neben der Schaltfläche für die Vorschau"><figcaption>Sprachflaggen neben der Schaltfläche für die Vorschau</figcaption></figure><p>Die Anwendung gibt es auf <strong>Deutsch, Spanisch, Französisch, Englisch, Portugiesisch (Brasilien) und Portugiesisch (Portugal)</strong>. Sie startet in der Sprache Ihres Systems; gibt es dafür keine Übersetzung, startet sie auf Englisch. Zum Wechseln klicken Sie auf die Flagge der gewünschten Sprache links neben der Schaltfläche für die Vorschau. Der Wechsel wirkt sofort und wird für das nächste Mal gespeichert. Dieses Handbuch öffnet sich in der gerade verwendeten Sprache.</p>
+<h2 id="13-tastenkurzel">13. Tastenkürzel</h2>
+<figure><img src="img/s14-shortcuts.png" alt="Fenster „Tastenkürzel“"><figcaption>Fenster „Tastenkürzel“</figcaption></figure><p>Die Liste sehen Sie auch in der Anwendung unter <strong><span class="ui">Hilfe</span> → <span class="ui">Tastenkürzel</span></strong>. Die verfügbaren Tastenkürzel:</p>
+<h3>Datei</h3><table><tbody><tr><td><kbd>Ctrl+N</kbd></td><td>Neues Dokument (Markdown)</td></tr><tr><td><kbd>Ctrl+O</kbd></td><td>Dateien öffnen</td></tr><tr><td><kbd>Ctrl+Shift+K</kbd></td><td>Ordner öffnen</td></tr><tr><td><kbd>Ctrl+S</kbd></td><td>Speichern</td></tr><tr><td><kbd>Ctrl+Shift+S</kbd></td><td>Speichern unter</td></tr><tr><td><kbd>Ctrl+W</kbd></td><td>Tab schließen</td></tr><tr><td><kbd>Alt+F4</kbd></td><td>Beenden</td></tr></tbody></table>
+<h3>Bearbeiten</h3><table><tbody><tr><td><kbd>Ctrl+Z</kbd></td><td>Rückgängig</td></tr><tr><td><kbd>Ctrl+Y</kbd></td><td>Wiederholen</td></tr><tr><td><kbd>Ctrl+X</kbd> / <kbd>Ctrl+C</kbd> / <kbd>Ctrl+V</kbd></td><td>Ausschneiden / Kopieren / Einfügen</td></tr><tr><td><kbd>Ctrl+A</kbd></td><td>Alles auswählen</td></tr><tr><td><kbd>Ctrl+L</kbd></td><td>Zeile auswählen</td></tr><tr><td><kbd>Ctrl+D</kbd></td><td>Nächstes Vorkommen auswählen (mehrere Cursor)</td></tr><tr><td><kbd>Alt+Klick</kbd></td><td>Cursor hinzufügen</td></tr><tr><td><kbd>Umschalt+Alt+Ziehen</kbd></td><td>Spaltenauswahl</td></tr><tr><td><kbd>Alt+↑</kbd> / <kbd>Alt+↓</kbd></td><td>Zeile nach oben / unten verschieben</td></tr><tr><td><kbd>Shift+Alt+↑</kbd> / <kbd>Shift+Alt+↓</kbd></td><td>Zeile duplizieren</td></tr><tr><td><kbd>Ctrl+/</kbd></td><td>Zeilenkommentar umschalten</td></tr><tr><td><kbd>F1</kbd></td><td>Befehlspalette</td></tr></tbody></table>
+<h3>Suchen</h3><table><tbody><tr><td><kbd>Ctrl+F</kbd></td><td>Suchen</td></tr><tr><td><kbd>Ctrl+H</kbd></td><td>Ersetzen</td></tr><tr><td><kbd>Ctrl+Shift+F</kbd></td><td>In Dateien suchen</td></tr><tr><td><kbd>Ctrl+G</kbd></td><td>Gehe zu Zeile</td></tr></tbody></table>
+<h3>Ansicht</h3><table><tbody><tr><td><kbd>Ctrl+Shift+B</kbd></td><td>Seitenleiste ein- oder ausblenden</td></tr><tr><td><kbd>Ctrl+Shift+E</kbd></td><td>Zwischen Vorschau und Bearbeitung wechseln (Markdown und JSON)</td></tr><tr><td><kbd>Ctrl++</kbd></td><td>Schrift vergrößern</td></tr><tr><td><kbd>Ctrl+-</kbd></td><td>Schrift verkleinern</td></tr><tr><td><kbd>Ctrl+0</kbd></td><td>Standardschriftgröße</td></tr></tbody></table>
+<h3>Markdown und JSON</h3><table><tbody><tr><td><kbd>Ctrl+B</kbd></td><td>Fett</td></tr><tr><td><kbd>Ctrl+I</kbd></td><td>Kursiv</td></tr><tr><td><kbd>Ctrl+Shift+X</kbd></td><td>Durchgestrichen</td></tr><tr><td><kbd>Shift+Alt+F</kbd></td><td>Dokument formatieren (JSON)</td></tr></tbody></table>
+<h3>Makros</h3><table><tbody><tr><td><kbd>Ctrl+Shift+R</kbd></td><td>Makroaufzeichnung starten oder beenden</td></tr><tr><td><kbd>Ctrl+Shift+M</kbd></td><td>Letztes Makro ausführen</td></tr></tbody></table><h2 id="14-haufige-fragen">14. Häufige Fragen</h2>
+<p><strong>Ich habe die Anwendung ohne Speichern geschlossen. Ist mein Text weg?</strong>
+Nein. Nicht gespeicherter Text wird automatisch gesichert und kommt zurück, wenn Sie die Anwendung wieder öffnen.</p>
+<p><strong>Warum wird Markdown formatiert geöffnet und ich kann nichts eintippen?</strong>
+Das ist der Lesemodus. Klicken Sie auf <strong><span class="ui">Text bearbeiten</span></strong> (oder Ctrl+Shift+E), um zu bearbeiten.</p>
+<p><strong>Mein JSON zeigt einen Fehler, lässt sich aber in einem anderen Programm öffnen.</strong>
+Der Viewer hält sich strikt an den JSON-Standard: Ein überzähliges Komma am Ende, Kommentare und einfache Anführungszeichen sind nicht erlaubt. Mit der Schaltfläche beim Fehler gelangen Sie direkt zur Fehlerstelle.</p>
+<p><strong>Die Datei ist groß und lässt sich nicht öffnen.</strong>
+Die Grenze liegt bei 50 MB pro Datei.</p>
+<p><strong>Ich kann mich nicht anmelden oder nicht in der Cloud speichern.</strong>
+Prüfen Sie die Serveradresse und Ihre Internetverbindung. Wenn die Meldung besagt, dass die Sitzung abgelaufen ist, melden Sie sich erneut an.</p>
+<p><strong>Wie sehe ich die Version der Anwendung?</strong>
+Unter <strong><span class="ui">Hilfe</span> → <span class="ui">Über Meu Editor de Arquivos</span></strong>.</p>
+<h2 id="15-uber-das-programm-und-support">15. Über das Programm und Support</h2>
+<figure><img src="img/s15-about.png" alt="Fenster „Über“"><figcaption>Fenster „Über“</figcaption></figure><figure><img src="img/s19-menu-help.png" alt="Menü Hilfe"><figcaption>Menü Hilfe</figcaption></figure><p><strong>Meu Editor de Arquivos</strong> wurde von Diego Mendes Rodrigues entwickelt. Der Eintrag <strong><span class="ui">Technischer Support</span></strong> im Menü Hilfe ist in dieser Version noch nicht verfügbar.</p>
+
+</main>
+</div>
+</body>
+</html>

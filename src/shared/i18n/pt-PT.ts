@@ -42,6 +42,8 @@ export const ptPT: Messages = {
   "api.not_found": "Ficheiro não encontrado.",
   "api.too_large": "O ficheiro passa dos 10 MB.",
   "api.internal": "Erro interno do servidor.",
+  "err.manualMissing": "Não foi possível encontrar o manual do utilizador.",
+  "err.openManual": "Não foi possível abrir o manual do utilizador.",
   "menu.file": "Ficheiro",
   "menu.edit": "Editar",
   "menu.search": "Pesquisar",

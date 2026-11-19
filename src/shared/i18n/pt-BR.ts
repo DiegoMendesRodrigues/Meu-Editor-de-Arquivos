@@ -41,6 +41,8 @@ export const ptBR = {
   "api.not_found": "Arquivo não encontrado.",
   "api.too_large": "O arquivo passa de 10 MB.",
   "api.internal": "Erro interno do servidor.",
+  "err.manualMissing": "Não foi possível encontrar o manual do usuário.",
+  "err.openManual": "Não foi possível abrir o manual do usuário.",
   "menu.file": "Arquivo",
   "menu.edit": "Editar",
   "menu.search": "Pesquisar",

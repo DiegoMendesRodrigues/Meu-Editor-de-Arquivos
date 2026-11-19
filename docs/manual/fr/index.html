@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'unsafe-inline'">
+<title>Meu Editor de Arquivos — Manuel d'utilisation</title>
+<style>
+:root{--ink:#1f2933;--muted:#5b6770;--line:#d9e0e6;--accent:#1e7be0;--bg:#fff;--soft:#f3f6f9}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif}
+.layout{display:flex;gap:40px;max-width:1180px;margin:0 auto;padding:24px 24px 80px}
+nav.toc{position:sticky;top:16px;align-self:flex-start;width:260px;flex:none;max-height:calc(100vh - 32px);overflow:auto;font-size:14px}
+nav.toc h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+nav.toc ol{list-style:none;margin:0;padding:0}nav.toc li{margin:0}
+nav.toc a{display:block;padding:5px 10px;border-left:3px solid transparent;color:var(--ink);text-decoration:none;border-radius:0 6px 6px 0}
+nav.toc a:hover{background:var(--soft);border-left-color:var(--accent)}
+main{min-width:0;flex:1;max-width:860px}
+h1{font-size:2rem;line-height:1.25;margin:.2em 0 .1em}
+main>p:first-of-type{color:var(--muted);margin-top:0}
+h2{font-size:1.45rem;margin:2.2em 0 .6em;padding-top:.6em;border-top:1px solid var(--line)}
+h3{font-size:1.05rem;margin:1.4em 0 .4em}
+p,li{max-width:70ch}li{margin:.3em 0}
+a{color:var(--accent)}
+code{background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:.05em .35em;font:.92em Consolas,"Cascadia Mono",monospace}
+.ui{font-weight:600;color:#0f4c92;background:#e8f1fc;border-radius:4px;padding:0 .3em}
+blockquote{margin:1em 0;padding:.2em 1em;border-left:4px solid var(--accent);background:var(--soft);color:var(--muted)}
+figure{margin:1.2em 0 1.6em}
+figure img{display:block;max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;box-shadow:0 2px 10px rgba(15,40,70,.12)}
+figcaption{margin-top:.5em;font-size:.88rem;color:var(--muted)}
+table{border-collapse:collapse;width:100%;margin:.6em 0 1.2em;font-size:.95rem}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft)}
+kbd{font:.88em Consolas,"Cascadia Mono",monospace;background:#fff;border:1px solid #b9c4cd;border-bottom-width:2px;border-radius:5px;padding:.05em .45em;white-space:nowrap}
+td:first-child{white-space:nowrap}
+strong{font-weight:650}
+@media (max-width:900px){.layout{display:block}nav.toc{position:static;width:auto;max-height:none;margin-bottom:24px}}
+@media print{nav.toc{display:none}.layout{display:block;padding:0}figure{break-inside:avoid}h2{break-after:avoid}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" aria-label="Dans ce manuel">
+<h2>Dans ce manuel</h2>
+<ol><li><a href="#1-bienvenue">1. Bienvenue</a></li><li><a href="#2-decouvrir-l-ecran">2. Découvrir l'écran</a></li><li><a href="#3-creer-et-ouvrir-des-fichiers">3. Créer et ouvrir des fichiers</a></li><li><a href="#4-enregistrer-et-documents-temporaires">4. Enregistrer et documents temporaires</a></li><li><a href="#5-modifier-du-texte">5. Modifier du texte</a></li><li><a href="#6-markdown">6. Markdown</a></li><li><a href="#7-fichiers-json">7. Fichiers JSON</a></li><li><a href="#8-recherche-dans-les-fichiers">8. Recherche dans les fichiers</a></li><li><a href="#9-langage-encodage-et-fins-de-ligne">9. Langage, encodage et fins de ligne</a></li><li><a href="#10-snippets-et-macros">10. Snippets et macros</a></li><li><a href="#11-compte-et-fichiers-dans-le-cloud">11. Compte et fichiers dans le cloud</a></li><li><a href="#12-langues">12. Langues</a></li><li><a href="#13-raccourcis-clavier">13. Raccourcis clavier</a></li><li><a href="#14-questions-frequentes">14. Questions fréquentes</a></li><li><a href="#15-a-propos-et-assistance">15. À propos et assistance</a></li></ol>
+</nav>
+<main>
+<h1>Meu Editor de Arquivos — Manuel d&#39;utilisation</h1>
+<p>Version 1.0.0</p>
+<h2 id="1-bienvenue">1. Bienvenue</h2>
+<p><strong>Meu Editor de Arquivos</strong> est un éditeur léger pour tous ceux qui travaillent avec des textes, des notes, des scripts, des fichiers de configuration, des journaux et du code. Il fonctionne sous Windows 11, Debian 12 et 13 et Ubuntu 22.04 ou plus récent, et <strong>n&#39;a pas besoin d&#39;internet</strong> pour modifier vos fichiers.</p>
+<p>Ce que vous y trouverez :</p>
+<ul>
+<li>des onglets pour plusieurs fichiers à la fois, avec récupération automatique de ce que vous avez saisi ;</li>
+<li>du Markdown qui s&#39;ouvre <strong>mis en forme</strong>, avec un bouton pour modifier le texte ;</li>
+<li>un <strong>visionneur JSON</strong> dans lequel vous ouvrez et refermez des parties du fichier ;</li>
+<li>la recherche et le remplacement dans un fichier ou dans un dossier entier ;</li>
+<li>la coloration syntaxique de dizaines de langages, des extraits de texte (snippets) et des macros ;</li>
+<li>un compte utilisateur pour conserver des fichiers dans le cloud et les ouvrir sur d&#39;autres ordinateurs ;</li>
+<li>une interface en six langues.</li>
+</ul>
+<h2 id="2-decouvrir-l-ecran">2. Découvrir l&#39;écran</h2>
+<figure><img src="img/s01-main.png" alt="Écran principal avec un dossier ouvert et un document Markdown"><figcaption>Écran principal avec un dossier ouvert et un document Markdown</figcaption></figure><ol>
+<li><strong>Barre de menus</strong> (en haut) : <span class="ui">Fichier</span>, <span class="ui">Édition</span>, <span class="ui">Recherche</span>, <span class="ui">Affichage</span>, <span class="ui">Encodage</span>, <span class="ui">Langage</span>, <span class="ui">Outils</span>, <span class="ui">Compte</span> et <span class="ui">Aide</span>.</li>
+<li><strong>Barre d&#39;outils</strong> : raccourcis vers les commandes les plus courantes. Les boutons de mise en forme apparaissent quand le document est en Markdown. À droite se trouvent les <strong>drapeaux des langues</strong> et le bouton qui alterne entre l&#39;aperçu et la modification.</li>
+<li><strong>Barre latérale</strong> (à gauche) : les documents ouverts, l&#39;explorateur du dossier ouvert et vos fichiers récents. Pour la masquer ou l&#39;afficher, utilisez <strong>Ctrl+Shift+B</strong>.</li>
+<li><strong>Onglets</strong> : chaque document a le sien. Un point (●) à côté du nom indique des modifications pas encore écrites dans le fichier.</li>
+<li><strong>Zone d&#39;édition</strong> : c&#39;est là que vous lisez et écrivez.</li>
+<li><strong>Panneau inférieur</strong> : affiche les résultats de la recherche dans les fichiers. Il s&#39;ouvre tout seul quand vous utilisez la recherche.</li>
+<li><strong>Barre d&#39;état</strong> (en bas) : ligne et colonne du curseur, taille du fichier, encodage, type de fin de ligne et langage du document.</li>
+</ol>
+<h2 id="3-creer-et-ouvrir-des-fichiers">3. Créer et ouvrir des fichiers</h2>
+<figure><img src="img/s02-new-menu.png" alt="Le bouton Nouveau avec la flèche qui liste les types de document"><figcaption>Le bouton Nouveau avec la flèche qui liste les types de document</figcaption></figure><ul>
+<li><strong>Nouveau document :</strong> cliquez sur <strong><span class="ui">Nouveau</span></strong> ou appuyez sur <strong>Ctrl+N</strong>. Un nouveau document est en Markdown (.md). La <strong>flèche à côté du bouton</strong> permet de créer un autre type : .md (Markdown), .txt (texte), .py (Python) ou .sql (SQL).</li>
+<li><strong>Ouvrir des fichiers :</strong> <strong><span class="ui">Fichier</span> → <span class="ui">Ouvrir</span></strong> ou <strong>Ctrl+O</strong>. Vous pouvez en choisir plusieurs à la fois. La limite est de 50 Mo par fichier.</li>
+<li><strong>Ouvrir un dossier :</strong> <strong><span class="ui">Fichier</span> → <span class="ui">Ouvrir un dossier</span></strong> ou <strong>Ctrl+Shift+K</strong>. Le dossier apparaît dans l&#39;explorateur de la barre latérale, et un clic sur un fichier l&#39;ouvre. Utilisez <strong><span class="ui">Fermer le dossier</span></strong> pour le fermer.</li>
+<li><strong>Fichiers récents :</strong> les derniers fichiers utilisés figurent dans la liste <strong>Récents</strong> de la barre latérale. Cliquez sur l&#39;un d&#39;eux pour le rouvrir.</li>
+</ul>
+<p>Si un autre programme modifie un fichier que vous avez ouvert, l&#39;application le recharge toute seule. Si ce document contient des modifications de votre part non enregistrées, elle vous demande d&#39;abord. Si le fichier est supprimé ou déplacé, le nom de l&#39;onglet devient rouge et barré.</p>
+<figure><img src="img/s07-menu-file.png" alt="Menu Fichier"><figcaption>Menu Fichier</figcaption></figure><h2 id="4-enregistrer-et-documents-temporaires">4. Enregistrer et documents temporaires</h2>
+<figure><img src="img/s20-restored.png" alt="Avis de documents restaurés à la réouverture de l'application"><figcaption>Avis de documents restaurés à la réouverture de l'application</figcaption></figure><ul>
+<li><strong><span class="ui">Enregistrer</span></strong> (<strong>Ctrl+S</strong>) écrit le document dans son fichier. Pour un nouveau document, l&#39;application demande le nom et l&#39;emplacement.</li>
+<li><strong><span class="ui">Enregistrer sous</span></strong> (<strong>Ctrl+Shift+S</strong>) écrit une copie sous un autre nom ou à un autre endroit.</li>
+<li><strong><span class="ui">Tout enregistrer</span></strong> écrit tous les documents qui ont des modifications.</li>
+</ul>
+<p><strong>Vous ne perdez pas ce que vous avez saisi.</strong> Quelques secondes après chaque modification, l&#39;application conserve automatiquement tous les documents ouverts, y compris ceux qui n&#39;ont jamais été enregistrés. Cela se fait que vous enregistriez ou non.</p>
+<p>Quand vous <strong>fermez l&#39;application</strong>, elle ne pose aucune question et ne supprime rien. À la prochaine ouverture, les onglets, le dossier et le texte non enregistré reviennent tels quels, avec un avis jaune en haut de l&#39;écran. Enregistrez quand vous voulez écrire dans le véritable fichier.</p>
+<p>Quand vous <strong>fermez un onglet</strong> contenant des modifications, l&#39;application demande s&#39;il faut enregistrer, ne pas enregistrer ou annuler. Deux remarques : l&#39;historique d&#39;annulation (Ctrl+Z) n&#39;est pas conservé d&#39;une session à l&#39;autre, et la récupération automatique conserve jusqu&#39;à 100 Mo de texte non enregistré.</p>
+<h2 id="5-modifier-du-texte">5. Modifier du texte</h2>
+<figure><img src="img/s11-invisibles.png" alt="Caractères invisibles : espaces, tabulations et fins de ligne"><figcaption>Caractères invisibles : espaces, tabulations et fins de ligne</figcaption></figure><p>Les commandes de modification se trouvent dans <strong><span class="ui">Édition</span></strong> et les options d&#39;affichage dans <strong><span class="ui">Affichage</span></strong>.</p>
+<ul>
+<li><strong>Annuler et rétablir :</strong> Ctrl+Z et Ctrl+Y.</li>
+<li><strong>Rechercher et remplacer</strong> dans le document : Ctrl+F et Ctrl+H. Pour aller à une ligne, utilisez Ctrl+G.</li>
+<li><strong>Plusieurs curseurs :</strong> maintenez Alt et cliquez là où vous voulez un autre curseur, ou appuyez sur Ctrl+D pour sélectionner l&#39;occurrence suivante du mot.</li>
+<li><strong><span class="ui">Sélection en colonne</span> :</strong> maintenez Maj+Alt et faites glisser la souris pour modifier plusieurs lignes dans la même colonne.</li>
+<li><strong>Lignes :</strong> Alt+↑ et Alt+↓ déplacent la ligne ; Shift+Alt+↑ et Shift+Alt+↓ la dupliquent ; Ctrl+/ la commente ou la décommente.</li>
+<li><strong>Ranger :</strong> <span class="ui">Trier les lignes (A-Z)</span>, <span class="ui">Trier les lignes (Z-A)</span>, <span class="ui">Supprimer les lignes en double</span> et <span class="ui">Supprimer les espaces en fin de ligne</span>.</li>
+<li><strong><span class="ui">Caractères invisibles</span> :</strong> affiche les espaces (·), les tabulations (→) et la fin de chaque ligne (¶). Très pratique pour repérer les espaces en trop.</li>
+<li><strong><span class="ui">Retour automatique à la ligne</span></strong> et <strong><span class="ui">Tout replier</span> / <span class="ui">Tout déplier</span></strong> aident à lire les longs fichiers.</li>
+<li><strong>Taille de la police :</strong> Ctrl++ l&#39;agrandit, Ctrl+- la réduit et Ctrl+0 rétablit la taille par défaut.</li>
+<li><strong>Indentation :</strong> dans <strong><span class="ui">Édition</span></strong>, choisissez entre espaces et tabulation, ainsi que la taille (2, 4 ou 8 colonnes).</li>
+</ul>
+<p>Vos préférences d&#39;affichage sont conservées pour la prochaine fois. Les textes propres à l&#39;éditeur, comme la zone de recherche (Ctrl+F) et la palette de commandes (F1), apparaissent en anglais.</p>
+<h2 id="6-markdown">6. Markdown</h2>
+<figure><img src="img/s03-markdown-edit.png" alt="Document Markdown en mode modification, avec la barre de mise en forme"><figcaption>Document Markdown en mode modification, avec la barre de mise en forme</figcaption></figure><p>Les fichiers Markdown (.md) s&#39;ouvrent <strong>mis en forme</strong>, prêts à être lus. Pour modifier le texte, cliquez sur <strong><span class="ui">Modifier le texte</span></strong> (ou appuyez sur <strong>Ctrl+Shift+E</strong>) ; pour revenir à la lecture, cliquez sur <strong><span class="ui">Aperçu</span></strong>.</p>
+<p>En mode modification, la barre d&#39;outils propose la mise en forme : titres, liste à puces, liste numérotée, retrait, <strong>gras</strong> (Ctrl+B), <em>italique</em> (Ctrl+I), <del>barré</del> (Ctrl+Shift+X), lien, tableau et effacement de la mise en forme. Sélectionnez le texte et cliquez sur le bouton ; sans sélection, l&#39;application place un modèle au niveau du curseur.</p>
+<p>En lecture, les liens s&#39;ouvrent dans le navigateur du système. Les images du document ne sont pas affichées dans la version actuelle.</p>
+<h2 id="7-fichiers-json">7. Fichiers JSON</h2>
+<figure><img src="img/s04-json-tree.png" alt="Fichier JSON en arborescence, avec un élément sélectionné"><figcaption>Fichier JSON en arborescence, avec un élément sélectionné</figcaption></figure><p>Les fichiers .json s&#39;ouvrent en <strong>arborescence</strong>. Cliquez sur la flèche d&#39;un élément pour ouvrir ou refermer cette partie. Utilisez <strong><span class="ui">Tout déplier</span></strong> et <strong><span class="ui">Tout replier</span></strong> pour tout ouvrir ou tout refermer. Quand vous cliquez sur un élément, la barre affiche son chemin, et vous pouvez copier le <strong><span class="ui">Chemin</span></strong> ou la <strong><span class="ui">Valeur</span></strong>. Les très longues listes s&#39;affichent par petites parties, avec un bouton pour en voir davantage.</p>
+<p>Pour modifier, cliquez sur <strong><span class="ui">Modifier le texte</span></strong>. En mode modification, le bouton <strong><span class="ui">Formater le JSON</span></strong> (Shift+Alt+F) remet le fichier en ordre.</p>
+<figure><img src="img/s05-json-error.png" alt="Message d'erreur d'un JSON invalide, avec ligne et colonne"><figcaption>Message d'erreur d'un JSON invalide, avec ligne et colonne</figcaption></figure><p>Si le fichier contient une erreur, l&#39;application explique le problème et indique la ligne et la colonne. Le bouton <strong><span class="ui">Modifier et aller à l&#39;erreur</span></strong> ouvre l&#39;éditeur directement à l&#39;endroit de l&#39;erreur.</p>
+<h2 id="8-recherche-dans-les-fichiers">8. Recherche dans les fichiers</h2>
+<figure><img src="img/s06-search.png" alt="Panneau de recherche avec les résultats regroupés par fichier"><figcaption>Panneau de recherche avec les résultats regroupés par fichier</figcaption></figure><p>Ouvrez un dossier et choisissez <strong><span class="ui">Recherche</span> → <span class="ui">Rechercher dans les fichiers</span></strong> (<strong>Ctrl+Shift+F</strong>). Le panneau inférieur s&#39;ouvre.</p>
+<ol>
+<li>Saisissez le texte et cliquez sur <strong><span class="ui">Rechercher</span></strong> (ou appuyez sur Entrée).</li>
+<li>Affinez la recherche avec les trois boutons voisins : <strong><span class="ui">Respecter la casse</span></strong>, <strong><span class="ui">Mot entier</span></strong> et <strong><span class="ui">Expression régulière</span></strong>.</li>
+<li>Pour limiter les fichiers, écrivez un filtre, par exemple <code>*.md, docs/**</code>.</li>
+<li>Les résultats apparaissent regroupés par fichier, avec la ligne et la colonne. Cliquez sur un résultat pour ouvrir le fichier et sélectionner le passage.</li>
+</ol>
+<p>Pour remplacer le texte, saisissez le nouveau dans le champ de remplacement et cliquez sur <strong><span class="ui">Tout remplacer</span></strong>. Décochez les fichiers qui ne doivent pas changer. L&#39;application demande une confirmation, car <strong>le remplacement est écrit directement dans les fichiers et ne peut pas être annulé depuis l&#39;éditeur</strong>. Les fichiers ouverts qui ont des modifications non enregistrées sont ignorés, pour que vous ne perdiez pas votre travail.</p>
+<p>La recherche n&#39;entre pas dans des dossiers comme <code>node_modules</code> et <code>.git</code>, ni dans les fichiers binaires ou de plus de 5 Mo. Elle affiche au maximum 5 000 occurrences à la fois.</p>
+<h2 id="9-langage-encodage-et-fins-de-ligne">9. Langage, encodage et fins de ligne</h2>
+<figure><img src="img/s09-menu-encoding.png" alt="Menu Encodage"><figcaption>Menu Encodage</figcaption></figure><ul>
+<li><strong><span class="ui">Langage</span> :</strong> l&#39;application choisit le langage d&#39;après l&#39;extension du fichier et utilise des couleurs pour faciliter la lecture. Pour changer le langage d&#39;un document, ouvrez le menu et choisissez-en un autre.</li>
+</ul>
+<figure><img src="img/s10-menu-language.png" alt="Menu Langage"><figcaption>Menu Langage</figcaption></figure><ul>
+<li><strong><span class="ui">Encodage</span> :</strong> convertissez le document en <strong>UTF-8</strong> ou en <strong>UTF-8 avec BOM</strong>, et choisissez les fins de ligne <strong>Windows (CRLF)</strong> ou <strong>Unix/Mac (LF)</strong>. Une conversion marque le document comme modifié ; il suffit d&#39;enregistrer pour qu&#39;elle soit effective.</li>
+</ul>
+<p>L&#39;encodage et la fin de ligne actuels s&#39;affichent dans la barre d&#39;état.</p>
+<h2 id="10-snippets-et-macros">10. Snippets et macros</h2>
+<figure><img src="img/s12-snippets.png" alt="Fenêtre des snippets"><figcaption>Fenêtre des snippets</figcaption></figure><p>Les <strong>snippets</strong> sont des extraits de texte tout prêts. Ouvrez <strong><span class="ui">Outils</span> → <span class="ui">Snippets</span></strong>. L&#39;application en fournit déjà quelques-uns : <code>data</code>, <code>hora</code>, <code>codigo</code>, <code>tarefa</code>, <code>tabela</code>, <code>link</code> et <code>cabecalho</code>. Pour en utiliser un, saisissez son raccourci dans l&#39;éditeur et choisissez la suggestion (ou appuyez sur Ctrl+Espace), ou cliquez sur <strong><span class="ui">Insérer dans l&#39;éditeur</span></strong> dans la fenêtre. Pour créer le vôtre, cliquez sur <strong><span class="ui">Nouveau snippet</span></strong> et donnez-lui un nom, un raccourci et le texte. Dans le texte, <code>$1</code> et <code>${2:défaut}</code> marquent les endroits où le curseur s&#39;arrête, et <code>$0</code> est la position finale. Les snippets fournis ne peuvent pas être modifiés, mais vous pouvez les dupliquer.</p>
+<figure><img src="img/s13-macros.png" alt="Fenêtre des macros"><figcaption>Fenêtre des macros</figcaption></figure><p>Les <strong>macros</strong> répètent une séquence que vous avez effectuée. Appuyez sur <strong>Ctrl+Shift+R</strong> pour commencer l&#39;enregistrement, saisissez ou modifiez ce que vous voulez, puis appuyez de nouveau sur <strong>Ctrl+Shift+R</strong> pour l&#39;arrêter. Ensuite, <strong>Ctrl+Shift+M</strong> exécute le dernier enregistrement. Dans <strong><span class="ui">Macros</span></strong>, vous choisissez le nombre de répétitions et pouvez enregistrer la macro sous un nom. Sont enregistrés : le texte saisi, le texte collé, les touches fléchées, Début, Fin, Retour arrière, Suppr, Tab, Entrée et les commandes des menus. Les clics de souris et Ctrl+Z ne sont pas enregistrés.</p>
+<h2 id="11-compte-et-fichiers-dans-le-cloud">11. Compte et fichiers dans le cloud</h2>
+<figure><img src="img/s16a-account-server.png" alt="Premier accès : adresse du serveur"><figcaption>Premier accès : adresse du serveur</figcaption></figure><p>Avec un compte, vous conservez des fichiers dans le cloud et les ouvrez sur d&#39;autres ordinateurs. Ouvrez le menu <strong><span class="ui">Compte</span></strong>.</p>
+<ol>
+<li><strong>Adresse du serveur :</strong> la première fois, saisissez l&#39;adresse que votre entreprise ou votre administrateur vous a communiquée. Elle commence par <code>https://</code>.</li>
+<li><strong>Créer un compte :</strong> cliquez sur <strong><span class="ui">Créer un compte</span></strong> et renseignez votre e-mail, votre nom et un mot de passe d&#39;au moins 10 caractères.</li>
+</ol>
+<figure><img src="img/s16-account-login.png" alt="Écran de connexion"><figcaption>Écran de connexion</figcaption></figure><ol start="3">
+<li><strong>Se connecter :</strong> utilisez votre e-mail et votre mot de passe. Si vous oubliez le mot de passe, cliquez sur <strong><span class="ui">J&#39;ai oublié mon mot de passe</span></strong> : vous recevez un code par e-mail et choisissez un nouveau mot de passe.</li>
+</ol>
+<figure><img src="img/s18-account-profile.png" alt="Profil de l'utilisateur"><figcaption>Profil de l'utilisateur</figcaption></figure><ol start="4">
+<li><strong>Profil :</strong> dans <strong><span class="ui">Compte</span></strong>, ouvrez votre profil pour changer le nom, changer le mot de passe ou vous déconnecter. Quand vous changez le mot de passe, vos autres ordinateurs doivent se reconnecter.</li>
+</ol>
+<figure><img src="img/s17-cloud-open.png" alt="Liste des fichiers dans le cloud"><figcaption>Liste des fichiers dans le cloud</figcaption></figure><ol start="5">
+<li><strong>Enregistrer dans le cloud :</strong> <strong><span class="ui">Fichier</span> → <span class="ui">Enregistrer dans le cloud</span></strong>. Choisissez le chemin, par exemple <code>travail/compte-rendu.md</code>.</li>
+<li><strong>Ouvrir depuis le cloud :</strong> <strong><span class="ui">Fichier</span> → <span class="ui">Ouvrir depuis le cloud</span></strong>. Dans la liste, vous ouvrez ou supprimez des fichiers. Dans un document ouvert depuis le cloud, <strong>Ctrl+S</strong> enregistre de nouveau dans le cloud.</li>
+</ol>
+<p>Si le fichier a changé dans le cloud depuis la dernière fois, l&#39;application vous prévient et demande si vous voulez l&#39;écraser. Chaque fichier peut peser jusqu&#39;à 10 Mo. Si votre système n&#39;a pas de coffre d&#39;identifiants, l&#39;application vous prévient que vous devrez vous reconnecter à chaque ouverture.</p>
+<h2 id="12-langues">12. Langues</h2>
+<figure><img src="img/s08-flags.png" alt="Drapeaux des langues à côté du bouton d'aperçu"><figcaption>Drapeaux des langues à côté du bouton d'aperçu</figcaption></figure><p>L&#39;application est disponible en <strong>allemand, espagnol, français, anglais, portugais (Brésil) et portugais (Portugal)</strong>. Elle s&#39;ouvre dans la langue de votre système ; s&#39;il n&#39;y a pas de traduction, elle s&#39;ouvre en anglais. Pour changer, cliquez sur le drapeau de la langue, à gauche du bouton d&#39;aperçu. Le changement est immédiat et conservé pour la prochaine fois. Ce manuel s&#39;ouvre dans la langue utilisée.</p>
+<h2 id="13-raccourcis-clavier">13. Raccourcis clavier</h2>
+<figure><img src="img/s14-shortcuts.png" alt="Fenêtre des raccourcis clavier"><figcaption>Fenêtre des raccourcis clavier</figcaption></figure><p>Pour voir la liste dans l&#39;application, ouvrez <strong><span class="ui">Aide</span> → <span class="ui">Raccourcis clavier</span></strong>. Les raccourcis disponibles :</p>
+<h3>Fichier</h3><table><tbody><tr><td><kbd>Ctrl+N</kbd></td><td>Nouveau document (Markdown)</td></tr><tr><td><kbd>Ctrl+O</kbd></td><td>Ouvrir des fichiers</td></tr><tr><td><kbd>Ctrl+Shift+K</kbd></td><td>Ouvrir un dossier</td></tr><tr><td><kbd>Ctrl+S</kbd></td><td>Enregistrer</td></tr><tr><td><kbd>Ctrl+Shift+S</kbd></td><td>Enregistrer sous</td></tr><tr><td><kbd>Ctrl+W</kbd></td><td>Fermer l'onglet</td></tr><tr><td><kbd>Alt+F4</kbd></td><td>Quitter</td></tr></tbody></table>
+<h3>Édition</h3><table><tbody><tr><td><kbd>Ctrl+Z</kbd></td><td>Annuler</td></tr><tr><td><kbd>Ctrl+Y</kbd></td><td>Rétablir</td></tr><tr><td><kbd>Ctrl+X</kbd> / <kbd>Ctrl+C</kbd> / <kbd>Ctrl+V</kbd></td><td>Couper / copier / coller</td></tr><tr><td><kbd>Ctrl+A</kbd></td><td>Tout sélectionner</td></tr><tr><td><kbd>Ctrl+L</kbd></td><td>Sélectionner la ligne</td></tr><tr><td><kbd>Ctrl+D</kbd></td><td>Sélectionner l'occurrence suivante (curseurs multiples)</td></tr><tr><td><kbd>Alt+Clic</kbd></td><td>Ajouter un curseur</td></tr><tr><td><kbd>Maj+Alt+Glisser</kbd></td><td>Sélection en colonne</td></tr><tr><td><kbd>Alt+↑</kbd> / <kbd>Alt+↓</kbd></td><td>Déplacer la ligne vers le haut / le bas</td></tr><tr><td><kbd>Shift+Alt+↑</kbd> / <kbd>Shift+Alt+↓</kbd></td><td>Dupliquer la ligne</td></tr><tr><td><kbd>Ctrl+/</kbd></td><td>Commenter ou décommenter la ligne</td></tr><tr><td><kbd>F1</kbd></td><td>Palette de commandes</td></tr></tbody></table>
+<h3>Recherche</h3><table><tbody><tr><td><kbd>Ctrl+F</kbd></td><td>Rechercher</td></tr><tr><td><kbd>Ctrl+H</kbd></td><td>Remplacer</td></tr><tr><td><kbd>Ctrl+Shift+F</kbd></td><td>Rechercher dans les fichiers</td></tr><tr><td><kbd>Ctrl+G</kbd></td><td>Aller à la ligne</td></tr></tbody></table>
+<h3>Affichage</h3><table><tbody><tr><td><kbd>Ctrl+Shift+B</kbd></td><td>Afficher ou masquer la barre latérale</td></tr><tr><td><kbd>Ctrl+Shift+E</kbd></td><td>Basculer entre aperçu et édition (Markdown et JSON)</td></tr><tr><td><kbd>Ctrl++</kbd></td><td>Agrandir la police</td></tr><tr><td><kbd>Ctrl+-</kbd></td><td>Réduire la police</td></tr><tr><td><kbd>Ctrl+0</kbd></td><td>Taille de police par défaut</td></tr></tbody></table>
+<h3>Markdown et JSON</h3><table><tbody><tr><td><kbd>Ctrl+B</kbd></td><td>Gras</td></tr><tr><td><kbd>Ctrl+I</kbd></td><td>Italique</td></tr><tr><td><kbd>Ctrl+Shift+X</kbd></td><td>Barré</td></tr><tr><td><kbd>Shift+Alt+F</kbd></td><td>Formater le document (JSON)</td></tr></tbody></table>
+<h3>Macros</h3><table><tbody><tr><td><kbd>Ctrl+Shift+R</kbd></td><td>Démarrer ou arrêter l'enregistrement de la macro</td></tr><tr><td><kbd>Ctrl+Shift+M</kbd></td><td>Exécuter la dernière macro</td></tr></tbody></table><h2 id="14-questions-frequentes">14. Questions fréquentes</h2>
+<p><strong>J&#39;ai fermé l&#39;application sans enregistrer. Ai-je perdu mon texte ?</strong>
+Non. Le texte non enregistré est conservé automatiquement et revient quand vous rouvrez l&#39;application.</p>
+<p><strong>Pourquoi le Markdown s&#39;ouvre-t-il mis en forme sans que je puisse écrire ?</strong>
+C&#39;est le mode lecture. Cliquez sur <strong><span class="ui">Modifier le texte</span></strong> (ou Ctrl+Shift+E) pour modifier.</p>
+<p><strong>Mon JSON affiche une erreur, mais il s&#39;ouvre dans un autre programme.</strong>
+Le visionneur suit strictement la norme JSON : il n&#39;accepte ni virgule superflue à la fin, ni commentaires, ni apostrophes. Utilisez le bouton de l&#39;erreur pour aller directement au problème.</p>
+<p><strong>Le fichier est volumineux et ne s&#39;ouvre pas.</strong>
+La limite est de 50 Mo par fichier.</p>
+<p><strong>Je n&#39;arrive pas à me connecter ni à enregistrer dans le cloud.</strong>
+Vérifiez l&#39;adresse du serveur et la connexion internet. Si le message indique que la session a expiré, reconnectez-vous.</p>
+<p><strong>Comment voir la version de l&#39;application ?</strong>
+Dans <strong><span class="ui">Aide</span> → <span class="ui">À propos de Meu Editor de Arquivos</span></strong>.</p>
+<h2 id="15-a-propos-et-assistance">15. À propos et assistance</h2>
+<figure><img src="img/s15-about.png" alt="Fenêtre À propos"><figcaption>Fenêtre À propos</figcaption></figure><figure><img src="img/s19-menu-help.png" alt="Menu Aide"><figcaption>Menu Aide</figcaption></figure><p><strong>Meu Editor de Arquivos</strong> a été développé par Diego Mendes Rodrigues. L&#39;élément <strong><span class="ui">Support technique</span></strong> du menu Aide n&#39;est pas encore disponible dans cette version.</p>
+
+</main>
+</div>
+</body>
+</html>

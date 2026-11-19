@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'unsafe-inline'">
+<title>Meu Editor de Arquivos — Manual do usuário</title>
+<style>
+:root{--ink:#1f2933;--muted:#5b6770;--line:#d9e0e6;--accent:#1e7be0;--bg:#fff;--soft:#f3f6f9}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif}
+.layout{display:flex;gap:40px;max-width:1180px;margin:0 auto;padding:24px 24px 80px}
+nav.toc{position:sticky;top:16px;align-self:flex-start;width:260px;flex:none;max-height:calc(100vh - 32px);overflow:auto;font-size:14px}
+nav.toc h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+nav.toc ol{list-style:none;margin:0;padding:0}nav.toc li{margin:0}
+nav.toc a{display:block;padding:5px 10px;border-left:3px solid transparent;color:var(--ink);text-decoration:none;border-radius:0 6px 6px 0}
+nav.toc a:hover{background:var(--soft);border-left-color:var(--accent)}
+main{min-width:0;flex:1;max-width:860px}
+h1{font-size:2rem;line-height:1.25;margin:.2em 0 .1em}
+main>p:first-of-type{color:var(--muted);margin-top:0}
+h2{font-size:1.45rem;margin:2.2em 0 .6em;padding-top:.6em;border-top:1px solid var(--line)}
+h3{font-size:1.05rem;margin:1.4em 0 .4em}
+p,li{max-width:70ch}li{margin:.3em 0}
+a{color:var(--accent)}
+code{background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:.05em .35em;font:.92em Consolas,"Cascadia Mono",monospace}
+.ui{font-weight:600;color:#0f4c92;background:#e8f1fc;border-radius:4px;padding:0 .3em}
+blockquote{margin:1em 0;padding:.2em 1em;border-left:4px solid var(--accent);background:var(--soft);color:var(--muted)}
+figure{margin:1.2em 0 1.6em}
+figure img{display:block;max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;box-shadow:0 2px 10px rgba(15,40,70,.12)}
+figcaption{margin-top:.5em;font-size:.88rem;color:var(--muted)}
+table{border-collapse:collapse;width:100%;margin:.6em 0 1.2em;font-size:.95rem}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft)}
+kbd{font:.88em Consolas,"Cascadia Mono",monospace;background:#fff;border:1px solid #b9c4cd;border-bottom-width:2px;border-radius:5px;padding:.05em .45em;white-space:nowrap}
+td:first-child{white-space:nowrap}
+strong{font-weight:650}
+@media (max-width:900px){.layout{display:block}nav.toc{position:static;width:auto;max-height:none;margin-bottom:24px}}
+@media print{nav.toc{display:none}.layout{display:block;padding:0}figure{break-inside:avoid}h2{break-after:avoid}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" aria-label="Neste manual">
+<h2>Neste manual</h2>
+<ol><li><a href="#1-bem-vindo">1. Bem-vindo</a></li><li><a href="#2-conhecendo-a-tela">2. Conhecendo a tela</a></li><li><a href="#3-criar-e-abrir-arquivos">3. Criar e abrir arquivos</a></li><li><a href="#4-salvar-e-documentos-temporarios">4. Salvar e documentos temporários</a></li><li><a href="#5-editando-texto">5. Editando texto</a></li><li><a href="#6-markdown">6. Markdown</a></li><li><a href="#7-arquivos-json">7. Arquivos JSON</a></li><li><a href="#8-busca-em-arquivos">8. Busca em arquivos</a></li><li><a href="#9-linguagem-codificacao-e-quebras-de-linha">9. Linguagem, codificação e quebras de linha</a></li><li><a href="#10-snippets-e-macros">10. Snippets e macros</a></li><li><a href="#11-conta-e-arquivos-na-nuvem">11. Conta e arquivos na nuvem</a></li><li><a href="#12-idiomas">12. Idiomas</a></li><li><a href="#13-atalhos-de-teclado">13. Atalhos de teclado</a></li><li><a href="#14-perguntas-frequentes">14. Perguntas frequentes</a></li><li><a href="#15-sobre-e-suporte">15. Sobre e suporte</a></li></ol>
+</nav>
+<main>
+<h1>Meu Editor de Arquivos — Manual do usuário</h1>
+<p>Versão 1.0.0</p>
+<h2 id="1-bem-vindo">1. Bem-vindo</h2>
+<p>O <strong>Meu Editor de Arquivos</strong> é um editor leve para quem trabalha com textos, anotações, scripts, arquivos de configuração, logs e código. Ele funciona no Windows 11, no Debian 12 e 13 e no Ubuntu 22.04 ou mais novo, e <strong>não precisa de internet</strong> para editar.</p>
+<p>O que você encontra nele:</p>
+<ul>
+<li>abas para vários arquivos ao mesmo tempo, com recuperação automática do que você escreveu;</li>
+<li>Markdown que abre <strong>formatado</strong>, com um botão para editar o texto;</li>
+<li>um <strong>visualizador de JSON</strong> em que você abre e fecha as partes do arquivo;</li>
+<li>busca e substituição em um arquivo ou em uma pasta inteira;</li>
+<li>realce de cores para dezenas de linguagens, snippets e macros;</li>
+<li>conta de usuário para guardar arquivos na nuvem e abri-los em outros computadores;</li>
+<li>tela em seis idiomas.</li>
+</ul>
+<h2 id="2-conhecendo-a-tela">2. Conhecendo a tela</h2>
+<figure><img src="img/s01-main.png" alt="Tela principal do aplicativo com uma pasta aberta e um documento Markdown"><figcaption>Tela principal do aplicativo com uma pasta aberta e um documento Markdown</figcaption></figure><ol>
+<li><strong>Barra de menus</strong> (no alto): <span class="ui">Arquivo</span>, <span class="ui">Editar</span>, <span class="ui">Pesquisar</span>, <span class="ui">Exibir</span>, <span class="ui">Codificação</span>, <span class="ui">Linguagem</span>, <span class="ui">Ferramentas</span>, <span class="ui">Conta</span> e <span class="ui">Ajuda</span>.</li>
+<li><strong>Barra de ferramentas</strong>: atalhos para os comandos mais usados. Os botões de formatação aparecem quando o documento é Markdown. No lado direito ficam as <strong>bandeiras dos idiomas</strong> e o botão que alterna entre visualizar e editar.</li>
+<li><strong>Barra lateral</strong> (à esquerda): os documentos abertos, o explorador da pasta aberta e os arquivos recentes. Para ocultá-la ou exibi-la, use <strong>Ctrl+Shift+B</strong>.</li>
+<li><strong>Abas</strong>: cada documento tem uma aba. Um ponto (●) ao lado do nome indica que há alterações ainda não gravadas no arquivo.</li>
+<li><strong>Área de edição</strong>: onde você lê e escreve.</li>
+<li><strong>Painel inferior</strong>: mostra os resultados da busca em arquivos. Ele se abre sozinho quando você usa a busca.</li>
+<li><strong>Barra de status</strong> (embaixo): linha e coluna do cursor, tamanho do arquivo, codificação, tipo de quebra de linha e linguagem do documento.</li>
+</ol>
+<h2 id="3-criar-e-abrir-arquivos">3. Criar e abrir arquivos</h2>
+<figure><img src="img/s02-new-menu.png" alt="Botão Novo com a seta que lista os tipos de documento"><figcaption>Botão Novo com a seta que lista os tipos de documento</figcaption></figure><ul>
+<li><strong>Novo documento:</strong> clique em <strong><span class="ui">Novo</span></strong> ou use <strong>Ctrl+N</strong>. O documento novo é Markdown (.md). Clique na <strong>seta ao lado do botão</strong> para criar um documento de outro tipo: .md (Markdown), .txt (texto), .py (Python) ou .sql (SQL).</li>
+<li><strong>Abrir arquivos:</strong> <strong><span class="ui">Arquivo</span> → <span class="ui">Abrir</span></strong> ou <strong>Ctrl+O</strong>. Você pode escolher vários arquivos de uma vez. O limite é de 50 MB por arquivo.</li>
+<li><strong>Abrir uma pasta:</strong> <strong><span class="ui">Arquivo</span> → <span class="ui">Abrir pasta</span></strong> ou <strong>Ctrl+Shift+K</strong>. A pasta aparece no explorador, na barra lateral, e um clique em um arquivo o abre. Use <strong><span class="ui">Fechar pasta</span></strong> para fechá-la.</li>
+<li><strong>Arquivos recentes:</strong> os últimos arquivos que você usou ficam na lista <strong>Recentes</strong>, na barra lateral. Clique em um deles para abri-lo de novo.</li>
+</ul>
+<p>Se outro programa alterar um arquivo que você tem aberto, o aplicativo o recarrega sozinho. Se você tiver alterações suas ainda não gravadas naquele documento, ele pergunta antes. Se o arquivo for apagado ou movido, o nome da aba fica em vermelho e riscado.</p>
+<figure><img src="img/s07-menu-file.png" alt="Menu Arquivo"><figcaption>Menu Arquivo</figcaption></figure><h2 id="4-salvar-e-documentos-temporarios">4. Salvar e documentos temporários</h2>
+<figure><img src="img/s20-restored.png" alt="Aviso de documentos restaurados ao reabrir o aplicativo"><figcaption>Aviso de documentos restaurados ao reabrir o aplicativo</figcaption></figure><ul>
+<li><strong><span class="ui">Salvar</span></strong> (<strong>Ctrl+S</strong>) grava o documento no arquivo. Em um documento novo, o aplicativo pede o nome e o local.</li>
+<li><strong><span class="ui">Salvar como</span></strong> (<strong>Ctrl+Shift+S</strong>) grava uma cópia com outro nome ou em outro lugar.</li>
+<li><strong><span class="ui">Salvar todos</span></strong> grava todos os documentos com alterações.</li>
+</ul>
+<p><strong>Você não perde o que escreveu.</strong> O aplicativo guarda automaticamente, uns segundos depois de cada alteração, todos os documentos abertos, inclusive os que nunca foram salvos. Isso é independente de você salvar ou não.</p>
+<p>Ao <strong>fechar o aplicativo</strong>, nada é perguntado e nada é descartado. Quando você abrir de novo, as abas, a pasta e o texto ainda não salvo voltam como estavam, com um aviso amarelo no alto da tela. Salve quando quiser gravar no arquivo de verdade.</p>
+<p>Ao <strong>fechar uma aba</strong> que tem alterações, o aplicativo pergunta se você quer salvar, não salvar ou cancelar. Duas observações: o histórico de desfazer (Ctrl+Z) não é guardado entre uma abertura e outra, e a recuperação automática guarda até 100 MB de texto não salvo.</p>
+<h2 id="5-editando-texto">5. Editando texto</h2>
+<figure><img src="img/s11-invisibles.png" alt="Caracteres invisíveis: espaços, tabulações e fim de linha"><figcaption>Caracteres invisíveis: espaços, tabulações e fim de linha</figcaption></figure><p>Os comandos de edição ficam em <strong><span class="ui">Editar</span></strong>, e os de exibição em <strong><span class="ui">Exibir</span></strong>.</p>
+<ul>
+<li><strong>Desfazer e refazer:</strong> Ctrl+Z e Ctrl+Y.</li>
+<li><strong>Localizar e substituir</strong> no documento: Ctrl+F e Ctrl+H. Para ir a uma linha, use Ctrl+G.</li>
+<li><strong>Vários cursores:</strong> segure Alt e clique onde quiser um cursor, ou use Ctrl+D para selecionar a próxima ocorrência da palavra.</li>
+<li><strong><span class="ui">Seleção por coluna</span>:</strong> segure Shift+Alt e arraste o mouse para editar várias linhas na mesma coluna.</li>
+<li><strong>Linhas:</strong> Alt+↑ e Alt+↓ movem a linha; Shift+Alt+↑ e Shift+Alt+↓ a duplicam; Ctrl+/ comenta ou descomenta.</li>
+<li><strong>Organizar:</strong> <span class="ui">Ordenar linhas (A-Z)</span>, <span class="ui">Ordenar linhas (Z-A)</span>, <span class="ui">Remover linhas duplicadas</span> e <span class="ui">Remover espaços no fim das linhas</span>.</li>
+<li><strong><span class="ui">Caracteres invisíveis</span>:</strong> mostra os espaços (·), as tabulações (→) e o fim de cada linha (¶). É ótimo para achar espaços sobrando.</li>
+<li><strong><span class="ui">Quebra automática de linha</span></strong> e <strong><span class="ui">Recolher tudo</span> / <span class="ui">Expandir tudo</span></strong> ajudam a ler arquivos longos.</li>
+<li><strong>Tamanho da letra:</strong> Ctrl++ aumenta, Ctrl+- diminui e Ctrl+0 volta ao tamanho padrão.</li>
+<li><strong>Indentação:</strong> em <strong><span class="ui">Editar</span></strong>, escolha entre espaços ou tabulação e o tamanho (2, 4 ou 8 colunas).</li>
+</ul>
+<p>As suas preferências de exibição ficam guardadas para a próxima vez. Os textos internos do editor, como a caixa de busca (Ctrl+F) e a paleta de comandos (F1), aparecem em inglês.</p>
+<h2 id="6-markdown">6. Markdown</h2>
+<figure><img src="img/s03-markdown-edit.png" alt="Documento Markdown em modo de edição, com a barra de formatação"><figcaption>Documento Markdown em modo de edição, com a barra de formatação</figcaption></figure><p>Os arquivos Markdown (.md) abrem <strong>formatados</strong>, prontos para ler. Para editar o texto, clique em <strong><span class="ui">Editar texto</span></strong> (ou use <strong>Ctrl+Shift+E</strong>); para voltar à leitura, clique em <strong><span class="ui">Visualizar</span></strong>.</p>
+<p>Em modo de edição, a barra de ferramentas oferece a formatação: títulos, lista com marcadores, lista numerada, recuo, <strong>negrito</strong> (Ctrl+B), <em>itálico</em> (Ctrl+I), <del>tachado</del> (Ctrl+Shift+X), link, tabela e remover formatação. Selecione o texto e clique no botão; sem seleção, o aplicativo coloca o modelo no lugar do cursor.</p>
+<p>Na leitura, os links abrem no navegador do sistema. As imagens do documento não são exibidas na versão atual.</p>
+<h2 id="7-arquivos-json">7. Arquivos JSON</h2>
+<figure><img src="img/s04-json-tree.png" alt="Arquivo JSON em árvore, com um item selecionado"><figcaption>Arquivo JSON em árvore, com um item selecionado</figcaption></figure><p>Os arquivos .json abrem em <strong>árvore</strong>. Clique na seta de um item para abrir ou fechar aquela parte. Use <strong><span class="ui">Expandir tudo</span></strong> e <strong><span class="ui">Recolher tudo</span></strong> para abrir ou fechar tudo. Ao clicar em um item, a barra mostra o caminho dele, e você pode copiar o <strong><span class="ui">Caminho</span></strong> ou o <strong><span class="ui">Valor</span></strong>. Listas muito grandes são mostradas aos poucos, com um botão para ver mais.</p>
+<p>Para editar, clique em <strong><span class="ui">Editar texto</span></strong>. No modo de edição, o botão <strong><span class="ui">Formatar JSON</span></strong> (Shift+Alt+F) organiza o arquivo.</p>
+<figure><img src="img/s05-json-error.png" alt="Mensagem de erro de um JSON inválido, com linha e coluna"><figcaption>Mensagem de erro de um JSON inválido, com linha e coluna</figcaption></figure><p>Se o arquivo tiver um erro, o aplicativo explica o problema e diz a linha e a coluna. O botão <strong><span class="ui">Editar e ir até o erro</span></strong> abre o editor já no ponto do erro.</p>
+<h2 id="8-busca-em-arquivos">8. Busca em arquivos</h2>
+<figure><img src="img/s06-search.png" alt="Painel de busca com os resultados agrupados por arquivo"><figcaption>Painel de busca com os resultados agrupados por arquivo</figcaption></figure><p>Abra uma pasta e use <strong><span class="ui">Pesquisar</span> → <span class="ui">Localizar em arquivos</span></strong> (<strong>Ctrl+Shift+F</strong>). O painel inferior se abre.</p>
+<ol>
+<li>Digite o texto e clique em <strong><span class="ui">Buscar</span></strong> (ou aperte Enter).</li>
+<li>Ajuste a busca com os três botões ao lado: <strong><span class="ui">Diferenciar maiúsculas</span></strong>, <strong><span class="ui">Palavra inteira</span></strong> e <strong><span class="ui">Expressão regular</span></strong>.</li>
+<li>Para limitar os arquivos, escreva um filtro, como <code>*.md, docs/**</code>.</li>
+<li>Os resultados aparecem agrupados por arquivo, com linha e coluna. Clique em um resultado para abrir o arquivo e selecionar o trecho.</li>
+</ol>
+<p>Para trocar o texto, escreva o novo no campo de substituição e clique em <strong><span class="ui">Substituir tudo</span></strong>. Desmarque os arquivos que não devem mudar. O aplicativo pede confirmação, porque <strong>a substituição é gravada direto nos arquivos e não pode ser desfeita pelo editor</strong>. Arquivos abertos com alterações não salvas são ignorados, para você não perder trabalho.</p>
+<p>A busca não entra em pastas como <code>node_modules</code> e <code>.git</code>, nem em arquivos binários ou maiores que 5 MB. Ela mostra no máximo 5.000 ocorrências por vez.</p>
+<h2 id="9-linguagem-codificacao-e-quebras-de-linha">9. Linguagem, codificação e quebras de linha</h2>
+<figure><img src="img/s09-menu-encoding.png" alt="Menu Codificação"><figcaption>Menu Codificação</figcaption></figure><ul>
+<li><strong><span class="ui">Linguagem</span>:</strong> o aplicativo escolhe a linguagem pela extensão do arquivo e usa cores para facilitar a leitura. Para mudar a de um documento, abra o menu e escolha outra.</li>
+</ul>
+<figure><img src="img/s10-menu-language.png" alt="Menu Linguagem"><figcaption>Menu Linguagem</figcaption></figure><ul>
+<li><strong><span class="ui">Codificação</span>:</strong> converta o documento para <strong>UTF-8</strong> ou <strong>UTF-8 com BOM</strong>, e escolha a quebra de linha do <strong>Windows (CRLF)</strong> ou do <strong>Unix/Mac (LF)</strong>. A conversão marca o documento como alterado; basta salvar para valer.</li>
+</ul>
+<p>A codificação e a quebra de linha atuais aparecem na barra de status.</p>
+<h2 id="10-snippets-e-macros">10. Snippets e macros</h2>
+<figure><img src="img/s12-snippets.png" alt="Janela de snippets"><figcaption>Janela de snippets</figcaption></figure><p><strong>Snippets</strong> são trechos de texto prontos. Abra <strong><span class="ui">Ferramentas</span> → <span class="ui">Snippets</span></strong>. O aplicativo já traz alguns: <code>data</code>, <code>hora</code>, <code>codigo</code>, <code>tarefa</code>, <code>tabela</code>, <code>link</code> e <code>cabecalho</code>. Para usar, digite o atalho no editor e escolha a sugestão (ou aperte Ctrl+Espaço), ou clique em <strong><span class="ui">Inserir no editor</span></strong> na janela. Para criar o seu, clique em <strong><span class="ui">Novo snippet</span></strong>, dê um nome, um atalho e o texto. No texto, <code>$1</code> e <code>${2:padrão}</code> marcam os lugares onde o cursor para, e <code>$0</code> é o ponto final. Os snippets do aplicativo não podem ser editados, mas você pode duplicá-los.</p>
+<figure><img src="img/s13-macros.png" alt="Janela de macros"><figcaption>Janela de macros</figcaption></figure><p><strong>Macros</strong> repetem uma sequência que você fez. Aperte <strong>Ctrl+Shift+R</strong> para começar a gravar, escreva ou edite o que quiser e aperte <strong>Ctrl+Shift+R</strong> de novo para parar. Depois, <strong>Ctrl+Shift+M</strong> executa a última gravação. Em <strong><span class="ui">Macros</span></strong> você escolhe quantas vezes repetir e pode salvar a macro com um nome. São gravados o texto digitado, o que você cola, as teclas de seta, Home, End, Backspace, Delete, Tab, Enter e os comandos dos menus. Cliques do mouse e Ctrl+Z não são gravados.</p>
+<h2 id="11-conta-e-arquivos-na-nuvem">11. Conta e arquivos na nuvem</h2>
+<figure><img src="img/s16a-account-server.png" alt="Primeiro acesso: endereço do servidor"><figcaption>Primeiro acesso: endereço do servidor</figcaption></figure><p>Com uma conta, você guarda arquivos na nuvem e os abre em outros computadores. Abra o menu <strong><span class="ui">Conta</span></strong>.</p>
+<ol>
+<li><strong>Endereço do servidor:</strong> na primeira vez, informe o endereço que sua empresa ou o administrador passou. Ele começa com <code>https://</code>.</li>
+<li><strong>Criar conta:</strong> clique em <strong><span class="ui">Criar uma conta</span></strong> e preencha e-mail, nome e uma senha com pelo menos 10 caracteres.</li>
+</ol>
+<figure><img src="img/s16-account-login.png" alt="Tela de entrada"><figcaption>Tela de entrada</figcaption></figure><ol start="3">
+<li><strong>Entrar:</strong> use o e-mail e a senha. Se esquecer a senha, clique em <strong><span class="ui">Esqueci a senha</span></strong>: você recebe um código por e-mail e escolhe uma nova senha.</li>
+</ol>
+<figure><img src="img/s18-account-profile.png" alt="Perfil do usuário"><figcaption>Perfil do usuário</figcaption></figure><ol start="4">
+<li><strong>Perfil:</strong> em <strong><span class="ui">Conta</span></strong>, abra o seu perfil para mudar o nome, trocar a senha ou sair da conta. Ao trocar a senha, os outros computadores precisam entrar de novo.</li>
+</ol>
+<figure><img src="img/s17-cloud-open.png" alt="Lista de arquivos na nuvem"><figcaption>Lista de arquivos na nuvem</figcaption></figure><ol start="5">
+<li><strong>Salvar na nuvem:</strong> <strong><span class="ui">Arquivo</span> → <span class="ui">Salvar na nuvem</span></strong>. Escolha o caminho, por exemplo <code>trabalho/ata.md</code>.</li>
+<li><strong>Abrir da nuvem:</strong> <strong><span class="ui">Arquivo</span> → <span class="ui">Abrir da nuvem</span></strong>. Na lista você abre ou exclui arquivos. Em um documento aberto da nuvem, <strong>Ctrl+S</strong> grava de volta na nuvem.</li>
+</ol>
+<p>Se o arquivo mudou na nuvem desde a última vez, o aplicativo avisa e pergunta se você quer sobrescrever. Cada arquivo pode ter até 10 MB. Se o seu sistema não tem cofre de credenciais, o aplicativo avisa que você precisará entrar a cada abertura.</p>
+<h2 id="12-idiomas">12. Idiomas</h2>
+<figure><img src="img/s08-flags.png" alt="Bandeiras dos idiomas ao lado do botão de visualização"><figcaption>Bandeiras dos idiomas ao lado do botão de visualização</figcaption></figure><p>O aplicativo está disponível em <strong>alemão, espanhol, francês, inglês, português (Brasil) e português (Portugal)</strong>. Ele abre no idioma do seu sistema; se não houver tradução, abre em inglês. Para trocar, clique na bandeira do idioma, à esquerda do botão de visualização. A escolha vale na hora e fica guardada para a próxima vez. Este manual abre no idioma que estiver em uso.</p>
+<h2 id="13-atalhos-de-teclado">13. Atalhos de teclado</h2>
+<figure><img src="img/s14-shortcuts.png" alt="Janela de atalhos de teclado"><figcaption>Janela de atalhos de teclado</figcaption></figure><p>Para ver a lista dentro do aplicativo, abra <strong><span class="ui">Ajuda</span> → <span class="ui">Atalhos de teclado</span></strong>. Os atalhos disponíveis:</p>
+<h3>Arquivo</h3><table><tbody><tr><td><kbd>Ctrl+N</kbd></td><td>Novo documento (Markdown)</td></tr><tr><td><kbd>Ctrl+O</kbd></td><td>Abrir arquivos</td></tr><tr><td><kbd>Ctrl+Shift+K</kbd></td><td>Abrir pasta</td></tr><tr><td><kbd>Ctrl+S</kbd></td><td>Salvar</td></tr><tr><td><kbd>Ctrl+Shift+S</kbd></td><td>Salvar como</td></tr><tr><td><kbd>Ctrl+W</kbd></td><td>Fechar aba</td></tr><tr><td><kbd>Alt+F4</kbd></td><td>Sair</td></tr></tbody></table>
+<h3>Editar</h3><table><tbody><tr><td><kbd>Ctrl+Z</kbd></td><td>Desfazer</td></tr><tr><td><kbd>Ctrl+Y</kbd></td><td>Refazer</td></tr><tr><td><kbd>Ctrl+X</kbd> / <kbd>Ctrl+C</kbd> / <kbd>Ctrl+V</kbd></td><td>Recortar / copiar / colar</td></tr><tr><td><kbd>Ctrl+A</kbd></td><td>Selecionar tudo</td></tr><tr><td><kbd>Ctrl+L</kbd></td><td>Selecionar a linha</td></tr><tr><td><kbd>Ctrl+D</kbd></td><td>Selecionar a próxima ocorrência (vários cursores)</td></tr><tr><td><kbd>Alt+Clique</kbd></td><td>Adicionar cursor</td></tr><tr><td><kbd>Shift+Alt+Arrastar</kbd></td><td>Seleção por coluna</td></tr><tr><td><kbd>Alt+↑</kbd> / <kbd>Alt+↓</kbd></td><td>Mover a linha para cima / para baixo</td></tr><tr><td><kbd>Shift+Alt+↑</kbd> / <kbd>Shift+Alt+↓</kbd></td><td>Duplicar a linha</td></tr><tr><td><kbd>Ctrl+/</kbd></td><td>Comentar ou descomentar a linha</td></tr><tr><td><kbd>F1</kbd></td><td>Paleta de comandos</td></tr></tbody></table>
+<h3>Pesquisar</h3><table><tbody><tr><td><kbd>Ctrl+F</kbd></td><td>Localizar</td></tr><tr><td><kbd>Ctrl+H</kbd></td><td>Substituir</td></tr><tr><td><kbd>Ctrl+Shift+F</kbd></td><td>Localizar em arquivos</td></tr><tr><td><kbd>Ctrl+G</kbd></td><td>Ir para linha</td></tr></tbody></table>
+<h3>Exibir</h3><table><tbody><tr><td><kbd>Ctrl+Shift+B</kbd></td><td>Mostrar ou ocultar a barra lateral</td></tr><tr><td><kbd>Ctrl+Shift+E</kbd></td><td>Alternar entre visualização e edição (Markdown e JSON)</td></tr><tr><td><kbd>Ctrl++</kbd></td><td>Aumentar fonte</td></tr><tr><td><kbd>Ctrl+-</kbd></td><td>Diminuir fonte</td></tr><tr><td><kbd>Ctrl+0</kbd></td><td>Tamanho padrão da fonte</td></tr></tbody></table>
+<h3>Markdown e JSON</h3><table><tbody><tr><td><kbd>Ctrl+B</kbd></td><td>Negrito</td></tr><tr><td><kbd>Ctrl+I</kbd></td><td>Itálico</td></tr><tr><td><kbd>Ctrl+Shift+X</kbd></td><td>Tachado</td></tr><tr><td><kbd>Shift+Alt+F</kbd></td><td>Formatar o documento (JSON)</td></tr></tbody></table>
+<h3>Macros</h3><table><tbody><tr><td><kbd>Ctrl+Shift+R</kbd></td><td>Iniciar ou parar a gravação de macro</td></tr><tr><td><kbd>Ctrl+Shift+M</kbd></td><td>Executar última macro</td></tr></tbody></table><h2 id="14-perguntas-frequentes">14. Perguntas frequentes</h2>
+<p><strong>Fechei o aplicativo sem salvar. Perdi meu texto?</strong>
+Não. O texto não salvo é guardado automaticamente e volta quando você abre o aplicativo de novo.</p>
+<p><strong>Por que o Markdown abre formatado e eu não consigo digitar?</strong>
+É o modo de leitura. Clique em <strong><span class="ui">Editar texto</span></strong> (ou Ctrl+Shift+E) para editar.</p>
+<p><strong>Meu JSON mostra um erro, mas ele abre em outro programa.</strong>
+O visualizador segue o padrão rigoroso do JSON: não aceita vírgula sobrando no fim, comentários nem aspas simples. Use o botão do erro para ir direto ao problema.</p>
+<p><strong>O arquivo é grande e não abre.</strong>
+O limite é de 50 MB por arquivo.</p>
+<p><strong>Não consigo entrar na conta ou salvar na nuvem.</strong>
+Confira o endereço do servidor e a conexão com a internet. Se a mensagem disser que a sessão expirou, entre de novo.</p>
+<p><strong>Como vejo a versão do aplicativo?</strong>
+Em <strong><span class="ui">Ajuda</span> → <span class="ui">Sobre o Meu Editor de Arquivos</span></strong>.</p>
+<h2 id="15-sobre-e-suporte">15. Sobre e suporte</h2>
+<figure><img src="img/s15-about.png" alt="Janela Sobre"><figcaption>Janela Sobre</figcaption></figure><figure><img src="img/s19-menu-help.png" alt="Menu Ajuda"><figcaption>Menu Ajuda</figcaption></figure><p>O <strong>Meu Editor de Arquivos</strong> foi desenvolvido por Diego Mendes Rodrigues. O item <strong><span class="ui">Suporte Técnico</span></strong> do menu Ajuda ainda não está disponível nesta versão.</p>
+
+</main>
+</div>
+</body>
+</html>

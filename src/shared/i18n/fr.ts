@@ -42,6 +42,8 @@ export const fr: Messages = {
   "api.not_found": "Fichier introuvable.",
   "api.too_large": "Le fichier dépasse 10 Mo.",
   "api.internal": "Erreur interne du serveur.",
+  "err.manualMissing": "Le manuel d'utilisation est introuvable.",
+  "err.openManual": "Impossible d'ouvrir le manuel d'utilisation.",
   "menu.file": "Fichier",
   "menu.edit": "Édition",
   "menu.search": "Recherche",

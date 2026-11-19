@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'unsafe-inline'">
+<title>Meu Editor de Arquivos — User Manual</title>
+<style>
+:root{--ink:#1f2933;--muted:#5b6770;--line:#d9e0e6;--accent:#1e7be0;--bg:#fff;--soft:#f3f6f9}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif}
+.layout{display:flex;gap:40px;max-width:1180px;margin:0 auto;padding:24px 24px 80px}
+nav.toc{position:sticky;top:16px;align-self:flex-start;width:260px;flex:none;max-height:calc(100vh - 32px);overflow:auto;font-size:14px}
+nav.toc h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+nav.toc ol{list-style:none;margin:0;padding:0}nav.toc li{margin:0}
+nav.toc a{display:block;padding:5px 10px;border-left:3px solid transparent;color:var(--ink);text-decoration:none;border-radius:0 6px 6px 0}
+nav.toc a:hover{background:var(--soft);border-left-color:var(--accent)}
+main{min-width:0;flex:1;max-width:860px}
+h1{font-size:2rem;line-height:1.25;margin:.2em 0 .1em}
+main>p:first-of-type{color:var(--muted);margin-top:0}
+h2{font-size:1.45rem;margin:2.2em 0 .6em;padding-top:.6em;border-top:1px solid var(--line)}
+h3{font-size:1.05rem;margin:1.4em 0 .4em}
+p,li{max-width:70ch}li{margin:.3em 0}
+a{color:var(--accent)}
+code{background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:.05em .35em;font:.92em Consolas,"Cascadia Mono",monospace}
+.ui{font-weight:600;color:#0f4c92;background:#e8f1fc;border-radius:4px;padding:0 .3em}
+blockquote{margin:1em 0;padding:.2em 1em;border-left:4px solid var(--accent);background:var(--soft);color:var(--muted)}
+figure{margin:1.2em 0 1.6em}
+figure img{display:block;max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;box-shadow:0 2px 10px rgba(15,40,70,.12)}
+figcaption{margin-top:.5em;font-size:.88rem;color:var(--muted)}
+table{border-collapse:collapse;width:100%;margin:.6em 0 1.2em;font-size:.95rem}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft)}
+kbd{font:.88em Consolas,"Cascadia Mono",monospace;background:#fff;border:1px solid #b9c4cd;border-bottom-width:2px;border-radius:5px;padding:.05em .45em;white-space:nowrap}
+td:first-child{white-space:nowrap}
+strong{font-weight:650}
+@media (max-width:900px){.layout{display:block}nav.toc{position:static;width:auto;max-height:none;margin-bottom:24px}}
+@media print{nav.toc{display:none}.layout{display:block;padding:0}figure{break-inside:avoid}h2{break-after:avoid}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" aria-label="In this manual">
+<h2>In this manual</h2>
+<ol><li><a href="#1-welcome">1. Welcome</a></li><li><a href="#2-getting-to-know-the-screen">2. Getting to know the screen</a></li><li><a href="#3-creating-and-opening-files">3. Creating and opening files</a></li><li><a href="#4-saving-and-temporary-documents">4. Saving and temporary documents</a></li><li><a href="#5-editing-text">5. Editing text</a></li><li><a href="#6-markdown">6. Markdown</a></li><li><a href="#7-json-files">7. JSON files</a></li><li><a href="#8-searching-in-files">8. Searching in files</a></li><li><a href="#9-language-encoding-and-line-endings">9. Language, encoding and line endings</a></li><li><a href="#10-snippets-and-macros">10. Snippets and macros</a></li><li><a href="#11-account-and-cloud-files">11. Account and cloud files</a></li><li><a href="#12-languages">12. Languages</a></li><li><a href="#13-keyboard-shortcuts">13. Keyboard shortcuts</a></li><li><a href="#14-frequently-asked-questions">14. Frequently asked questions</a></li><li><a href="#15-about-and-support">15. About and support</a></li></ol>
+</nav>
+<main>
+<h1>Meu Editor de Arquivos — User Manual</h1>
+<p>Version 1.0.0</p>
+<h2 id="1-welcome">1. Welcome</h2>
+<p><strong>Meu Editor de Arquivos</strong> is a lightweight editor for anyone who works with text, notes, scripts, configuration files, logs and code. It runs on Windows 11, Debian 12 and 13, and Ubuntu 22.04 or newer, and it <strong>does not need an internet connection</strong> for editing.</p>
+<p>What you will find in it:</p>
+<ul>
+<li>tabs for several files at once, with automatic recovery of what you have typed;</li>
+<li>Markdown that opens <strong>formatted</strong>, with a button to edit the text;</li>
+<li>a <strong>JSON viewer</strong> where you can open and close parts of the file;</li>
+<li>search and replace in a single file or in a whole folder;</li>
+<li>syntax colors for dozens of languages, snippets and macros;</li>
+<li>a user account to keep files in the cloud and open them on other computers;</li>
+<li>an interface in six languages.</li>
+</ul>
+<h2 id="2-getting-to-know-the-screen">2. Getting to know the screen</h2>
+<figure><img src="img/s01-main.png" alt="Main screen with a folder open and a Markdown document"><figcaption>Main screen with a folder open and a Markdown document</figcaption></figure><ol>
+<li><strong>Menu bar</strong> (at the top): <span class="ui">File</span>, <span class="ui">Edit</span>, <span class="ui">Search</span>, <span class="ui">View</span>, <span class="ui">Encoding</span>, <span class="ui">Language</span>, <span class="ui">Tools</span>, <span class="ui">Account</span> and <span class="ui">Help</span>.</li>
+<li><strong>Toolbar</strong>: shortcuts for the most common commands. The formatting buttons appear when the document is Markdown. On the right you will find the <strong>language flags</strong> and the button that switches between preview and editing.</li>
+<li><strong>Sidebar</strong> (on the left): the open documents, the explorer for the open folder and your recent files. To hide or show it, use <strong>Ctrl+Shift+B</strong>.</li>
+<li><strong>Tabs</strong>: each document has its own tab. A dot (●) next to the name means there are changes not yet written to the file.</li>
+<li><strong>Editing area</strong>: where you read and write.</li>
+<li><strong>Bottom panel</strong>: shows the results of searching in files. It opens by itself when you use the search.</li>
+<li><strong>Status bar</strong> (at the bottom): cursor line and column, file size, encoding, line ending type and the document&#39;s language.</li>
+</ol>
+<h2 id="3-creating-and-opening-files">3. Creating and opening files</h2>
+<figure><img src="img/s02-new-menu.png" alt="The New button with the arrow that lists the document types"><figcaption>The New button with the arrow that lists the document types</figcaption></figure><ul>
+<li><strong>New document:</strong> click <strong><span class="ui">New</span></strong> or press <strong>Ctrl+N</strong>. A new document is Markdown (.md). Click the <strong>arrow next to the button</strong> to create another type: .md (Markdown), .txt (text), .py (Python) or .sql (SQL).</li>
+<li><strong>Open files:</strong> <strong><span class="ui">File</span> → <span class="ui">Open</span></strong> or <strong>Ctrl+O</strong>. You can pick several files at once. The limit is 50 MB per file.</li>
+<li><strong>Open a folder:</strong> <strong><span class="ui">File</span> → <span class="ui">Open Folder</span></strong> or <strong>Ctrl+Shift+K</strong>. The folder appears in the explorer on the sidebar, and a click on a file opens it. Use <strong><span class="ui">Close Folder</span></strong> to close it.</li>
+<li><strong>Recent files:</strong> the last files you used are listed under <strong>Recent</strong> on the sidebar. Click one to open it again.</li>
+</ul>
+<p>If another program changes a file you have open, the application reloads it by itself. If you have changes of your own in that document that are not yet saved, it asks you first. If the file is deleted or moved, the tab name turns red and struck through.</p>
+<figure><img src="img/s07-menu-file.png" alt="File menu"><figcaption>File menu</figcaption></figure><h2 id="4-saving-and-temporary-documents">4. Saving and temporary documents</h2>
+<figure><img src="img/s20-restored.png" alt="Notice of documents restored when the application is reopened"><figcaption>Notice of documents restored when the application is reopened</figcaption></figure><ul>
+<li><strong><span class="ui">Save</span></strong> (<strong>Ctrl+S</strong>) writes the document to its file. For a new document, the application asks for a name and a location.</li>
+<li><strong><span class="ui">Save As</span></strong> (<strong>Ctrl+Shift+S</strong>) writes a copy under another name or in another place.</li>
+<li><strong><span class="ui">Save All</span></strong> writes every document that has changes.</li>
+</ul>
+<p><strong>You do not lose what you typed.</strong> A few seconds after each change, the application automatically keeps all open documents, including those that were never saved. This works whether or not you save.</p>
+<p>When you <strong>close the application</strong>, it asks nothing and discards nothing. The next time you open it, your tabs, the folder and the unsaved text come back as they were, with a yellow notice at the top of the screen. Save whenever you want to write to the actual file.</p>
+<p>When you <strong>close a tab</strong> that has changes, the application asks whether to save, not save or cancel. Two notes: the undo history (Ctrl+Z) is not kept between sessions, and automatic recovery keeps up to 100 MB of unsaved text.</p>
+<h2 id="5-editing-text">5. Editing text</h2>
+<figure><img src="img/s11-invisibles.png" alt="Invisible characters: spaces, tabs and line endings"><figcaption>Invisible characters: spaces, tabs and line endings</figcaption></figure><p>Editing commands are in <strong><span class="ui">Edit</span></strong> and display options are in <strong><span class="ui">View</span></strong>.</p>
+<ul>
+<li><strong>Undo and redo:</strong> Ctrl+Z and Ctrl+Y.</li>
+<li><strong>Find and replace</strong> in the document: Ctrl+F and Ctrl+H. To jump to a line, use Ctrl+G.</li>
+<li><strong>Multiple cursors:</strong> hold Alt and click wherever you want another cursor, or press Ctrl+D to select the next occurrence of the word.</li>
+<li><strong><span class="ui">Column Selection</span>:</strong> hold Shift+Alt and drag the mouse to edit several lines in the same column.</li>
+<li><strong>Lines:</strong> Alt+↑ and Alt+↓ move the line; Shift+Alt+↑ and Shift+Alt+↓ duplicate it; Ctrl+/ comments or uncomments it.</li>
+<li><strong>Tidying up:</strong> <span class="ui">Sort Lines (A-Z)</span>, <span class="ui">Sort Lines (Z-A)</span>, <span class="ui">Remove Duplicate Lines</span> and <span class="ui">Trim Trailing Whitespace</span>.</li>
+<li><strong><span class="ui">Invisible Characters</span>:</strong> shows spaces (·), tabs (→) and the end of each line (¶). It is great for finding stray spaces.</li>
+<li><strong><span class="ui">Word Wrap</span></strong> and <strong><span class="ui">Fold All</span> / <span class="ui">Unfold All</span></strong> help you read long files.</li>
+<li><strong>Font size:</strong> Ctrl++ makes it larger, Ctrl+- makes it smaller and Ctrl+0 restores the default.</li>
+<li><strong>Indentation:</strong> in <strong><span class="ui">Edit</span></strong>, choose between spaces and tabs and the size (2, 4 or 8 columns).</li>
+</ul>
+<p>Your display preferences are remembered for next time. The editor&#39;s own texts, such as the find box (Ctrl+F) and the command palette (F1), appear in English.</p>
+<h2 id="6-markdown">6. Markdown</h2>
+<figure><img src="img/s03-markdown-edit.png" alt="Markdown document in editing mode, with the formatting toolbar"><figcaption>Markdown document in editing mode, with the formatting toolbar</figcaption></figure><p>Markdown files (.md) open <strong>formatted</strong>, ready to read. To edit the text, click <strong><span class="ui">Edit text</span></strong> (or press <strong>Ctrl+Shift+E</strong>); to go back to reading, click <strong><span class="ui">Preview</span></strong>.</p>
+<p>In editing mode the toolbar offers formatting: headings, bulleted list, numbered list, indent, <strong>bold</strong> (Ctrl+B), <em>italic</em> (Ctrl+I), <del>strikethrough</del> (Ctrl+Shift+X), link, table and clear formatting. Select the text and click the button; with nothing selected, the application puts a template at the cursor.</p>
+<p>While reading, links open in the system browser. Images in the document are not displayed in the current version.</p>
+<h2 id="7-json-files">7. JSON files</h2>
+<figure><img src="img/s04-json-tree.png" alt="A JSON file as a tree, with one item selected"><figcaption>A JSON file as a tree, with one item selected</figcaption></figure><p>.json files open as a <strong>tree</strong>. Click an item&#39;s arrow to open or close that part. Use <strong><span class="ui">Unfold All</span></strong> and <strong><span class="ui">Fold All</span></strong> to open or close everything. When you click an item, the bar shows its path, and you can copy the <strong><span class="ui">Path</span></strong> or the <strong><span class="ui">Value</span></strong>. Very large lists are shown a little at a time, with a button to show more.</p>
+<p>To edit, click <strong><span class="ui">Edit text</span></strong>. In editing mode, the <strong><span class="ui">Format JSON</span></strong> button (Shift+Alt+F) tidies up the file.</p>
+<figure><img src="img/s05-json-error.png" alt="Error message for invalid JSON, with line and column"><figcaption>Error message for invalid JSON, with line and column</figcaption></figure><p>If the file has an error, the application explains the problem and gives the line and column. The <strong><span class="ui">Edit and go to the error</span></strong> button opens the editor right at the error.</p>
+<h2 id="8-searching-in-files">8. Searching in files</h2>
+<figure><img src="img/s06-search.png" alt="Search panel with results grouped by file"><figcaption>Search panel with results grouped by file</figcaption></figure><p>Open a folder and choose <strong><span class="ui">Search</span> → <span class="ui">Find in Files</span></strong> (<strong>Ctrl+Shift+F</strong>). The bottom panel opens.</p>
+<ol>
+<li>Type the text and click <strong><span class="ui">Search</span></strong> (or press Enter).</li>
+<li>Fine-tune the search with the three buttons beside it: <strong><span class="ui">Match case</span></strong>, <strong><span class="ui">Whole word</span></strong> and <strong><span class="ui">Regular expression</span></strong>.</li>
+<li>To limit the files, write a filter such as <code>*.md, docs/**</code>.</li>
+<li>Results appear grouped by file, with line and column. Click a result to open the file and select the match.</li>
+</ol>
+<p>To replace the text, type the new text in the replacement field and click <strong><span class="ui">Replace all</span></strong>. Untick the files that must not change. The application asks for confirmation, because <strong>the replacement is written straight to the files and cannot be undone from the editor</strong>. Open files with unsaved changes are skipped, so you do not lose work.</p>
+<p>The search does not enter folders such as <code>node_modules</code> and <code>.git</code>, nor binary files or files larger than 5 MB. It shows at most 5,000 matches at a time.</p>
+<h2 id="9-language-encoding-and-line-endings">9. Language, encoding and line endings</h2>
+<figure><img src="img/s09-menu-encoding.png" alt="Encoding menu"><figcaption>Encoding menu</figcaption></figure><ul>
+<li><strong><span class="ui">Language</span>:</strong> the application picks the language from the file extension and uses colors to make reading easier. To change a document&#39;s language, open the menu and choose another one.</li>
+</ul>
+<figure><img src="img/s10-menu-language.png" alt="Language menu"><figcaption>Language menu</figcaption></figure><ul>
+<li><strong><span class="ui">Encoding</span>:</strong> convert the document to <strong>UTF-8</strong> or <strong>UTF-8 with BOM</strong>, and choose <strong>Windows (CRLF)</strong> or <strong>Unix/Mac (LF)</strong> line endings. A conversion marks the document as changed; just save for it to take effect.</li>
+</ul>
+<p>The current encoding and line ending appear in the status bar.</p>
+<h2 id="10-snippets-and-macros">10. Snippets and macros</h2>
+<figure><img src="img/s12-snippets.png" alt="Snippets window"><figcaption>Snippets window</figcaption></figure><p><strong>Snippets</strong> are ready-made pieces of text. Open <strong><span class="ui">Tools</span> → <span class="ui">Snippets</span></strong>. The application already includes a few: <code>data</code>, <code>hora</code>, <code>codigo</code>, <code>tarefa</code>, <code>tabela</code>, <code>link</code> and <code>cabecalho</code>. To use one, type its shortcut in the editor and pick the suggestion (or press Ctrl+Space), or click <strong><span class="ui">Insert into editor</span></strong> in the window. To create your own, click <strong><span class="ui">New snippet</span></strong> and give it a name, a shortcut and the text. In the text, <code>$1</code> and <code>${2:default}</code> mark the places where the cursor stops, and <code>$0</code> is the final position. The application&#39;s own snippets cannot be edited, but you can duplicate them.</p>
+<figure><img src="img/s13-macros.png" alt="Macros window"><figcaption>Macros window</figcaption></figure><p><strong>Macros</strong> repeat a sequence you performed. Press <strong>Ctrl+Shift+R</strong> to start recording, type or edit whatever you like, and press <strong>Ctrl+Shift+R</strong> again to stop. After that, <strong>Ctrl+Shift+M</strong> runs the last recording. In <strong><span class="ui">Macros</span></strong> you choose how many times to repeat it and can save the macro with a name. What gets recorded: typed text, pasted text, the arrow keys, Home, End, Backspace, Delete, Tab, Enter and menu commands. Mouse clicks and Ctrl+Z are not recorded.</p>
+<h2 id="11-account-and-cloud-files">11. Account and cloud files</h2>
+<figure><img src="img/s16a-account-server.png" alt="First access: server address"><figcaption>First access: server address</figcaption></figure><p>With an account you can keep files in the cloud and open them on other computers. Open the <strong><span class="ui">Account</span></strong> menu.</p>
+<ol>
+<li><strong>Server address:</strong> the first time, enter the address given to you by your company or administrator. It starts with <code>https://</code>.</li>
+<li><strong>Create an account:</strong> click <strong><span class="ui">Create an account</span></strong> and fill in your email, name and a password of at least 10 characters.</li>
+</ol>
+<figure><img src="img/s16-account-login.png" alt="Sign-in screen"><figcaption>Sign-in screen</figcaption></figure><ol start="3">
+<li><strong>Sign in:</strong> use your email and password. If you forget the password, click <strong><span class="ui">I forgot my password</span></strong>: you will receive a code by email and can choose a new password.</li>
+</ol>
+<figure><img src="img/s18-account-profile.png" alt="User profile"><figcaption>User profile</figcaption></figure><ol start="4">
+<li><strong>Profile:</strong> in <strong><span class="ui">Account</span></strong>, open your profile to change your name, change your password or sign out. When you change your password, your other computers have to sign in again.</li>
+</ol>
+<figure><img src="img/s17-cloud-open.png" alt="List of files in the cloud"><figcaption>List of files in the cloud</figcaption></figure><ol start="5">
+<li><strong>Save to the cloud:</strong> <strong><span class="ui">File</span> → <span class="ui">Save to Cloud</span></strong>. Pick the path, for example <code>work/minutes.md</code>.</li>
+<li><strong>Open from the cloud:</strong> <strong><span class="ui">File</span> → <span class="ui">Open from Cloud</span></strong>. In the list you can open or delete files. In a document opened from the cloud, <strong>Ctrl+S</strong> saves back to the cloud.</li>
+</ol>
+<p>If the file has changed in the cloud since you last synced, the application warns you and asks whether to overwrite it. Each file can be up to 10 MB. If your system has no credential vault, the application warns you that you will need to sign in every time you open it.</p>
+<h2 id="12-languages">12. Languages</h2>
+<figure><img src="img/s08-flags.png" alt="Language flags next to the preview button"><figcaption>Language flags next to the preview button</figcaption></figure><p>The application is available in <strong>German, Spanish, French, English, Portuguese (Brazil) and Portuguese (Portugal)</strong>. It opens in your system&#39;s language; if there is no translation, it opens in English. To switch, click the flag of the language, to the left of the preview button. The change is immediate and remembered for next time. This manual opens in the language currently in use.</p>
+<h2 id="13-keyboard-shortcuts">13. Keyboard shortcuts</h2>
+<figure><img src="img/s14-shortcuts.png" alt="Keyboard shortcuts window"><figcaption>Keyboard shortcuts window</figcaption></figure><p>To see the list inside the application, open <strong><span class="ui">Help</span> → <span class="ui">Keyboard Shortcuts</span></strong>. The available shortcuts:</p>
+<h3>File</h3><table><tbody><tr><td><kbd>Ctrl+N</kbd></td><td>New document (Markdown)</td></tr><tr><td><kbd>Ctrl+O</kbd></td><td>Open files</td></tr><tr><td><kbd>Ctrl+Shift+K</kbd></td><td>Open folder</td></tr><tr><td><kbd>Ctrl+S</kbd></td><td>Save</td></tr><tr><td><kbd>Ctrl+Shift+S</kbd></td><td>Save As</td></tr><tr><td><kbd>Ctrl+W</kbd></td><td>Close Tab</td></tr><tr><td><kbd>Alt+F4</kbd></td><td>Exit</td></tr></tbody></table>
+<h3>Edit</h3><table><tbody><tr><td><kbd>Ctrl+Z</kbd></td><td>Undo</td></tr><tr><td><kbd>Ctrl+Y</kbd></td><td>Redo</td></tr><tr><td><kbd>Ctrl+X</kbd> / <kbd>Ctrl+C</kbd> / <kbd>Ctrl+V</kbd></td><td>Cut / copy / paste</td></tr><tr><td><kbd>Ctrl+A</kbd></td><td>Select All</td></tr><tr><td><kbd>Ctrl+L</kbd></td><td>Select line</td></tr><tr><td><kbd>Ctrl+D</kbd></td><td>Select next occurrence (multiple cursors)</td></tr><tr><td><kbd>Alt+Click</kbd></td><td>Add cursor</td></tr><tr><td><kbd>Shift+Alt+Drag</kbd></td><td>Column Selection</td></tr><tr><td><kbd>Alt+↑</kbd> / <kbd>Alt+↓</kbd></td><td>Move line up / down</td></tr><tr><td><kbd>Shift+Alt+↑</kbd> / <kbd>Shift+Alt+↓</kbd></td><td>Duplicate line</td></tr><tr><td><kbd>Ctrl+/</kbd></td><td>Toggle line comment</td></tr><tr><td><kbd>F1</kbd></td><td>Command Palette</td></tr></tbody></table>
+<h3>Search</h3><table><tbody><tr><td><kbd>Ctrl+F</kbd></td><td>Find</td></tr><tr><td><kbd>Ctrl+H</kbd></td><td>Replace</td></tr><tr><td><kbd>Ctrl+Shift+F</kbd></td><td>Find in files</td></tr><tr><td><kbd>Ctrl+G</kbd></td><td>Go to line</td></tr></tbody></table>
+<h3>View</h3><table><tbody><tr><td><kbd>Ctrl+Shift+B</kbd></td><td>Show or hide the sidebar</td></tr><tr><td><kbd>Ctrl+Shift+E</kbd></td><td>Switch between preview and editing (Markdown and JSON)</td></tr><tr><td><kbd>Ctrl++</kbd></td><td>Increase Font Size</td></tr><tr><td><kbd>Ctrl+-</kbd></td><td>Decrease Font Size</td></tr><tr><td><kbd>Ctrl+0</kbd></td><td>Reset Font Size</td></tr></tbody></table>
+<h3>Markdown and JSON</h3><table><tbody><tr><td><kbd>Ctrl+B</kbd></td><td>Bold</td></tr><tr><td><kbd>Ctrl+I</kbd></td><td>Italic</td></tr><tr><td><kbd>Ctrl+Shift+X</kbd></td><td>Strikethrough</td></tr><tr><td><kbd>Shift+Alt+F</kbd></td><td>Format document (JSON)</td></tr></tbody></table>
+<h3>Macros</h3><table><tbody><tr><td><kbd>Ctrl+Shift+R</kbd></td><td>Start or stop macro recording</td></tr><tr><td><kbd>Ctrl+Shift+M</kbd></td><td>Run Last Macro</td></tr></tbody></table><h2 id="14-frequently-asked-questions">14. Frequently asked questions</h2>
+<p><strong>I closed the application without saving. Did I lose my text?</strong>
+No. Unsaved text is kept automatically and comes back when you open the application again.</p>
+<p><strong>Why does Markdown open formatted and I cannot type?</strong>
+That is reading mode. Click <strong><span class="ui">Edit text</span></strong> (or Ctrl+Shift+E) to edit.</p>
+<p><strong>My JSON shows an error, but it opens in another program.</strong>
+The viewer follows the strict JSON standard: it does not accept a trailing comma, comments or single quotes. Use the error button to go straight to the problem.</p>
+<p><strong>The file is large and will not open.</strong>
+The limit is 50 MB per file.</p>
+<p><strong>I cannot sign in or save to the cloud.</strong>
+Check the server address and your internet connection. If the message says the session has expired, sign in again.</p>
+<p><strong>How do I see the application version?</strong>
+In <strong><span class="ui">Help</span> → <span class="ui">About Meu Editor de Arquivos</span></strong>.</p>
+<h2 id="15-about-and-support">15. About and support</h2>
+<figure><img src="img/s15-about.png" alt="About window"><figcaption>About window</figcaption></figure><figure><img src="img/s19-menu-help.png" alt="Help menu"><figcaption>Help menu</figcaption></figure><p><strong>Meu Editor de Arquivos</strong> was developed by Diego Mendes Rodrigues. The <strong><span class="ui">Technical Support</span></strong> item in the Help menu is not available in this version yet.</p>
+
+</main>
+</div>
+</body>
+</html>

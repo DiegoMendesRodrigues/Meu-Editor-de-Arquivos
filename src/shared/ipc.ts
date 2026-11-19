@@ -44,7 +44,8 @@ export const IpcChannels = {
   appInfo: 'app:info',
   beforeClose: 'app:before-close',
   closeWindow: 'app:close-window',
-  setLocale: 'app:set-locale'
+  setLocale: 'app:set-locale',
+  openManual: 'app:open-manual'
 } as const
 
 /** Limite de texto não salvo guardado na sessão (acima disso o app volta a perguntar ao fechar). */
@@ -279,6 +280,8 @@ export interface EditorApi {
 
   /** Avisa o processo principal do idioma da interface (diálogos nativos e mensagens de erro). */
   setLocale(locale: Locale): Promise<void>
+  /** Abre o manual do usuário, no idioma atual, numa janela própria. */
+  openManual(): Promise<void>
 
   getAppInfo(): Promise<AppInfo>
   /** O Main avisa que o usuário quer fechar a janela; o Renderer decide e chama closeWindow(). */

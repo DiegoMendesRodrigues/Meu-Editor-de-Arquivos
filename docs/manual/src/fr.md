@@ -1,0 +1,200 @@
+# Meu Editor de Arquivos — Manuel d'utilisation
+
+Version {{version}}
+
+## 1. Bienvenue
+
+**Meu Editor de Arquivos** est un éditeur léger pour tous ceux qui travaillent avec des textes, des notes, des scripts, des fichiers de configuration, des journaux et du code. Il fonctionne sous Windows 11, Debian 12 et 13 et Ubuntu 22.04 ou plus récent, et **n'a pas besoin d'internet** pour modifier vos fichiers.
+
+Ce que vous y trouverez :
+
+- des onglets pour plusieurs fichiers à la fois, avec récupération automatique de ce que vous avez saisi ;
+- du Markdown qui s'ouvre **mis en forme**, avec un bouton pour modifier le texte ;
+- un **visionneur JSON** dans lequel vous ouvrez et refermez des parties du fichier ;
+- la recherche et le remplacement dans un fichier ou dans un dossier entier ;
+- la coloration syntaxique de dizaines de langages, des extraits de texte (snippets) et des macros ;
+- un compte utilisateur pour conserver des fichiers dans le cloud et les ouvrir sur d'autres ordinateurs ;
+- une interface en six langues.
+
+## 2. Découvrir l'écran
+
+![Écran principal avec un dossier ouvert et un document Markdown](img/s01-main.png)
+
+1. **Barre de menus** (en haut) : {{menu.file}}, {{menu.edit}}, {{menu.search}}, {{menu.view}}, {{menu.encoding}}, {{menu.language}}, {{menu.tools}}, {{menu.account}} et {{menu.help}}.
+2. **Barre d'outils** : raccourcis vers les commandes les plus courantes. Les boutons de mise en forme apparaissent quand le document est en Markdown. À droite se trouvent les **drapeaux des langues** et le bouton qui alterne entre l'aperçu et la modification.
+3. **Barre latérale** (à gauche) : les documents ouverts, l'explorateur du dossier ouvert et vos fichiers récents. Pour la masquer ou l'afficher, utilisez **Ctrl+Shift+B**.
+4. **Onglets** : chaque document a le sien. Un point (●) à côté du nom indique des modifications pas encore écrites dans le fichier.
+5. **Zone d'édition** : c'est là que vous lisez et écrivez.
+6. **Panneau inférieur** : affiche les résultats de la recherche dans les fichiers. Il s'ouvre tout seul quand vous utilisez la recherche.
+7. **Barre d'état** (en bas) : ligne et colonne du curseur, taille du fichier, encodage, type de fin de ligne et langage du document.
+
+## 3. Créer et ouvrir des fichiers
+
+![Le bouton Nouveau avec la flèche qui liste les types de document](img/s02-new-menu.png)
+
+- **Nouveau document :** cliquez sur **{{toolbar.new}}** ou appuyez sur **Ctrl+N**. Un nouveau document est en Markdown (.md). La **flèche à côté du bouton** permet de créer un autre type : .md (Markdown), .txt (texte), .py (Python) ou .sql (SQL).
+- **Ouvrir des fichiers :** **{{menu.file}} → {{menu.file.open}}** ou **Ctrl+O**. Vous pouvez en choisir plusieurs à la fois. La limite est de 50 Mo par fichier.
+- **Ouvrir un dossier :** **{{menu.file}} → {{menu.file.openFolder}}** ou **Ctrl+Shift+K**. Le dossier apparaît dans l'explorateur de la barre latérale, et un clic sur un fichier l'ouvre. Utilisez **{{menu.file.closeFolder}}** pour le fermer.
+- **Fichiers récents :** les derniers fichiers utilisés figurent dans la liste **Récents** de la barre latérale. Cliquez sur l'un d'eux pour le rouvrir.
+
+Si un autre programme modifie un fichier que vous avez ouvert, l'application le recharge toute seule. Si ce document contient des modifications de votre part non enregistrées, elle vous demande d'abord. Si le fichier est supprimé ou déplacé, le nom de l'onglet devient rouge et barré.
+
+![Menu Fichier](img/s07-menu-file.png)
+
+## 4. Enregistrer et documents temporaires
+
+![Avis de documents restaurés à la réouverture de l'application](img/s20-restored.png)
+
+- **{{menu.file.save}}** (**Ctrl+S**) écrit le document dans son fichier. Pour un nouveau document, l'application demande le nom et l'emplacement.
+- **{{menu.file.saveAs}}** (**Ctrl+Shift+S**) écrit une copie sous un autre nom ou à un autre endroit.
+- **{{menu.file.saveAll}}** écrit tous les documents qui ont des modifications.
+
+**Vous ne perdez pas ce que vous avez saisi.** Quelques secondes après chaque modification, l'application conserve automatiquement tous les documents ouverts, y compris ceux qui n'ont jamais été enregistrés. Cela se fait que vous enregistriez ou non.
+
+Quand vous **fermez l'application**, elle ne pose aucune question et ne supprime rien. À la prochaine ouverture, les onglets, le dossier et le texte non enregistré reviennent tels quels, avec un avis jaune en haut de l'écran. Enregistrez quand vous voulez écrire dans le véritable fichier.
+
+Quand vous **fermez un onglet** contenant des modifications, l'application demande s'il faut enregistrer, ne pas enregistrer ou annuler. Deux remarques : l'historique d'annulation (Ctrl+Z) n'est pas conservé d'une session à l'autre, et la récupération automatique conserve jusqu'à 100 Mo de texte non enregistré.
+
+## 5. Modifier du texte
+
+![Caractères invisibles : espaces, tabulations et fins de ligne](img/s11-invisibles.png)
+
+Les commandes de modification se trouvent dans **{{menu.edit}}** et les options d'affichage dans **{{menu.view}}**.
+
+- **Annuler et rétablir :** Ctrl+Z et Ctrl+Y.
+- **Rechercher et remplacer** dans le document : Ctrl+F et Ctrl+H. Pour aller à une ligne, utilisez Ctrl+G.
+- **Plusieurs curseurs :** maintenez Alt et cliquez là où vous voulez un autre curseur, ou appuyez sur Ctrl+D pour sélectionner l'occurrence suivante du mot.
+- **{{menu.edit.columnSelection}} :** maintenez Maj+Alt et faites glisser la souris pour modifier plusieurs lignes dans la même colonne.
+- **Lignes :** Alt+↑ et Alt+↓ déplacent la ligne ; Shift+Alt+↑ et Shift+Alt+↓ la dupliquent ; Ctrl+/ la commente ou la décommente.
+- **Ranger :** {{menu.edit.sortAsc}}, {{menu.edit.sortDesc}}, {{menu.edit.removeDuplicates}} et {{menu.edit.trimWhitespace}}.
+- **{{menu.view.invisibles}} :** affiche les espaces (·), les tabulations (→) et la fin de chaque ligne (¶). Très pratique pour repérer les espaces en trop.
+- **{{menu.view.wordWrap}}** et **{{menu.view.foldAll}} / {{menu.view.unfoldAll}}** aident à lire les longs fichiers.
+- **Taille de la police :** Ctrl++ l'agrandit, Ctrl+- la réduit et Ctrl+0 rétablit la taille par défaut.
+- **Indentation :** dans **{{menu.edit}}**, choisissez entre espaces et tabulation, ainsi que la taille (2, 4 ou 8 colonnes).
+
+Vos préférences d'affichage sont conservées pour la prochaine fois. Les textes propres à l'éditeur, comme la zone de recherche (Ctrl+F) et la palette de commandes (F1), apparaissent en anglais.
+
+## 6. Markdown
+
+![Document Markdown en mode modification, avec la barre de mise en forme](img/s03-markdown-edit.png)
+
+Les fichiers Markdown (.md) s'ouvrent **mis en forme**, prêts à être lus. Pour modifier le texte, cliquez sur **{{toolbar.editText}}** (ou appuyez sur **Ctrl+Shift+E**) ; pour revenir à la lecture, cliquez sur **{{toolbar.preview}}**.
+
+En mode modification, la barre d'outils propose la mise en forme : titres, liste à puces, liste numérotée, retrait, **gras** (Ctrl+B), *italique* (Ctrl+I), ~~barré~~ (Ctrl+Shift+X), lien, tableau et effacement de la mise en forme. Sélectionnez le texte et cliquez sur le bouton ; sans sélection, l'application place un modèle au niveau du curseur.
+
+En lecture, les liens s'ouvrent dans le navigateur du système. Les images du document ne sont pas affichées dans la version actuelle.
+
+## 7. Fichiers JSON
+
+![Fichier JSON en arborescence, avec un élément sélectionné](img/s04-json-tree.png)
+
+Les fichiers .json s'ouvrent en **arborescence**. Cliquez sur la flèche d'un élément pour ouvrir ou refermer cette partie. Utilisez **{{menu.view.unfoldAll}}** et **{{menu.view.foldAll}}** pour tout ouvrir ou tout refermer. Quand vous cliquez sur un élément, la barre affiche son chemin, et vous pouvez copier le **{{json.path}}** ou la **{{json.value}}**. Les très longues listes s'affichent par petites parties, avec un bouton pour en voir davantage.
+
+Pour modifier, cliquez sur **{{toolbar.editText}}**. En mode modification, le bouton **{{toolbar.formatJson}}** (Shift+Alt+F) remet le fichier en ordre.
+
+![Message d'erreur d'un JSON invalide, avec ligne et colonne](img/s05-json-error.png)
+
+Si le fichier contient une erreur, l'application explique le problème et indique la ligne et la colonne. Le bouton **{{json.editGoToError}}** ouvre l'éditeur directement à l'endroit de l'erreur.
+
+## 8. Recherche dans les fichiers
+
+![Panneau de recherche avec les résultats regroupés par fichier](img/s06-search.png)
+
+Ouvrez un dossier et choisissez **{{menu.search}} → {{menu.search.findInFiles}}** (**Ctrl+Shift+F**). Le panneau inférieur s'ouvre.
+
+1. Saisissez le texte et cliquez sur **{{search.run}}** (ou appuyez sur Entrée).
+2. Affinez la recherche avec les trois boutons voisins : **{{search.caseSensitive}}**, **{{search.wholeWord}}** et **{{search.regex}}**.
+3. Pour limiter les fichiers, écrivez un filtre, par exemple `*.md, docs/**`.
+4. Les résultats apparaissent regroupés par fichier, avec la ligne et la colonne. Cliquez sur un résultat pour ouvrir le fichier et sélectionner le passage.
+
+Pour remplacer le texte, saisissez le nouveau dans le champ de remplacement et cliquez sur **{{search.replaceAll}}**. Décochez les fichiers qui ne doivent pas changer. L'application demande une confirmation, car **le remplacement est écrit directement dans les fichiers et ne peut pas être annulé depuis l'éditeur**. Les fichiers ouverts qui ont des modifications non enregistrées sont ignorés, pour que vous ne perdiez pas votre travail.
+
+La recherche n'entre pas dans des dossiers comme `node_modules` et `.git`, ni dans les fichiers binaires ou de plus de 5 Mo. Elle affiche au maximum 5 000 occurrences à la fois.
+
+## 9. Langage, encodage et fins de ligne
+
+![Menu Encodage](img/s09-menu-encoding.png)
+
+- **{{menu.language}} :** l'application choisit le langage d'après l'extension du fichier et utilise des couleurs pour faciliter la lecture. Pour changer le langage d'un document, ouvrez le menu et choisissez-en un autre.
+
+![Menu Langage](img/s10-menu-language.png)
+
+- **{{menu.encoding}} :** convertissez le document en **UTF-8** ou en **UTF-8 avec BOM**, et choisissez les fins de ligne **Windows (CRLF)** ou **Unix/Mac (LF)**. Une conversion marque le document comme modifié ; il suffit d'enregistrer pour qu'elle soit effective.
+
+L'encodage et la fin de ligne actuels s'affichent dans la barre d'état.
+
+## 10. Snippets et macros
+
+![Fenêtre des snippets](img/s12-snippets.png)
+
+Les **snippets** sont des extraits de texte tout prêts. Ouvrez **{{menu.tools}} → {{menu.tools.snippets}}**. L'application en fournit déjà quelques-uns : `data`, `hora`, `codigo`, `tarefa`, `tabela`, `link` et `cabecalho`. Pour en utiliser un, saisissez son raccourci dans l'éditeur et choisissez la suggestion (ou appuyez sur Ctrl+Espace), ou cliquez sur **{{snippets.insert}}** dans la fenêtre. Pour créer le vôtre, cliquez sur **{{snippets.new}}** et donnez-lui un nom, un raccourci et le texte. Dans le texte, `$1` et `${2:défaut}` marquent les endroits où le curseur s'arrête, et `$0` est la position finale. Les snippets fournis ne peuvent pas être modifiés, mais vous pouvez les dupliquer.
+
+![Fenêtre des macros](img/s13-macros.png)
+
+Les **macros** répètent une séquence que vous avez effectuée. Appuyez sur **Ctrl+Shift+R** pour commencer l'enregistrement, saisissez ou modifiez ce que vous voulez, puis appuyez de nouveau sur **Ctrl+Shift+R** pour l'arrêter. Ensuite, **Ctrl+Shift+M** exécute le dernier enregistrement. Dans **{{menu.tools.macros}}**, vous choisissez le nombre de répétitions et pouvez enregistrer la macro sous un nom. Sont enregistrés : le texte saisi, le texte collé, les touches fléchées, Début, Fin, Retour arrière, Suppr, Tab, Entrée et les commandes des menus. Les clics de souris et Ctrl+Z ne sont pas enregistrés.
+
+## 11. Compte et fichiers dans le cloud
+
+![Premier accès : adresse du serveur](img/s16a-account-server.png)
+
+Avec un compte, vous conservez des fichiers dans le cloud et les ouvrez sur d'autres ordinateurs. Ouvrez le menu **{{menu.account}}**.
+
+1. **Adresse du serveur :** la première fois, saisissez l'adresse que votre entreprise ou votre administrateur vous a communiquée. Elle commence par `https://`.
+2. **Créer un compte :** cliquez sur **{{account.link.register}}** et renseignez votre e-mail, votre nom et un mot de passe d'au moins 10 caractères.
+
+![Écran de connexion](img/s16-account-login.png)
+
+3. **Se connecter :** utilisez votre e-mail et votre mot de passe. Si vous oubliez le mot de passe, cliquez sur **{{account.link.forgot}}** : vous recevez un code par e-mail et choisissez un nouveau mot de passe.
+
+![Profil de l'utilisateur](img/s18-account-profile.png)
+
+4. **Profil :** dans **{{menu.account}}**, ouvrez votre profil pour changer le nom, changer le mot de passe ou vous déconnecter. Quand vous changez le mot de passe, vos autres ordinateurs doivent se reconnecter.
+
+![Liste des fichiers dans le cloud](img/s17-cloud-open.png)
+
+5. **Enregistrer dans le cloud :** **{{menu.file}} → {{menu.file.saveCloud}}**. Choisissez le chemin, par exemple `travail/compte-rendu.md`.
+6. **Ouvrir depuis le cloud :** **{{menu.file}} → {{menu.file.openCloud}}**. Dans la liste, vous ouvrez ou supprimez des fichiers. Dans un document ouvert depuis le cloud, **Ctrl+S** enregistre de nouveau dans le cloud.
+
+Si le fichier a changé dans le cloud depuis la dernière fois, l'application vous prévient et demande si vous voulez l'écraser. Chaque fichier peut peser jusqu'à 10 Mo. Si votre système n'a pas de coffre d'identifiants, l'application vous prévient que vous devrez vous reconnecter à chaque ouverture.
+
+## 12. Langues
+
+![Drapeaux des langues à côté du bouton d'aperçu](img/s08-flags.png)
+
+L'application est disponible en **allemand, espagnol, français, anglais, portugais (Brésil) et portugais (Portugal)**. Elle s'ouvre dans la langue de votre système ; s'il n'y a pas de traduction, elle s'ouvre en anglais. Pour changer, cliquez sur le drapeau de la langue, à gauche du bouton d'aperçu. Le changement est immédiat et conservé pour la prochaine fois. Ce manuel s'ouvre dans la langue utilisée.
+
+## 13. Raccourcis clavier
+
+![Fenêtre des raccourcis clavier](img/s14-shortcuts.png)
+
+Pour voir la liste dans l'application, ouvrez **{{menu.help}} → {{menu.help.shortcuts}}**. Les raccourcis disponibles :
+
+{{shortcuts}}
+
+## 14. Questions fréquentes
+
+**J'ai fermé l'application sans enregistrer. Ai-je perdu mon texte ?**
+Non. Le texte non enregistré est conservé automatiquement et revient quand vous rouvrez l'application.
+
+**Pourquoi le Markdown s'ouvre-t-il mis en forme sans que je puisse écrire ?**
+C'est le mode lecture. Cliquez sur **{{toolbar.editText}}** (ou Ctrl+Shift+E) pour modifier.
+
+**Mon JSON affiche une erreur, mais il s'ouvre dans un autre programme.**
+Le visionneur suit strictement la norme JSON : il n'accepte ni virgule superflue à la fin, ni commentaires, ni apostrophes. Utilisez le bouton de l'erreur pour aller directement au problème.
+
+**Le fichier est volumineux et ne s'ouvre pas.**
+La limite est de 50 Mo par fichier.
+
+**Je n'arrive pas à me connecter ni à enregistrer dans le cloud.**
+Vérifiez l'adresse du serveur et la connexion internet. Si le message indique que la session a expiré, reconnectez-vous.
+
+**Comment voir la version de l'application ?**
+Dans **{{menu.help}} → {{menu.help.about}}**.
+
+## 15. À propos et assistance
+
+![Fenêtre À propos](img/s15-about.png)
+
+![Menu Aide](img/s19-menu-help.png)
+
+**Meu Editor de Arquivos** a été développé par Diego Mendes Rodrigues. L'élément **{{menu.help.support}}** du menu Aide n'est pas encore disponible dans cette version.

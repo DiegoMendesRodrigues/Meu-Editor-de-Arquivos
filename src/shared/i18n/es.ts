@@ -42,6 +42,8 @@ export const es: Messages = {
   "api.not_found": "Archivo no encontrado.",
   "api.too_large": "El archivo supera los 10 MB.",
   "api.internal": "Error interno del servidor.",
+  "err.manualMissing": "No se encontró el manual del usuario.",
+  "err.openManual": "No se pudo abrir el manual del usuario.",
   "menu.file": "Archivo",
   "menu.edit": "Editar",
   "menu.search": "Buscar",

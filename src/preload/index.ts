@@ -52,6 +52,7 @@ const api: EditorApi = {
   cloudSave: (req) => ipcRenderer.invoke(IpcChannels.cloudSave, req),
   cloudDelete: (id) => ipcRenderer.invoke(IpcChannels.cloudDelete, id),
 
+  openManual: () => ipcRenderer.invoke(IpcChannels.openManual),
   setLocale: (locale) => ipcRenderer.invoke(IpcChannels.setLocale, locale),
   getAppInfo: () => ipcRenderer.invoke(IpcChannels.appInfo),
   onBeforeClose: (listener) => {

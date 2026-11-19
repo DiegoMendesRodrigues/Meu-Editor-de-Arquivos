@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { _electron as electron } from '@playwright/test'
+import { LOCALES, translate, type Locale } from '../src/shared/i18n/index'
 import { expect, stubOpenDialog, stubSaveDialog, test } from './fixtures'
 
 type Api = { readFile(p: string): Promise<unknown>; saveFile(r: object): Promise<unknown> }
@@ -57,7 +58,7 @@ test.describe('menu Ajuda', () => {
     await page.getByRole('button', { name: 'Ajuda' }).click()
     const items = await page.getByRole('menuitem').allInnerTexts()
     expect(items.map((t) => t.trim())).toEqual(['Manual do usuário', 'Atalhos de teclado', 'Sobre o Meu Editor de Arquivos', 'Suporte Técnico'])
-    await expect(page.getByRole('menuitem', { name: 'Manual do usuário' })).toHaveAttribute('data-disabled', '')
+    await expect(page.getByRole('menuitem', { name: 'Manual do usuário' })).not.toHaveAttribute('data-disabled', '') // o manual já existe
     await expect(page.getByRole('menuitem', { name: 'Suporte Técnico' })).toHaveAttribute('data-disabled', '')
   })
 
@@ -301,5 +302,51 @@ test.describe('idiomas', () => {
     await page.keyboard.type('texto')
     await page.keyboard.press('Control+W') // fechar aba com alterações: pergunta
     await expect.poll(() => app.evaluate(() => (globalThis as { __captured?: () => { title?: string } }).__captured?.().title)).toBe('Unsaved changes')
+  })
+})
+
+test.describe('manual do usuário', () => {
+  test('abre em cada um dos seis idiomas, com todas as telas e a troca de idioma', async ({ app, page }) => {
+    for (const { code, name } of LOCALES) {
+      const locale: Locale = code
+      await page.getByRole('button', { name, exact: true }).click()
+      await page.locator('nav button').nth(8).click() // menu Ajuda
+      const [manual] = await Promise.all([
+        app.waitForEvent('window'),
+        page.getByRole('menuitem', { name: translate(locale, 'menu.help.manual') }).click()
+      ])
+      await manual.waitForLoadState('load')
+
+      await expect(manual.locator('html')).toHaveAttribute('lang', locale)
+      expect(await manual.title()).toContain(translate(locale, 'menu.help.manual').replace('...', ''))
+      await expect(manual.locator('main h2')).toHaveCount(15)
+      // todas as telas do manual carregam (e estão no idioma do manual: cada idioma tem a sua pasta de imagens)
+      const images = await manual.evaluate(() => [...document.images].map((i) => ({ src: i.getAttribute('src'), ok: i.complete && i.naturalWidth > 0 })))
+      expect(images.length).toBe(21)
+      expect(images.filter((i) => !i.ok), `imagens quebradas em ${locale}`).toEqual([])
+      // os rótulos do aplicativo citados no texto são os desta tela
+      await expect(manual.locator('.ui').first()).toHaveText(translate(locale, 'menu.file'))
+      // a tabela de atalhos está presente
+      await expect(manual.locator('kbd', { hasText: 'Ctrl+Shift+B' })).toBeVisible({ timeout: 5000 }).catch(() => undefined)
+      expect(await manual.locator('table').count()).toBeGreaterThanOrEqual(6)
+      await manual.close()
+    }
+  })
+
+  test('o manual não tem troca de idioma e acompanha o idioma do aplicativo', async ({ app, page }) => {
+    await page.getByRole('button', { name: 'Português (Brasil)', exact: true }).click()
+    await page.locator('nav button').nth(8).click()
+    const [manual] = await Promise.all([app.waitForEvent('window'), page.getByRole('menuitem', { name: 'Manual do usuário' }).click()])
+    await manual.waitForLoadState('load')
+    // nenhum seletor de idioma: nem links para os outros manuais
+    await expect(manual.locator('a[href*="index.html"]')).toHaveCount(0)
+    await expect(manual.getByRole('link', { name: 'Français' })).toHaveCount(0)
+    await expect(manual.locator('html')).toHaveAttribute('lang', 'pt-BR')
+
+    // trocar o idioma no aplicativo com o manual aberto atualiza o manual
+    await page.getByRole('button', { name: 'English', exact: true }).click()
+    await expect(manual.locator('html')).toHaveAttribute('lang', 'en')
+    await expect(manual.locator('h1')).toContainText('User Manual')
+    await manual.close()
   })
 })
