@@ -92,7 +92,7 @@ export function MenuBar() {
       items: [
         { label: 'Localizar...', shortcut: 'Ctrl+F', action: cmd.find },
         { label: 'Substituir...', shortcut: 'Ctrl+H', action: cmd.replace },
-        { label: 'Localizar em arquivos...' },
+        { label: 'Localizar em arquivos...', shortcut: 'Ctrl+Shift+F', action: () => cmd.openSearch() },
         'separator',
         { label: 'Ir para linha...', shortcut: 'Ctrl+G', action: cmd.goToLine }
       ]

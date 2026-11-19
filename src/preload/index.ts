@@ -20,6 +20,8 @@ const api: EditorApi = {
 
   openFolder: () => ipcRenderer.invoke(IpcChannels.openFolder),
   listFolder: (path) => ipcRenderer.invoke(IpcChannels.listFolder, path),
+  searchFolder: (req) => ipcRenderer.invoke(IpcChannels.searchFolder, req),
+  replaceInFiles: (req) => ipcRenderer.invoke(IpcChannels.replaceInFiles, req),
 
   getRecentFiles: () => ipcRenderer.invoke(IpcChannels.recentList),
   clearRecentFiles: () => ipcRenderer.invoke(IpcChannels.recentClear),

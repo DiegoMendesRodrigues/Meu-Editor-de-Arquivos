@@ -4,6 +4,7 @@ import log from 'electron-log/main'
 import { registerFileHandlers } from './ipc/files'
 import { guardWindowClose, registerAppHandlers } from './ipc/app'
 import { registerFolderHandlers } from './ipc/folders'
+import { registerSearchHandlers } from './ipc/search'
 import { loadRecent, registerRecentHandlers } from './ipc/recent'
 import { setWatchTarget } from './watcher'
 import { registerSessionHandlers } from './ipc/session'
@@ -66,6 +67,7 @@ app.whenReady().then(async () => {
   await loadRecent()
   registerFileHandlers()
   registerFolderHandlers()
+  registerSearchHandlers()
   registerRecentHandlers()
   registerSessionHandlers()
   registerAppHandlers()

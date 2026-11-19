@@ -1,3 +1,6 @@
+import type { SearchMatch, SearchOptions } from './search'
+export type { SearchMatch, SearchOptions } from './search'
+
 /**
  * Contrato entre Main, Preload e Renderer.
  * Os nomes de canais e os tipos ficam aqui para que as três camadas
@@ -13,6 +16,8 @@ export const IpcChannels = {
   fileChanged: 'file:changed',
   openFolder: 'folder:open',
   listFolder: 'folder:list',
+  searchFolder: 'search:folder',
+  replaceInFiles: 'search:replace',
   recentList: 'recent:list',
   recentClear: 'recent:clear',
   confirmUnsaved: 'dialog:confirm-unsaved',
@@ -65,6 +70,41 @@ export interface FolderEntry {
   isDirectory: boolean
 }
 
+export interface SearchRequest extends SearchOptions {
+  folder: string
+  /** Padrões separados por vírgula (ex.: "*.ts, docs/**"). Vazio = todos os arquivos de texto. */
+  include: string
+}
+
+export interface SearchFileResult {
+  path: string
+  /** Caminho relativo à pasta, com "/". */
+  relPath: string
+  matches: SearchMatch[]
+}
+
+export interface SearchResponse {
+  files: SearchFileResult[]
+  totalMatches: number
+  filesScanned: number
+  /** Arquivos ignorados por serem binários ou grandes demais. */
+  filesSkipped: number
+  /** Verdadeiro se a busca parou num limite (de ocorrências ou de arquivos). */
+  truncated: boolean
+}
+
+export interface ReplaceRequest extends SearchRequest {
+  replacement: string
+  /** Arquivos (caminhos absolutos dentro da pasta) em que a substituição será aplicada. */
+  paths: string[]
+}
+
+export interface ReplaceResponse {
+  filesChanged: number
+  replacements: number
+  errors: string[]
+}
+
 export interface FileChange {
   path: string
   kind: 'changed' | 'deleted'
@@ -113,6 +153,8 @@ export interface EditorApi {
 
   openFolder(): Promise<FolderInfo | null>
   listFolder(path: string): Promise<FolderEntry[]>
+  searchFolder(req: SearchRequest): Promise<SearchResponse>
+  replaceInFiles(req: ReplaceRequest): Promise<ReplaceResponse>
 
   getRecentFiles(): Promise<string[]>
   clearRecentFiles(): Promise<void>

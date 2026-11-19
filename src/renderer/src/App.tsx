@@ -27,6 +27,7 @@ function useGlobalShortcuts(): void {
         void fn()
       }
       if (key === 'n' && !e.shiftKey) run(cmd.newFile)
+      else if (key === 'f' && e.shiftKey) run(() => cmd.openSearch())
       else if (key === 'k' && e.shiftKey) run(cmd.openFolder)
       else if (key === 'o' && !e.shiftKey) run(cmd.openFile)
       else if (key === 's' && e.shiftKey) run(cmd.saveAs)

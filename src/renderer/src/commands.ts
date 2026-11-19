@@ -4,7 +4,9 @@
  */
 import { useDocuments, isDirty, canPreview, type EditorDocument } from '@/store/documents'
 import { useWorkspace } from '@/store/workspace'
-import { runEditorAction } from '@/editor/editorRef'
+import { getActiveEditor, revealInDocument, runEditorAction } from '@/editor/editorRef'
+import { useSearch } from '@/store/search'
+import { useView } from '@/store/view'
 import { flushSession } from '@/session'
 
 const docs = () => useDocuments.getState()
@@ -164,3 +166,21 @@ export function togglePreview(): void {
 
 /** Formata (indenta) o documento inteiro com o formatador da linguagem, quando houver. */
 export const formatDocument = (): void => runEditorAction('editor.action.formatDocument')
+
+/** Abre o painel de busca em arquivos; usa o texto selecionado no editor como consulta. */
+export function openSearch(): void {
+  const ed = getActiveEditor()
+  const sel = ed?.getModel() && ed.getSelection() && !ed.getSelection()!.isEmpty() ? ed.getModel()!.getValueInRange(ed.getSelection()!) : ''
+  if (sel && !sel.includes('\n') && sel.length <= 200) useSearch.getState().setField('query', sel)
+  if (!useView.getState().bottomPanelVisible) useView.getState().toggle('bottomPanelVisible')
+  useSearch.getState().focusQuery()
+}
+
+/** Abre o arquivo de um resultado de busca e seleciona a ocorrência. */
+export async function openMatch(path: string, line: number, column: number, length: number): Promise<void> {
+  await openPath(path)
+  const doc = docs().documents.find((d) => d.path === path)
+  if (!doc) return
+  if (doc.mode === 'preview') docs().setMode(doc.id, 'edit')
+  revealInDocument(doc.id, line, column, length)
+}
