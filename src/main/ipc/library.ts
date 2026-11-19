@@ -1,9 +1,10 @@
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { app, ipcMain } from 'electron'
+import { app } from 'electron'
 import log from 'electron-log/main'
 import { z } from 'zod'
 import { IpcChannels } from '@shared/ipc'
+import { handle } from './secure'
 
 /** Snippets e macros do usuário: JSON na pasta de dados, gravado de forma atômica. */
 const snippetSchema = z.array(
@@ -38,7 +39,7 @@ const filePath = (kind: 'snippets' | 'macros'): string => join(app.getPath('user
 const writing: Record<string, Promise<void>> = {}
 
 export function registerLibraryHandlers(): void {
-  ipcMain.handle(IpcChannels.libraryLoad, async (_e, rawKind: unknown): Promise<unknown[]> => {
+  handle(IpcChannels.libraryLoad, async (_e, rawKind: unknown): Promise<unknown[]> => {
     const kind = kindSchema.parse(rawKind)
     try {
       return schemas[kind].parse(JSON.parse(await readFile(filePath(kind), 'utf8')))
@@ -48,7 +49,7 @@ export function registerLibraryHandlers(): void {
     }
   })
 
-  ipcMain.handle(IpcChannels.librarySave, async (_e, rawKind: unknown, raw: unknown): Promise<void> => {
+  handle(IpcChannels.librarySave, async (_e, rawKind: unknown, raw: unknown): Promise<void> => {
     const kind = kindSchema.parse(rawKind)
     const data = schemas[kind].parse(raw)
     const target = filePath(kind)

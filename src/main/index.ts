@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { app, BrowserWindow, Menu, shell } from 'electron'
+import { app, BrowserWindow, Menu, session, shell } from 'electron'
 import log from 'electron-log/main'
 import { registerFileHandlers } from './ipc/files'
 import { guardWindowClose, registerAppHandlers } from './ipc/app'
@@ -12,6 +12,25 @@ import { registerLibraryHandlers } from './ipc/library'
 import { registerSessionHandlers } from './ipc/session'
 
 log.initialize()
+
+// Uma única instância: duas janelas gravariam a mesma sessão e os mesmos arquivos de dados.
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    const win = BrowserWindow.getAllWindows()[0]
+    if (win) {
+      if (win.isMinimized()) win.restore()
+      win.focus()
+    }
+  })
+}
+
+// Endurecimento de qualquer conteúdo web: sem <webview>, sem navegação para fora, sem permissões de dispositivo.
+app.on('web-contents-created', (_e, contents) => {
+  contents.on('will-attach-webview', (event) => event.preventDefault())
+  contents.on('will-redirect', (event) => event.preventDefault())
+})
 log.info(`Iniciando Meu Editor de Arquivos ${app.getVersion()} em ${process.platform}`)
 
 function createWindow(): void {
@@ -66,6 +85,9 @@ function createWindow(): void {
 Menu.setApplicationMenu(null)
 
 app.whenReady().then(async () => {
+  // Editor de texto: nenhuma permissão (câmera, microfone, notificações, localização...) é concedida.
+  session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false))
+  session.defaultSession.setPermissionCheckHandler(() => false)
   await loadRecent()
   await loadAccount()
   registerFileHandlers()

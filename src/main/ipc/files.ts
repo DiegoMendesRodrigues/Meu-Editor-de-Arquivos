@@ -1,6 +1,6 @@
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
-import { BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent } from 'electron'
+import { BrowserWindow, dialog, type IpcMainInvokeEvent } from 'electron'
 import log from 'electron-log/main'
 import { z } from 'zod'
 import { IpcChannels, type OpenedFile, type SavedFile, type UnsavedChoice } from '@shared/ipc'
@@ -8,6 +8,7 @@ import { decodeText, encodeText } from './textCodec'
 import { assertAuthorized, authorizeFile } from './access'
 import { addRecent } from './recent'
 import { stopWatching, watchFile } from '../watcher'
+import { handle } from './secure'
 
 /** Acima deste tamanho o arquivo não é aberto (o suporte a arquivos grandes vem depois). */
 const MAX_OPEN_BYTES = 50 * 1024 * 1024
@@ -57,7 +58,7 @@ async function messageBox(e: IpcMainInvokeEvent, options: Electron.MessageBoxOpt
 }
 
 export function registerFileHandlers(): void {
-  ipcMain.handle(IpcChannels.openFiles, async (e): Promise<OpenedFile[]> => {
+  handle(IpcChannels.openFiles, async (e): Promise<OpenedFile[]> => {
     const win = ownerWindow(e)
     const options: Electron.OpenDialogOptions = {
       title: 'Abrir arquivos',
@@ -69,11 +70,11 @@ export function registerFileHandlers(): void {
     return Promise.all(result.filePaths.map(readOne))
   })
 
-  ipcMain.handle(IpcChannels.readFile, async (_e, raw: unknown): Promise<OpenedFile> => {
+  handle(IpcChannels.readFile, async (_e, raw: unknown): Promise<OpenedFile> => {
     return readOne(await assertAuthorized(pathSchema.parse(raw)))
   })
 
-  ipcMain.handle(IpcChannels.saveFile, async (_e, raw: unknown): Promise<SavedFile> => {
+  handle(IpcChannels.saveFile, async (_e, raw: unknown): Promise<SavedFile> => {
     const req = saveSchema.parse(raw)
     const target = await assertAuthorized(req.path).catch(() => {
       log.warn(`Gravação recusada em caminho não autorizado: ${resolve(req.path)}`)
@@ -82,7 +83,7 @@ export function registerFileHandlers(): void {
     return writeOne(target, req.content, req.encoding)
   })
 
-  ipcMain.handle(IpcChannels.saveFileAs, async (e, raw: unknown): Promise<SavedFile | null> => {
+  handle(IpcChannels.saveFileAs, async (e, raw: unknown): Promise<SavedFile | null> => {
     const req = saveAsSchema.parse(raw)
     const win = ownerWindow(e)
     const options: Electron.SaveDialogOptions = {
@@ -96,9 +97,9 @@ export function registerFileHandlers(): void {
     return writeOne(resolve(result.filePath), req.content, req.encoding)
   })
 
-  ipcMain.handle(IpcChannels.unwatchFile, (_e, raw: unknown) => stopWatching(resolve(pathSchema.parse(raw))))
+  handle(IpcChannels.unwatchFile, (_e, raw: unknown) => stopWatching(resolve(pathSchema.parse(raw))))
 
-  ipcMain.handle(IpcChannels.confirmUnsaved, async (e, raw: unknown): Promise<UnsavedChoice> => {
+  handle(IpcChannels.confirmUnsaved, async (e, raw: unknown): Promise<UnsavedChoice> => {
     const names = z.array(z.string()).parse(raw)
     const single = names.length === 1
     const response = await messageBox(e, {
@@ -116,7 +117,7 @@ export function registerFileHandlers(): void {
     return (['save', 'discard', 'cancel'] as const)[response] ?? 'cancel'
   })
 
-  ipcMain.handle(IpcChannels.confirmReload, async (e, raw: unknown): Promise<boolean> => {
+  handle(IpcChannels.confirmReload, async (e, raw: unknown): Promise<boolean> => {
     const name = z.string().parse(raw)
     const response = await messageBox(e, {
       type: 'question',

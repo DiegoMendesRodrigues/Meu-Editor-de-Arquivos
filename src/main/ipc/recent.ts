@@ -1,10 +1,11 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { app, ipcMain } from 'electron'
+import { app } from 'electron'
 import log from 'electron-log/main'
 import { z } from 'zod'
 import { IpcChannels } from '@shared/ipc'
 import { authorizeFile } from './access'
+import { handle } from './secure'
 
 /** Arquivos recentes, guardados em JSON na pasta de dados do usuário. */
 const MAX_RECENT = 15
@@ -39,8 +40,8 @@ export function addRecent(path: string): void {
 }
 
 export function registerRecentHandlers(): void {
-  ipcMain.handle(IpcChannels.recentList, () => recent)
-  ipcMain.handle(IpcChannels.recentClear, async () => {
+  handle(IpcChannels.recentList, () => recent)
+  handle(IpcChannels.recentClear, async () => {
     recent = []
     await persist()
   })

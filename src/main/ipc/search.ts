@@ -1,6 +1,5 @@
 import { open, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { join, relative, resolve } from 'node:path'
-import { ipcMain } from 'electron'
 import log from 'electron-log/main'
 import { z } from 'zod'
 import {
@@ -12,6 +11,7 @@ import {
 import { buildGlobFilter, buildRegex, replaceText, searchText } from '@shared/search'
 import { assertAuthorized, isInside } from './access'
 import { decodeText, encodeText } from './textCodec'
+import { handle } from './secure'
 
 /** Limites para manter a interface responsiva em pastas grandes. */
 const MAX_FILE_BYTES = 5 * 1024 * 1024
@@ -145,6 +145,6 @@ async function replaceInFiles(raw: unknown): Promise<ReplaceResponse> {
 }
 
 export function registerSearchHandlers(): void {
-  ipcMain.handle(IpcChannels.searchFolder, (_e, raw: unknown) => searchFolder(raw))
-  ipcMain.handle(IpcChannels.replaceInFiles, (_e, raw: unknown) => replaceInFiles(raw))
+  handle(IpcChannels.searchFolder, (_e, raw: unknown) => searchFolder(raw))
+  handle(IpcChannels.replaceInFiles, (_e, raw: unknown) => replaceInFiles(raw))
 }

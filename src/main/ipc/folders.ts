@@ -1,9 +1,10 @@
 import { readdir, stat } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { BrowserWindow, dialog, ipcMain } from 'electron'
+import { BrowserWindow, dialog } from 'electron'
 import { z } from 'zod'
 import { IpcChannels, type FolderEntry, type FolderInfo } from '@shared/ipc'
 import { assertAuthorized, authorizeRoot } from './access'
+import { handle } from './secure'
 
 /** Limite de itens listados por pasta, para não travar a interface em diretórios enormes. */
 const MAX_ENTRIES = 5000
@@ -11,7 +12,7 @@ const MAX_ENTRIES = 5000
 const collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' })
 
 export function registerFolderHandlers(): void {
-  ipcMain.handle(IpcChannels.openFolder, async (e): Promise<FolderInfo | null> => {
+  handle(IpcChannels.openFolder, async (e): Promise<FolderInfo | null> => {
     const win = BrowserWindow.fromWebContents(e.sender)
     const options: Electron.OpenDialogOptions = { title: 'Abrir pasta', properties: ['openDirectory'] }
     const result = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options)
@@ -21,7 +22,7 @@ export function registerFolderHandlers(): void {
     return { path, name: basename(path) || path }
   })
 
-  ipcMain.handle(IpcChannels.listFolder, async (_e, raw: unknown): Promise<FolderEntry[]> => {
+  handle(IpcChannels.listFolder, async (_e, raw: unknown): Promise<FolderEntry[]> => {
     const dir = await assertAuthorized(z.string().min(1).parse(raw))
     const dirents = (await readdir(dir, { withFileTypes: true })).slice(0, MAX_ENTRIES)
     const entries = await Promise.all(

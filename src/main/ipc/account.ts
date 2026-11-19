@@ -1,6 +1,6 @@
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { app, ipcMain, safeStorage } from 'electron'
+import { app, safeStorage } from 'electron'
 import log from 'electron-log/main'
 import { z } from 'zod'
 import {
@@ -12,6 +12,7 @@ import {
   type CloudSaveResult
 } from '@shared/ipc'
 import { detectEol } from './textCodec'
+import { handle } from './secure'
 
 /**
  * Conta de usuário e sincronização com a API intermediária.
@@ -143,9 +144,9 @@ async function startSession(res: { token: string; user: AccountUser }): Promise<
 const toMeta = (f: CloudFileMeta): CloudFileMeta => ({ id: f.id, path: f.path, version: f.version, size: f.size, updatedAt: f.updatedAt })
 
 export function registerAccountHandlers(): void {
-  ipcMain.handle(IpcChannels.accountStatus, () => status())
+  handle(IpcChannels.accountStatus, () => status())
 
-  ipcMain.handle(IpcChannels.accountSetServer, async (_e, raw: unknown) => {
+  handle(IpcChannels.accountSetServer, async (_e, raw: unknown) => {
     const url = serverUrlSchema.parse(raw)
     if (url !== serverUrl) {
       serverUrl = url
@@ -156,17 +157,17 @@ export function registerAccountHandlers(): void {
     return status()
   })
 
-  ipcMain.handle(IpcChannels.accountRegister, async (_e, email: unknown, name: unknown, password: unknown) => {
+  handle(IpcChannels.accountRegister, async (_e, email: unknown, name: unknown, password: unknown) => {
     const body = { email: emailSchema.parse(email), name: nameSchema.parse(name), password: passwordSchema.parse(password) }
     return startSession(await api('POST', '/v1/auth/register', { body }))
   })
 
-  ipcMain.handle(IpcChannels.accountLogin, async (_e, email: unknown, password: unknown) => {
+  handle(IpcChannels.accountLogin, async (_e, email: unknown, password: unknown) => {
     const body = { email: emailSchema.parse(email), password: passwordSchema.parse(password) }
     return startSession(await api('POST', '/v1/auth/login', { body }))
   })
 
-  ipcMain.handle(IpcChannels.accountLogout, async () => {
+  handle(IpcChannels.accountLogout, async () => {
     if (token) await api('POST', '/v1/auth/logout', { auth: true }).catch(() => undefined) // sai localmente mesmo sem rede
     token = null
     user = null
@@ -174,42 +175,42 @@ export function registerAccountHandlers(): void {
     return status()
   })
 
-  ipcMain.handle(IpcChannels.accountUpdateProfile, async (_e, name: unknown) => {
+  handle(IpcChannels.accountUpdateProfile, async (_e, name: unknown) => {
     const res = await api<{ user: AccountUser }>('PATCH', '/v1/me', { auth: true, body: { name: nameSchema.parse(name) } })
     user = { id: res.user.id, email: res.user.email, name: res.user.name }
     await persist()
     return status()
   })
 
-  ipcMain.handle(IpcChannels.accountChangePassword, async (_e, current: unknown, next: unknown) => {
+  handle(IpcChannels.accountChangePassword, async (_e, current: unknown, next: unknown) => {
     await api('POST', '/v1/me/password', {
       auth: true,
       body: { currentPassword: passwordSchema.parse(current), newPassword: passwordSchema.parse(next) }
     })
   })
 
-  ipcMain.handle(IpcChannels.accountRequestReset, async (_e, email: unknown) => {
+  handle(IpcChannels.accountRequestReset, async (_e, email: unknown) => {
     await api('POST', '/v1/auth/password-reset/request', { body: { email: emailSchema.parse(email) } })
   })
 
-  ipcMain.handle(IpcChannels.accountConfirmReset, async (_e, code: unknown, next: unknown) => {
+  handle(IpcChannels.accountConfirmReset, async (_e, code: unknown, next: unknown) => {
     await api('POST', '/v1/auth/password-reset/confirm', {
       body: { token: z.string().trim().min(1).max(200).parse(code), newPassword: passwordSchema.parse(next) }
     })
   })
 
-  ipcMain.handle(IpcChannels.cloudList, async (): Promise<CloudFileMeta[]> => {
+  handle(IpcChannels.cloudList, async (): Promise<CloudFileMeta[]> => {
     const res = await api<{ files: CloudFileMeta[] }>('GET', '/v1/files', { auth: true })
     return res.files.map(toMeta)
   })
 
-  ipcMain.handle(IpcChannels.cloudRead, async (_e, raw: unknown): Promise<CloudFileContent> => {
+  handle(IpcChannels.cloudRead, async (_e, raw: unknown): Promise<CloudFileContent> => {
     const id = z.string().min(1).max(64).parse(raw)
     const res = await api<{ file: CloudFileMeta & { content: string; encoding: 'UTF-8' | 'UTF-8 BOM' } }>('GET', `/v1/files/${encodeURIComponent(id)}`, { auth: true })
     return { ...toMeta(res.file), content: res.file.content, encoding: res.file.encoding, eol: detectEol(res.file.content) }
   })
 
-  ipcMain.handle(IpcChannels.cloudSave, async (_e, raw: unknown): Promise<CloudSaveResult> => {
+  handle(IpcChannels.cloudSave, async (_e, raw: unknown): Promise<CloudSaveResult> => {
     const req = z
       .object({
         path: z.string().min(1).max(512),
@@ -224,7 +225,7 @@ export function registerAccountHandlers(): void {
     return { ok: true, file: toMeta(res.file!) }
   })
 
-  ipcMain.handle(IpcChannels.cloudDelete, async (_e, raw: unknown) => {
+  handle(IpcChannels.cloudDelete, async (_e, raw: unknown) => {
     await api('DELETE', `/v1/files/${encodeURIComponent(z.string().min(1).max(64).parse(raw))}`, { auth: true })
   })
 }

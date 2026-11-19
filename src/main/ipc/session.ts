@@ -1,10 +1,11 @@
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { app, ipcMain } from 'electron'
+import { app } from 'electron'
 import log from 'electron-log/main'
 import { z } from 'zod'
 import { IpcChannels, type SessionData } from '@shared/ipc'
 import { authorizeFile, authorizeRoot } from './access'
+import { handle } from './secure'
 
 /**
  * Sessão do editor: abas abertas, pasta, preferências e textos não salvos.
@@ -55,7 +56,7 @@ async function persist(data: SessionData): Promise<void> {
 }
 
 export function registerSessionHandlers(): void {
-  ipcMain.handle(IpcChannels.sessionLoad, async (): Promise<SessionData | null> => {
+  handle(IpcChannels.sessionLoad, async (): Promise<SessionData | null> => {
     let data: SessionData
     try {
       data = sessionSchema.parse(JSON.parse(await readFile(sessionPath(), 'utf8')))
@@ -69,7 +70,7 @@ export function registerSessionHandlers(): void {
     return data
   })
 
-  ipcMain.handle(IpcChannels.sessionSave, async (_e, raw: unknown): Promise<void> => {
+  handle(IpcChannels.sessionSave, async (_e, raw: unknown): Promise<void> => {
     const data = sessionSchema.parse(raw)
     const size = data.documents.reduce((n, d) => n + (d.unsavedContent?.length ?? 0), 0)
     if (size > MAX_SESSION_CHARS) {

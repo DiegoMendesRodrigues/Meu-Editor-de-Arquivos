@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import { IpcChannels, type AppInfo } from '@shared/ipc'
+import { handle } from './secure'
 
 /** Janelas cujo fechamento já foi confirmado pelo Renderer. */
 const closeConfirmed = new WeakSet<BrowserWindow>()
@@ -17,12 +18,12 @@ export function guardWindowClose(win: BrowserWindow): void {
 }
 
 export function registerAppHandlers(): void {
-  ipcMain.handle(IpcChannels.appInfo, (): AppInfo => ({
+  handle(IpcChannels.appInfo, (): AppInfo => ({
     version: app.getVersion(),
     platform: process.platform
   }))
 
-  ipcMain.handle(IpcChannels.closeWindow, (e) => {
+  handle(IpcChannels.closeWindow, (e) => {
     const win = BrowserWindow.fromWebContents(e.sender)
     if (!win) return
     closeConfirmed.add(win)
