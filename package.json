@@ -17,6 +17,9 @@
     "test": "vitest run",
     "test:e2e": "npm run build && playwright test",
     "typecheck:e2e": "tsc --noEmit -p e2e/tsconfig.json",
+    "manual:capture": "tsx scripts/capture-manual.mts",
+    "manual:build": "tsx scripts/build-manual.mts",
+    "manual": "npm run build && npm run manual:capture && npm run manual:build",
     "dist:win": "npm run build && electron-builder --win",
     "dist:linux": "npm run build && electron-builder --linux"
   },
@@ -46,7 +49,9 @@
     "electron": "^45.4.1",
     "electron-builder": "^26.18.0",
     "electron-vite": "^6.0.0",
+    "marked": "^18.2.1",
     "tailwindcss": "^4.3.5",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
     "vitest": "^5.1.1"
