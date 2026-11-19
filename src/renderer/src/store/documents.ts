@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Encoding, Eol, OpenedFile, SavedFile } from '@shared/ipc'
+import type { CloudFileContent, Encoding, Eol, OpenedFile, SavedFile } from '@shared/ipc'
 import { languageFromName } from '@/editor/languages'
 
 export interface EditorDocument {
@@ -19,6 +19,14 @@ export interface EditorDocument {
   mode: DocumentMode
   /** O arquivo foi excluído ou movido por outro programa. */
   missingOnDisk?: boolean
+  /** Vínculo com o arquivo na nuvem (id, caminho lógico e a versão sincronizada). */
+  cloud?: CloudRef
+}
+
+export interface CloudRef {
+  id: string
+  path: string
+  version: number
 }
 
 export type DocumentMode = 'preview' | 'edit'
@@ -47,6 +55,10 @@ interface DocumentsState {
   reloadFromDisk(id: string, file: OpenedFile): void
   setMissingOnDisk(id: string, missing: boolean): void
   setLanguage(id: string, language: string): void
+  /** Abre um arquivo da nuvem como documento (sem caminho no disco). */
+  addCloudFile(file: CloudFileContent): void
+  /** Registra a gravação na nuvem: o texto atual passa a ser o sincronizado. */
+  markCloudSaved(id: string, cloud: CloudRef, content: string): void
   setEncoding(id: string, encoding: Encoding): void
   /** Converte as quebras de linha do texto (e do documento) para o formato escolhido. */
   setEol(id: string, eol: Eol): void
@@ -171,6 +183,33 @@ export const useDocuments = create<DocumentsState>((set) => ({
 
   setMissingOnDisk: (id, missing) =>
     set((s) => ({ documents: s.documents.map((d) => (d.id === id ? { ...d, missingOnDisk: missing } : d)) })),
+
+  addCloudFile: (file) =>
+    set((s) => {
+      const existing = s.documents.find((d) => d.cloud?.id === file.id)
+      if (existing) return { activeId: existing.id }
+      const name = file.path.split('/').pop() ?? file.path
+      const language = languageFromName(name)
+      const doc: EditorDocument = {
+        id: nextId(),
+        path: null,
+        name,
+        content: file.content,
+        savedContent: file.content,
+        language,
+        encoding: file.encoding,
+        savedEncoding: file.encoding,
+        eol: file.eol,
+        mode: canPreviewLanguage(language) ? 'preview' : 'edit',
+        cloud: { id: file.id, path: file.path, version: file.version }
+      }
+      return { documents: [...s.documents, doc], activeId: doc.id }
+    }),
+
+  markCloudSaved: (id, cloud, content) =>
+    set((s) => ({
+      documents: s.documents.map((d) => (d.id === id ? { ...d, cloud, savedContent: content, savedEncoding: d.encoding } : d))
+    })),
 
   setLanguage: (id, language) =>
     set((s) => ({

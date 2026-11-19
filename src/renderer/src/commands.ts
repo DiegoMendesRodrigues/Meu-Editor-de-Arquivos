@@ -7,6 +7,7 @@ import { useWorkspace } from '@/store/workspace'
 import { getActiveEditor, revealInDocument, runEditorAction } from '@/editor/editorRef'
 import { useSearch } from '@/store/search'
 import { useView } from '@/store/view'
+import { pushToCloud } from '@/cloud'
 import { useDialogs } from '@/store/dialogs'
 import { useLibrary } from '@/store/library'
 import { playMacro, startRecording, stopRecording } from '@/editor/macros'
@@ -81,6 +82,8 @@ export async function saveAs(doc = active()): Promise<boolean> {
 
 export async function save(doc = active()): Promise<boolean> {
   if (!doc) return false
+  // Documento aberto da nuvem (sem arquivo no disco): Ctrl+S grava de volta na nuvem.
+  if (!doc.path && doc.cloud) return pushToCloud(doc, doc.cloud.path)
   if (!doc.path) return saveAs(doc)
   try {
     const content = doc.content
@@ -220,4 +223,10 @@ export function toggleMacroRecording(): void {
 export function playLastMacro(): void {
   const { steps, recording } = useLibrary.getState()
   if (!recording && steps.length > 0) playMacro({ id: 'last', name: '', steps })
+}
+
+export const openAccount = (): void => useDialogs.getState().show('account')
+export const openCloudFiles = (): void => useDialogs.getState().show('cloudOpen')
+export const saveToCloudDialog = (): void => {
+  if (active()) useDialogs.getState().show('cloudSave')
 }

@@ -3,6 +3,7 @@ import { Check } from 'lucide-react'
 import * as cmd from '@/commands'
 import { LANGUAGE_LABELS, LANGUAGE_MENU } from '@/editor/languages'
 import { useActiveDocument } from '@/store/documents'
+import { useAccount } from '@/store/account'
 import { useLibrary } from '@/store/library'
 import { useView } from '@/store/view'
 import { useWorkspace } from '@/store/workspace'
@@ -55,6 +56,7 @@ export function MenuBar() {
   const folderOpen = useWorkspace((s) => s.folder !== null)
   const doc = useActiveDocument()
   const recording = useLibrary((s) => s.recording)
+  const account = useAccount((s) => s.status.user)
   const hasRecording = useLibrary((s) => s.steps.length > 0)
   const withDoc = (fn: () => void): (() => void) | undefined => (doc ? fn : undefined)
 
@@ -70,6 +72,9 @@ export function MenuBar() {
         { label: 'Salvar', shortcut: 'Ctrl+S', action: () => void cmd.save() },
         { label: 'Salvar como...', shortcut: 'Ctrl+Shift+S', action: () => void cmd.saveAs() },
         { label: 'Salvar todos', action: () => void cmd.saveAll() },
+        'separator',
+        { label: 'Abrir da nuvem...', action: cmd.openCloudFiles },
+        { label: 'Salvar na nuvem...', action: withDoc(cmd.saveToCloudDialog) },
         'separator',
         { label: 'Imprimir...' },
         'separator',
@@ -156,6 +161,13 @@ export function MenuBar() {
         'separator',
         { label: 'Comparar arquivos...' },
         { label: 'Assistente de IA (Ollama)' }
+      ]
+    },
+    {
+      title: 'Conta',
+      items: [
+        account ? { label: `Meu perfil (${account.name})...`, action: cmd.openAccount } : { label: 'Entrar ou criar conta...', action: cmd.openAccount },
+        { label: 'Arquivos da nuvem...', action: cmd.openCloudFiles }
       ]
     },
     { title: 'Plugins', items: [{ label: 'Gerenciar plugins...' }] },

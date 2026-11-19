@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type DialogName = 'snippets' | 'macros'
+export type DialogName = 'snippets' | 'macros' | 'account' | 'cloudOpen' | 'cloudSave'
 
 interface DialogsState {
   open: DialogName | null

@@ -14,9 +14,12 @@ import { useWorkspace } from '@/store/workspace'
 import { startFileSync } from '@/fileSync'
 import { restoreSession, startSessionAutosave } from '@/session'
 import * as cmd from '@/commands'
+import { AccountDialog } from '@/components/AccountDialog'
+import { CloudOpenDialog, CloudSaveDialog } from '@/components/CloudDialogs'
 import { MacrosDialog } from '@/components/MacrosDialog'
 import { SnippetsDialog } from '@/components/SnippetsDialog'
 import { useDialogs } from '@/store/dialogs'
+import { useAccount } from '@/store/account'
 import { useLibrary } from '@/store/library'
 
 /** Atalhos globais da aplicação (os de edição ficam com o próprio Monaco). */
@@ -84,6 +87,7 @@ export function App() {
   // Monitoramento de alterações externas e confirmação ao fechar a janela.
   useEffect(() => startFileSync(), [])
   useEffect(() => void useLibrary.getState().load(), [])
+  useEffect(() => void useAccount.getState().load(), [])
   useEffect(() => window.api.onBeforeClose(() => void cmd.requestQuit()), [])
 
   return (
@@ -131,6 +135,9 @@ export function App() {
       <StatusBar />
       {dialog === 'snippets' && <SnippetsDialog />}
       {dialog === 'macros' && <MacrosDialog />}
+      {dialog === 'account' && <AccountDialog />}
+      {dialog === 'cloudOpen' && <CloudOpenDialog />}
+      {dialog === 'cloudSave' && <CloudSaveDialog />}
     </div>
   )
 }

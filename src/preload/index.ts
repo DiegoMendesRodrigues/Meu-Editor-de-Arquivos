@@ -37,6 +37,20 @@ const api: EditorApi = {
   loadMacros: () => ipcRenderer.invoke(IpcChannels.libraryLoad, 'macros'),
   saveMacros: (items) => ipcRenderer.invoke(IpcChannels.librarySave, 'macros', items),
 
+  accountStatus: () => ipcRenderer.invoke(IpcChannels.accountStatus),
+  accountSetServer: (url) => ipcRenderer.invoke(IpcChannels.accountSetServer, url),
+  accountRegister: (email, name, password) => ipcRenderer.invoke(IpcChannels.accountRegister, email, name, password),
+  accountLogin: (email, password) => ipcRenderer.invoke(IpcChannels.accountLogin, email, password),
+  accountLogout: () => ipcRenderer.invoke(IpcChannels.accountLogout),
+  accountUpdateProfile: (name) => ipcRenderer.invoke(IpcChannels.accountUpdateProfile, name),
+  accountChangePassword: (current, next) => ipcRenderer.invoke(IpcChannels.accountChangePassword, current, next),
+  accountRequestReset: (email) => ipcRenderer.invoke(IpcChannels.accountRequestReset, email),
+  accountConfirmReset: (token, next) => ipcRenderer.invoke(IpcChannels.accountConfirmReset, token, next),
+  cloudList: () => ipcRenderer.invoke(IpcChannels.cloudList),
+  cloudRead: (id) => ipcRenderer.invoke(IpcChannels.cloudRead, id),
+  cloudSave: (req) => ipcRenderer.invoke(IpcChannels.cloudSave, req),
+  cloudDelete: (id) => ipcRenderer.invoke(IpcChannels.cloudDelete, id),
+
   getAppInfo: () => ipcRenderer.invoke(IpcChannels.appInfo),
   onBeforeClose: (listener) => {
     const handler = () => listener()

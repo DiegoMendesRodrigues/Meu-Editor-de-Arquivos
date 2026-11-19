@@ -7,6 +7,7 @@ import { registerFolderHandlers } from './ipc/folders'
 import { registerSearchHandlers } from './ipc/search'
 import { loadRecent, registerRecentHandlers } from './ipc/recent'
 import { setWatchTarget } from './watcher'
+import { loadAccount, registerAccountHandlers } from './ipc/account'
 import { registerLibraryHandlers } from './ipc/library'
 import { registerSessionHandlers } from './ipc/session'
 
@@ -66,12 +67,14 @@ Menu.setApplicationMenu(null)
 
 app.whenReady().then(async () => {
   await loadRecent()
+  await loadAccount()
   registerFileHandlers()
   registerFolderHandlers()
   registerSearchHandlers()
   registerRecentHandlers()
   registerSessionHandlers()
   registerLibraryHandlers()
+  registerAccountHandlers()
   registerAppHandlers()
   createWindow()
 
