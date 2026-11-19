@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { randomUUID } from 'node:crypto'
 import type { FileMeta, RemoteFile, Store, User } from './store.js'
 

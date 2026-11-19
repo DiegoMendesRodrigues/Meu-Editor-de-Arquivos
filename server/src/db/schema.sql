@@ -1,3 +1,4 @@
+-- Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 -- Esquema para MySQL 8+ / MariaDB 10.6+. Aplique com: npm run migrate
 
 CREATE TABLE IF NOT EXISTS users (

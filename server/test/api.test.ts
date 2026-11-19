@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { beforeEach, describe, expect, it } from 'vitest'
 import { buildApp, type Mailer } from '../src/app.js'
 import { createMemoryStore } from '../src/db/memory.js'

@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { buildApp, type Mailer } from './app.js'
 import { createMemoryStore } from './db/memory.js'
 import { createMysqlStore } from './db/mysql.js'

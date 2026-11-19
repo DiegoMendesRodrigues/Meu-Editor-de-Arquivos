@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 /** Acesso a dados da API. Há uma implementação em memória (testes/desenvolvimento) e uma MySQL/MariaDB. */
 
 export interface User {

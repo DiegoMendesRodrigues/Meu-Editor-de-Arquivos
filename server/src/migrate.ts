@@ -1,3 +1,4 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { readFile } from 'node:fs/promises'
 import { migrate } from './db/mysql.js'
 
