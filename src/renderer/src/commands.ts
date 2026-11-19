@@ -5,6 +5,7 @@
 import { useDocuments, isDirty, canPreview, type EditorDocument } from '@/store/documents'
 import { useWorkspace } from '@/store/workspace'
 import { runEditorAction } from '@/editor/editorRef'
+import { flushSession } from '@/session'
 
 const docs = () => useDocuments.getState()
 const active = (): EditorDocument | undefined => {
@@ -133,7 +134,10 @@ export async function closeAll(): Promise<void> {
 
 /** Chamado quando o usuário fecha a janela (botão X, Alt+F4 ou menu Sair). */
 export async function requestQuit(): Promise<void> {
-  if (await resolveUnsaved(docs().documents)) await window.api.closeWindow()
+  if (!(await resolveUnsaved(docs().documents))) return
+  // O usuário já decidiu sobre os não salvos: a sessão final guarda só abas, pasta e preferências.
+  await flushSession(false)
+  await window.api.closeWindow()
 }
 
 export const undo = (): void => runEditorAction('undo')

@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { X } from 'lucide-react'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { MenuBar } from '@/components/MenuBar'
 import { Toolbar } from '@/components/Toolbar'
@@ -11,6 +12,7 @@ import { useDocuments } from '@/store/documents'
 import { useView } from '@/store/view'
 import { useWorkspace } from '@/store/workspace'
 import { startFileSync } from '@/fileSync'
+import { restoreSession, startSessionAutosave } from '@/session'
 import * as cmd from '@/commands'
 
 /** Atalhos globais da aplicação (os de edição ficam com o próprio Monaco). */
@@ -42,12 +44,30 @@ const separatorClass = 'bg-border transition-colors data-[separator]:hover:bg-ac
 export function App() {
   const sidebarVisible = useView((s) => s.sidebarVisible)
   const bottomPanelVisible = useView((s) => s.bottomPanelVisible)
+  const [notice, setNotice] = useState<string | null>(null)
   useGlobalShortcuts()
 
-  // Começa com um documento em branco, como a maioria dos editores.
+  // Restaura a sessão anterior; sem nada para restaurar, começa com um documento em branco.
   useEffect(() => {
-    if (useDocuments.getState().documents.length === 0) useDocuments.getState().newDocument()
+    let stopAutosave = () => {}
+    let cancelled = false
+    void restoreSession().then(({ restored, recovered }) => {
+      if (cancelled) return
+      if (!restored) useDocuments.getState().newDocument()
+      if (recovered > 0) {
+        setNotice(
+          recovered === 1
+            ? '1 documento teve alterações não salvas recuperadas da última sessão.'
+            : `${recovered} documentos tiveram alterações não salvas recuperadas da última sessão.`
+        )
+      }
+      stopAutosave = startSessionAutosave()
+    })
     void useWorkspace.getState().refreshRecent()
+    return () => {
+      cancelled = true
+      stopAutosave()
+    }
   }, [])
 
   // Monitoramento de alterações externas e confirmação ao fechar a janela.
@@ -58,6 +78,14 @@ export function App() {
     <div className="flex h-full flex-col">
       <MenuBar />
       <Toolbar />
+      {notice && (
+        <div role="status" className="flex shrink-0 items-center gap-2 border-b border-amber-200 bg-amber-50 px-3 py-1.5 text-amber-900">
+          <span className="flex-1">{notice} Salve para manter as alterações.</span>
+          <button type="button" aria-label="Fechar aviso" onClick={() => setNotice(null)} className="rounded p-0.5 hover:bg-amber-100">
+            <X size={14} />
+          </button>
+        </div>
+      )}
       <Group orientation="horizontal" className="min-h-0 flex-1">
         {sidebarVisible && (
           <>

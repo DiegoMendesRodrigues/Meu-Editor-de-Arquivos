@@ -27,6 +27,9 @@ const api: EditorApi = {
   confirmUnsaved: (names) => ipcRenderer.invoke(IpcChannels.confirmUnsaved, names),
   confirmReload: (name) => ipcRenderer.invoke(IpcChannels.confirmReload, name),
 
+  loadSession: () => ipcRenderer.invoke(IpcChannels.sessionLoad),
+  saveSession: (data) => ipcRenderer.invoke(IpcChannels.sessionSave, data),
+
   getAppInfo: () => ipcRenderer.invoke(IpcChannels.appInfo),
   onBeforeClose: (listener) => {
     const handler = () => listener()

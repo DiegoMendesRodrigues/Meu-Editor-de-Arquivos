@@ -6,6 +6,7 @@ import { guardWindowClose, registerAppHandlers } from './ipc/app'
 import { registerFolderHandlers } from './ipc/folders'
 import { loadRecent, registerRecentHandlers } from './ipc/recent'
 import { setWatchTarget } from './watcher'
+import { registerSessionHandlers } from './ipc/session'
 
 log.initialize()
 log.info(`Iniciando Meu Editor de Arquivos ${app.getVersion()} em ${process.platform}`)
@@ -66,6 +67,7 @@ app.whenReady().then(async () => {
   registerFileHandlers()
   registerFolderHandlers()
   registerRecentHandlers()
+  registerSessionHandlers()
   registerAppHandlers()
   createWindow()
 

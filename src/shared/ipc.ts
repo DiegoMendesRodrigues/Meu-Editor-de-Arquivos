@@ -17,6 +17,8 @@ export const IpcChannels = {
   recentClear: 'recent:clear',
   confirmUnsaved: 'dialog:confirm-unsaved',
   confirmReload: 'dialog:confirm-reload',
+  sessionLoad: 'session:load',
+  sessionSave: 'session:save',
   appInfo: 'app:info',
   beforeClose: 'app:before-close',
   closeWindow: 'app:close-window'
@@ -70,6 +72,30 @@ export interface FileChange {
 
 export type UnsavedChoice = 'save' | 'discard' | 'cancel'
 
+/** Documento guardado na sessão. unsavedContent só existe quando havia alterações não salvas. */
+export interface SessionDocument {
+  path: string | null
+  name: string
+  mode: 'preview' | 'edit'
+  encoding: Encoding
+  eol: Eol
+  unsavedContent?: string
+}
+
+export interface SessionData {
+  version: 1
+  folder: string | null
+  activeIndex: number
+  documents: SessionDocument[]
+  view: {
+    sidebarVisible: boolean
+    bottomPanelVisible: boolean
+    minimap: boolean
+    wordWrap: boolean
+    showInvisibles: boolean
+  }
+}
+
 export interface AppInfo {
   version: string
   platform: string
@@ -95,6 +121,10 @@ export interface EditorApi {
   confirmUnsaved(names: string[]): Promise<UnsavedChoice>
   /** Diálogo nativo quando um arquivo com alterações foi modificado por outro programa. */
   confirmReload(name: string): Promise<boolean>
+
+  /** Sessão anterior (abas, pasta, preferências e textos não salvos), ou null. */
+  loadSession(): Promise<SessionData | null>
+  saveSession(data: SessionData): Promise<void>
 
   getAppInfo(): Promise<AppInfo>
   /** O Main avisa que o usuário quer fechar a janela; o Renderer decide e chama closeWindow(). */

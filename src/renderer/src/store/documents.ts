@@ -44,6 +44,8 @@ interface DocumentsState {
   /** Substitui o conteúdo pelo que está no disco (recarregamento). */
   reloadFromDisk(id: string, file: OpenedFile): void
   setMissingOnDisk(id: string, missing: boolean): void
+  /** Substitui todos os documentos pelos da sessão restaurada. */
+  restore(documents: Omit<EditorDocument, 'id'>[], activeIndex: number): void
 }
 
 const defaultEol: Eol = navigator.userAgent.includes('Windows') ? 'CRLF' : 'LF'
@@ -144,6 +146,17 @@ export const useDocuments = create<DocumentsState>((set) => ({
           : d
       )
     })),
+
+  restore: (restored, activeIndex) => {
+    const documents = restored.map((d) => ({ ...d, id: nextId() }))
+    // Continua a numeração de "Sem título N" a partir do maior número restaurado.
+    const untitledCounter = Math.max(
+      0,
+      ...documents.filter((d) => !d.path).map((d) => Number(/Sem título (\d+)/.exec(d.name)?.[1] ?? 0))
+    )
+    const active = documents[Math.min(Math.max(activeIndex, 0), documents.length - 1)]
+    set({ documents, activeId: active?.id ?? null, untitledCounter })
+  },
 
   setMissingOnDisk: (id, missing) =>
     set((s) => ({ documents: s.documents.map((d) => (d.id === id ? { ...d, missingOnDisk: missing } : d)) }))
