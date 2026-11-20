@@ -29,6 +29,8 @@ interface Demo {
   cloudText: string
   user: { email: string; name: string; password: string }
   scratch: string
+  /** Frase com uma palavra errada, para a tela do corretor ortográfico. */
+  typo: { text: string; word: string }
 }
 
 const DEMOS: Record<Locale, Demo> = {
@@ -47,7 +49,8 @@ const DEMOS: Record<Locale, Demo> = {
     cloudPath: 'trabalho/ata-da-reuniao.md',
     cloudText: '# Ata da reunião\n\nParticipantes: Ana e Bruno.\n',
     user: { email: 'ana.souza@exemplo.com', name: 'Ana Souza', password: 'minha-senha-segura-1' },
-    scratch: 'Rascunho: ideias para a apresentação.\n\tPrimeiro tópico   \n\tSegundo tópico'
+    scratch: 'Rascunho: ideias para a apresentação.\n\tPrimeiro tópico   \n\tSegundo tópico',
+    typo: { text: 'Reunião com o clinete na sexta.', word: 'clinete' }
   },
   en: {
     system: 'en-US',
@@ -64,7 +67,8 @@ const DEMOS: Record<Locale, Demo> = {
     cloudPath: 'work/meeting-minutes.md',
     cloudText: '# Meeting minutes\n\nAttendees: Anna and Brian.\n',
     user: { email: 'anna.smith@example.com', name: 'Anna Smith', password: 'my-secure-password-1' },
-    scratch: 'Draft: ideas for the presentation.\n\tFirst topic   \n\tSecond topic'
+    scratch: 'Draft: ideas for the presentation.\n\tFirst topic   \n\tSecond topic',
+    typo: { text: 'Meeting with the cliant on Friday.', word: 'cliant' }
   },
   de: {
     system: 'de-DE',
@@ -81,7 +85,8 @@ const DEMOS: Record<Locale, Demo> = {
     cloudPath: 'arbeit/besprechungsprotokoll.md',
     cloudText: '# Besprechungsprotokoll\n\nTeilnehmer: Anna und Bernd.\n',
     user: { email: 'anna.schmidt@beispiel.de', name: 'Anna Schmidt', password: 'mein-sicheres-passwort-1' },
-    scratch: 'Entwurf: Ideen für die Präsentation.\n\tErstes Thema   \n\tZweites Thema'
+    scratch: 'Entwurf: Ideen für die Präsentation.\n\tErstes Thema   \n\tZweites Thema',
+    typo: { text: 'Besprechung mit dem Kundne am Freitag.', word: 'Kundne' }
   },
   es: {
     system: 'es-ES',
@@ -98,7 +103,8 @@ const DEMOS: Record<Locale, Demo> = {
     cloudPath: 'trabajo/acta-de-la-reunion.md',
     cloudText: '# Acta de la reunión\n\nAsistentes: Ana y Bruno.\n',
     user: { email: 'ana.garcia@ejemplo.es', name: 'Ana García', password: 'mi-contrasena-segura-1' },
-    scratch: 'Borrador: ideas para la presentación.\n\tPrimer tema   \n\tSegundo tema'
+    scratch: 'Borrador: ideas para la presentación.\n\tPrimer tema   \n\tSegundo tema',
+    typo: { text: 'Reunión con el clinete el viernes.', word: 'clinete' }
   },
   fr: {
     system: 'fr-FR',
@@ -115,7 +121,8 @@ const DEMOS: Record<Locale, Demo> = {
     cloudPath: 'travail/compte-rendu-reunion.md',
     cloudText: '# Compte rendu de la réunion\n\nParticipants : Anne et Bruno.\n',
     user: { email: 'anne.martin@exemple.fr', name: 'Anne Martin', password: 'mon-mot-de-passe-sur-1' },
-    scratch: "Brouillon : idées pour la présentation.\n\tPremier sujet   \n\tDeuxième sujet"
+    scratch: "Brouillon : idées pour la présentation.\n\tPremier sujet   \n\tDeuxième sujet",
+    typo: { text: 'Réunion avec le cliant vendredi.', word: 'cliant' }
   },
   'pt-PT': {
     system: 'pt-PT',
@@ -132,7 +139,8 @@ const DEMOS: Record<Locale, Demo> = {
     cloudPath: 'trabalho/ata-da-reuniao.md',
     cloudText: '# Ata da reunião\n\nParticipantes: Ana e Bruno.\n',
     user: { email: 'ana.pereira@exemplo.pt', name: 'Ana Pereira', password: 'a-minha-palavra-passe-1' },
-    scratch: 'Rascunho: ideias para a apresentação.\n\tPrimeiro tópico   \n\tSegundo tópico'
+    scratch: 'Rascunho: ideias para a apresentação.\n\tPrimeiro tópico   \n\tSegundo tópico',
+    typo: { text: 'Reunião com o clinete na sexta-feira.', word: 'clinete' }
   }
 }
 
@@ -315,6 +323,19 @@ async function captureLocale(locale: Locale): Promise<void> {
     await shot(page, img('s11-invisibles'), { clip: { x: 300, y: 85, width: 820, height: 200 } })
     await page.locator('nav button').nth(MENU.view).click()
     await page.getByRole('menuitem', { name: t('menu.view.invisibles') }).click()
+
+    // --- Corretor ortográfico: palavra sublinhada e as sugestões (Ctrl+.)
+    await page.locator('.monaco-editor').click()
+    await page.keyboard.press('Control+A')
+    await page.keyboard.insertText(demo.typo.text)
+    await page.locator('.monaco-editor .squiggly-info').first().waitFor()
+    await page.keyboard.press('Control+Home')
+    for (let i = 0; i <= demo.typo.text.indexOf(demo.typo.word); i++) await page.keyboard.press('ArrowRight')
+    await page.keyboard.press('Control+.')
+    await page.locator('.action-widget').first().waitFor()
+    await sleep(300)
+    await shot(page, img('s11a-spelling'), { clip: { x: 300, y: 85, width: 820, height: 300 } })
+    await page.keyboard.press('Escape')
 
     // --- Snippets
     await page.locator('nav button').nth(MENU.tools).click()

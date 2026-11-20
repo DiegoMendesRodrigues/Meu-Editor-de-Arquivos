@@ -9,6 +9,8 @@ import { NEW_TYPES } from '@/newTypes'
 import { useAccount } from '@/store/account'
 import { useLibrary } from '@/store/library'
 import { useView } from '@/store/view'
+import { useSpelling } from '@/store/spelling'
+import { LOCALES } from '@shared/i18n'
 import { useWorkspace } from '@/store/workspace'
 
 interface Item {
@@ -57,6 +59,7 @@ function Menu({ title, items }: { title: string; items: Entry[] }) {
 export function MenuBar() {
   const t = useT()
   const view = useView()
+  const spelling = useSpelling()
   const folderOpen = useWorkspace((s) => s.folder !== null)
   const doc = useActiveDocument()
   const recording = useLibrary((s) => s.recording)
@@ -163,6 +166,10 @@ export function MenuBar() {
         { label: recording ? t('menu.tools.macroStop') : t('menu.tools.macroRecord'), shortcut: 'Ctrl+Shift+R', action: cmd.toggleMacroRecording },
         { label: t('menu.tools.macroRunLast'), shortcut: 'Ctrl+Shift+M', action: hasRecording && !recording ? cmd.playLastMacro : undefined },
         { label: t('menu.tools.macros'), action: cmd.openMacros },
+        'separator',
+        { label: t('menu.tools.spellCheck'), shortcut: 'F7', checked: spelling.enabled, action: spelling.toggle },
+        { label: t('menu.tools.spellAuto'), checked: spelling.locale === null, action: () => spelling.setLocale(null) },
+        ...LOCALES.map((l) => ({ label: t('menu.tools.spellLanguage', { name: l.name }), checked: spelling.locale === l.code, action: () => spelling.setLocale(l.code) })),
         'separator',
         { label: t('menu.tools.compare') },
         { label: t('menu.tools.ai') }

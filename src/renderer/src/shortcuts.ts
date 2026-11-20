@@ -37,7 +37,9 @@ export function shortcutGroups(t: Translate): ShortcutGroup[] {
         { keys: 'Alt+↑ / Alt+↓', action: t('sc.moveLine') },
         { keys: 'Shift+Alt+↑ / Shift+Alt+↓', action: t('sc.copyLine') },
         { keys: 'Ctrl+/', action: t('sc.comment') },
-        { keys: 'F1', action: t('menu.tools.commandPalette') }
+        { keys: 'F1', action: t('menu.tools.commandPalette') },
+        { keys: 'F7', action: t('menu.tools.spellCheck') },
+        { keys: 'Ctrl+.', action: t('spell.suggestions') }
       ]
     },
     {

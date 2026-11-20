@@ -10,6 +10,7 @@ import { EditorPane } from '@/components/EditorPane'
 import { BottomPanel } from '@/components/BottomPanel'
 import { StatusBar } from '@/components/StatusBar'
 import { useDocuments } from '@/store/documents'
+import { useSpelling } from '@/store/spelling'
 import { useView } from '@/store/view'
 import { useWorkspace } from '@/store/workspace'
 import { startFileSync } from '@/fileSync'
@@ -29,6 +30,11 @@ import { useLibrary } from '@/store/library'
 function useGlobalShortcuts(): void {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F7' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        e.preventDefault()
+        useSpelling.getState().toggle()
+        return
+      }
       if (!e.ctrlKey || e.altKey) return
       const key = e.key.toLowerCase()
       const run = (fn: () => unknown) => {

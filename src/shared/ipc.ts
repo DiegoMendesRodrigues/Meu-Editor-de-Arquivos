@@ -164,6 +164,12 @@ export interface SessionData {
     /** Idioma escolhido pelo usuário; ausente = idioma do sistema. */
     locale?: Locale
   }
+  /** Corretor ortográfico: ligado, idioma (ausente = o da interface) e dicionário do usuário. */
+  spelling?: {
+    enabled: boolean
+    locale?: Locale
+    words: string[]
+  }
 }
 
 /** Trecho de texto reutilizável, na sintaxe de snippets do Monaco ($1, ${2:padrão}, $0). */

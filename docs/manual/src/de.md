@@ -74,6 +74,19 @@ Die Bearbeitungsbefehle finden Sie unter **{{menu.edit}}**, die Anzeigeoptionen 
 
 Ihre Anzeigeeinstellungen werden für das nächste Mal gespeichert. Die eigenen Texte des Editors, etwa das Suchfeld (Ctrl+F) und die Befehlspalette (F1), erscheinen auf Englisch.
 
+### Rechtschreibprüfung
+
+![Unterstrichenes Wort und Korrekturvorschläge](img/s11a-spelling.png)
+
+In Markdown-, Text- (.txt) und LaTeX-Dokumenten werden Wörter, die nicht im Wörterbuch stehen, rot unterstrichen. Code, Links, Adressen, Abkürzungen und Text zwischen Backticks werden nicht geprüft; Log- und CSV-Dateien bleiben außen vor.
+
+- Setzen Sie den Cursor auf das Wort und drücken Sie **Strg+.** (oder Rechtsklick und **{{spell.suggestions}}**), um die Vorschläge zu sehen. Wählen Sie einen aus, um das Wort zu ersetzen.
+- **{{spell.addToDictionary}}** lässt das Wort ab sofort in allen Sprachen gelten.
+- **{{menu.tools}} → {{menu.tools.spellCheck}}** (oder **F7**) schaltet die Prüfung ein und aus.
+- Die Prüfung verwendet die Sprache der Oberfläche. Für eine andere Sprache wählen Sie in **{{menu.tools}}** eine der Optionen **{{spell.source}}: Deutsch**, **{{spell.source}}: English**… — es gibt Wörterbücher für Deutsch, Spanisch, Französisch, Englisch, brasilianisches und europäisches Portugiesisch. **{{menu.tools.spellAuto}}** folgt wieder der Oberfläche.
+
+Die Wörterbücher sind im Programm enthalten: Die Prüfung funktioniert ohne Internet.
+
 ## 6. Markdown
 
 ![Markdown-Dokument im Bearbeitungsmodus mit der Formatierungsleiste](img/s03-markdown-edit.png)

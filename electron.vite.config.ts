@@ -24,9 +24,12 @@ export default defineConfig({
     resolve: {
       alias: {
         '@': resolve('src/renderer/src'),
-        '@shared': resolve('src/shared')
+        '@shared': resolve('src/shared'),
+        // Dicionários do corretor ortográfico (lidos como texto, sem passar pelo "exports" dos pacotes).
+        '@dict': resolve('node_modules')
       }
     },
+    worker: { format: 'es' },
     plugins: [react(), tailwindcss()],
     build: {
       rollupOptions: { input: resolve('src/renderer/index.html') }

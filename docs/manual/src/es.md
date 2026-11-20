@@ -74,6 +74,19 @@ Los comandos de edición están en **{{menu.edit}}** y las opciones de visualiza
 
 Tus preferencias de visualización se guardan para la próxima vez. Los textos propios del editor, como el cuadro de búsqueda (Ctrl+F) y la paleta de comandos (F1), aparecen en inglés.
 
+### Corrector ortográfico
+
+![Palabra subrayada y las sugerencias de corrección](img/s11a-spelling.png)
+
+En los documentos Markdown, de texto (.txt) y LaTeX, las palabras que no están en el diccionario aparecen subrayadas en rojo. El código, los enlaces, las direcciones, las siglas y el texto entre comillas invertidas no se revisan, y los archivos de registro y CSV quedan fuera.
+
+- Coloque el cursor en la palabra y pulse **Ctrl+.** (o haga clic derecho y elija **{{spell.suggestions}}**) para ver las sugerencias. Elija una para reemplazar la palabra.
+- **{{spell.addToDictionary}}** hace que la palabra se acepte a partir de entonces, en cualquier idioma.
+- **{{menu.tools}} → {{menu.tools.spellCheck}}** (o **F7**) activa y desactiva la revisión.
+- El corrector usa el idioma de la interfaz. Para revisar en otro idioma, elija en **{{menu.tools}}** una de las opciones **{{spell.source}}: Deutsch**, **{{spell.source}}: English**…: hay diccionarios de alemán, español, francés, inglés, portugués de Brasil y portugués de Portugal. **{{menu.tools.spellAuto}}** vuelve a seguir la interfaz.
+
+Los diccionarios vienen con la aplicación: el corrector funciona sin internet.
+
 ## 6. Markdown
 
 ![Documento Markdown en modo de edición, con la barra de formato](img/s03-markdown-edit.png)

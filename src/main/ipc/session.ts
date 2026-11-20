@@ -41,7 +41,14 @@ export const sessionSchema = z.object({
     fontSize: z.number().int().min(8).max(40).optional(),
     tabSize: z.number().int().min(1).max(16).optional(),
     locale: z.enum(LOCALES.map((l) => l.code) as [Locale, ...Locale[]]).optional()
-  })
+  }),
+  spelling: z
+    .object({
+      enabled: z.boolean(),
+      locale: z.enum(LOCALES.map((l) => l.code) as [Locale, ...Locale[]]).optional(),
+      words: z.array(z.string().min(1).max(100)).max(5000)
+    })
+    .optional()
 })
 
 const sessionPath = (): string => join(app.getPath('userData'), 'session.json')

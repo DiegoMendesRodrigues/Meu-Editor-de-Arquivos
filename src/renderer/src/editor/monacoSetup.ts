@@ -42,7 +42,11 @@ monaco.editor.defineTheme('meu-claro', {
   base: 'vs',
   inherit: true,
   rules: [],
-  colors: { 'editorWhitespace.foreground': '#7c8591' }
+  colors: {
+    'editorWhitespace.foreground': '#7c8591',
+    // Sublinhado do corretor ortográfico (marcadores "info"): vermelho, como nos processadores de texto.
+    'editorInfo.foreground': '#d32f2f'
+  }
 })
 loader.config({ monaco })
 

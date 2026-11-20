@@ -322,7 +322,7 @@ test.describe('manual do usuário', () => {
       await expect(manual.locator('main h2')).toHaveCount(15)
       // todas as telas do manual carregam (e estão no idioma do manual: cada idioma tem a sua pasta de imagens)
       const images = await manual.evaluate(() => [...document.images].map((i) => ({ src: i.getAttribute('src'), ok: i.complete && i.naturalWidth > 0 })))
-      expect(images.length).toBe(21)
+      expect(images.length).toBe(22)
       expect(images.filter((i) => !i.ok), `imagens quebradas em ${locale}`).toEqual([])
       // os rótulos do aplicativo citados no texto são os desta tela
       await expect(manual.locator('.ui').first()).toHaveText(translate(locale, 'menu.file'))
@@ -348,5 +348,40 @@ test.describe('manual do usuário', () => {
     await expect(manual.locator('html')).toHaveAttribute('lang', 'en')
     await expect(manual.locator('h1')).toContainText('User Manual')
     await manual.close()
+  })
+})
+
+test.describe('corretor ortográfico', () => {
+  test('sublinha a palavra errada e corrige pela sugestão', async ({ page }) => {
+    await page.locator('.monaco-editor').click()
+    await page.keyboard.type('O coracão bate. ')
+    await expect(page.locator('.monaco-editor .squiggly-info')).toHaveCount(1, { timeout: 15000 })
+    await page.keyboard.press('Control+Home')
+    await page.keyboard.press('ArrowRight')
+    await page.keyboard.press('ArrowRight')
+    await page.keyboard.press('ArrowRight')
+    await page.keyboard.press('Control+.')
+    await page.locator('.action-widget').getByText('Substituir por “coração”').click()
+    await expect(page.locator('.monaco-editor .view-lines')).toContainText('O coração bate.')
+    await expect(page.locator('.monaco-editor .squiggly-info')).toHaveCount(0)
+  })
+
+  test('adicionar ao dicionário aceita a palavra', async ({ page }) => {
+    await page.locator('.monaco-editor').click()
+    await page.keyboard.type('Zorbelix ')
+    await expect(page.locator('.monaco-editor .squiggly-info')).toHaveCount(1, { timeout: 15000 })
+    await page.keyboard.press('Control+Home')
+    await page.keyboard.press('ArrowRight')
+    await page.keyboard.press('Control+.')
+    await page.locator('.action-widget').first().getByText('Adicionar ao dicionário').click()
+    await expect(page.locator('.monaco-editor .squiggly-info')).toHaveCount(0)
+  })
+
+  test('F7 liga e desliga a verificação', async ({ page }) => {
+    await page.locator('.monaco-editor').click()
+    await page.keyboard.type('palavraerrada ')
+    await expect(page.locator('.monaco-editor .squiggly-info')).toHaveCount(1, { timeout: 15000 })
+    await page.keyboard.press('F7')
+    await expect(page.locator('.monaco-editor .squiggly-info')).toHaveCount(0)
   })
 })

@@ -74,6 +74,19 @@ Editing commands are in **{{menu.edit}}** and display options are in **{{menu.vi
 
 Your display preferences are remembered for next time. The editor's own texts, such as the find box (Ctrl+F) and the command palette (F1), appear in English.
 
+### Spell checker
+
+![Underlined word and the suggested corrections](img/s11a-spelling.png)
+
+In Markdown, text (.txt) and LaTeX documents, words that are not in the dictionary are underlined in red. Code, links, addresses, acronyms and text between backticks are not checked, and log and CSV files are left out.
+
+- Place the cursor on the word and press **Ctrl+.** (or right-click and choose **{{spell.suggestions}}**) to see the suggestions. Pick one to replace the word.
+- **{{spell.addToDictionary}}** makes the word accepted from then on, in every language.
+- **{{menu.tools}} → {{menu.tools.spellCheck}}** (or **F7**) turns checking on and off.
+- The checker uses the interface language. To check in another language, choose one of the **{{spell.source}}: Deutsch**, **{{spell.source}}: English**… options in **{{menu.tools}}** — there are German, Spanish, French, English, Brazilian Portuguese and European Portuguese dictionaries. **{{menu.tools.spellAuto}}** goes back to following the interface.
+
+The dictionaries ship with the application, so the checker works offline.
+
 ## 6. Markdown
 
 ![Markdown document in editing mode, with the formatting toolbar](img/s03-markdown-edit.png)

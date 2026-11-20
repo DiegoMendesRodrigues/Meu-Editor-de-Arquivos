@@ -1,7 +1,7 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useEffect, useRef } from 'react'
 import Editor, { type OnMount } from '@monaco-editor/react'
-import type { editor } from 'monaco-editor'
+import type { editor, IDisposable } from 'monaco-editor'
 import { monaco } from '@/editor/monacoSetup'
 import { consumeReveal, requestReveal, setActiveEditor } from '@/editor/editorRef'
 import { JsonViewer } from '@/json/JsonViewer'
@@ -12,18 +12,23 @@ import { canPreview, modelPath, useActiveDocument, useDocuments, type EditorDocu
 import { useView } from '@/store/view'
 import { newFile, openFile } from '@/commands'
 import { useT } from '@/i18n'
+import { attachSpellcheck, registerSpellcheck } from '@/spell/spellcheck'
+
+registerSpellcheck()
 
 function CodeEditor({ doc }: { doc: EditorDocument }) {
   const updateContent = useDocuments((s) => s.updateContent)
   const setCursor = useDocuments((s) => s.setCursor)
   const view = useView()
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
+  const spellRef = useRef<IDisposable | null>(null)
 
   const handleMount: OnMount = (ed) => {
     editorRef.current = ed
     setActiveEditor(ed)
     registerMarkdownKeybindings(ed)
     attachRecorder(ed)
+    spellRef.current = attachSpellcheck(ed)
 
     const reportCursor = () => {
       const pos = ed.getPosition()
@@ -41,8 +46,14 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
     ed.focus()
   }
 
-  // Ao sair do modo de edição, os comandos de editor deixam de ter alvo.
-  useEffect(() => () => setActiveEditor(null), [])
+  // Ao sair do modo de edição, os comandos de editor deixam de ter alvo (e o corretor se desliga).
+  useEffect(
+    () => () => {
+      spellRef.current?.dispose()
+      setActiveEditor(null)
+    },
+    []
+  )
 
   // Marca o fim de cada linha com ¶ quando os caracteres invisíveis estão ligados
   // (o Monaco só desenha espaços e tabulações). Em arquivos enormes, fica de fora.

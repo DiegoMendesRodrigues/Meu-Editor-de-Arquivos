@@ -12,6 +12,7 @@ import { languageFromName } from '@/editor/languages'
 import { isDirty, useDocuments, type EditorDocument } from '@/store/documents'
 import { applyLocale, useLocale } from '@/i18n'
 import { useView } from '@/store/view'
+import { useSpelling } from '@/store/spelling'
 import { useWorkspace } from '@/store/workspace'
 
 const AUTOSAVE_DELAY_MS = 1500
@@ -52,7 +53,11 @@ export function snapshot(includeUnsaved: boolean): SessionData {
       fontSize: view.fontSize,
       tabSize: view.tabSize,
       locale: useLocale.getState().locale
-    }
+    },
+    spelling: (() => {
+      const s = useSpelling.getState()
+      return { enabled: s.enabled, ...(s.locale ? { locale: s.locale } : {}), words: s.words }
+    })()
   }
 }
 
@@ -142,6 +147,10 @@ export async function restoreSession(): Promise<{ restored: boolean; recovered: 
     const { locale, ...viewValues } = data.view
     useView.getState().setAll(viewValues)
     if (locale) applyLocale(locale)
+    if (data.spelling) {
+      const { enabled, locale: spellLocale, words } = data.spelling
+      useSpelling.getState().setAll({ enabled, locale: spellLocale ?? null, words })
+    }
 
     if (data.folder) {
       try {
@@ -171,6 +180,6 @@ export async function restoreSession(): Promise<{ restored: boolean; recovered: 
 
 /** Liga a gravação automática; devolve a função que a desliga. */
 export function startSessionAutosave(): () => void {
-  const unsubscribers = [useDocuments.subscribe(schedule), useWorkspace.subscribe(schedule), useView.subscribe(schedule), useLocale.subscribe(schedule)]
+  const unsubscribers = [useDocuments.subscribe(schedule), useWorkspace.subscribe(schedule), useView.subscribe(schedule), useLocale.subscribe(schedule), useSpelling.subscribe(schedule)]
   return () => unsubscribers.forEach((u) => u())
 }
