@@ -1,10 +1,10 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { BrowserWindow, shell } from 'electron'
-import { IpcChannels, type AppInfo } from '@shared/ipc'
+import { IpcChannels, type AppInfo, type UpdateInfo } from '@shared/ipc'
 import { z } from 'zod'
 import { LOCALES, type Locale } from '@shared/i18n'
 import { currentLocale, setMainLocale } from '../i18n'
-import { supportUrl } from '@shared/support'
+import { SITE_URL, siteUrl, supportUrl, versionUrl } from '@shared/support'
 import { openManual, refreshManual } from '../manual'
 import { handle } from './secure'
 
@@ -25,7 +25,23 @@ export function guardWindowClose(win: BrowserWindow): void {
 
 const localeSchema = z.enum(LOCALES.map((l) => l.code) as [Locale, ...Locale[]])
 
+/** Só os campos usados; o link só é aceito se for do próprio site. */
+const versionSchema = z.object({
+  version: z.string().regex(/^\d+(\.\d+){1,3}$/),
+  websiteLink: z.string().optional()
+})
+
+async function checkUpdate(): Promise<UpdateInfo> {
+  const locale = currentLocale()
+  const response = await fetch(versionUrl(locale), { signal: AbortSignal.timeout(10_000), headers: { Accept: 'application/json' } })
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  const data = versionSchema.parse(await response.json())
+  const link = data.websiteLink && data.websiteLink.startsWith(SITE_URL) ? data.websiteLink : siteUrl(locale)
+  return { version: data.version, websiteLink: link }
+}
+
 export function registerAppHandlers(): void {
+  handle(IpcChannels.checkUpdate, () => checkUpdate())
   handle(IpcChannels.openManual, () => openManual())
   // O endereço é montado aqui (o Renderer não escolhe a URL aberta no navegador).
   handle(IpcChannels.openSupport, () => shell.openExternal(supportUrl(currentLocale())))

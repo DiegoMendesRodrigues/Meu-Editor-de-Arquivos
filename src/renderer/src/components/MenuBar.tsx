@@ -5,7 +5,7 @@ import * as cmd from '@/commands'
 import { languageLabel, languageMenu } from '@/editor/languages'
 import { useT } from '@/i18n'
 import { useActiveDocument } from '@/store/documents'
-import { NEW_TYPES } from '@/newTypes'
+import { MENU_NEW_TYPES } from '@/newTypes'
 import { useAccount } from '@/store/account'
 import { useLibrary } from '@/store/library'
 import { useView } from '@/store/view'
@@ -72,7 +72,7 @@ export function MenuBar() {
       title: t('menu.file'),
       items: [
         { label: t('menu.file.newMd'), shortcut: 'Ctrl+N', action: () => cmd.newFile() },
-        ...NEW_TYPES.filter((type) => type.ext !== 'md').map((type) => ({ label: t('menu.file.newOfType', { label: type.nameKey ? t(type.nameKey) : type.name, ext: type.ext }), action: () => cmd.newFile(type.ext) })),
+        ...MENU_NEW_TYPES.map((type) => ({ label: t('menu.file.newOfType', { label: type.nameKey ? t(type.nameKey) : type.name, ext: type.ext }), action: () => cmd.newFile(type.ext) })),
         { label: t('menu.file.open'), shortcut: 'Ctrl+O', action: () => void cmd.openFile() },
         { label: t('menu.file.openFolder'), shortcut: 'Ctrl+Shift+K', action: () => void cmd.openFolder() },
         { label: t('menu.file.closeFolder'), action: folderOpen ? cmd.closeFolder : undefined },
@@ -187,8 +187,10 @@ export function MenuBar() {
       items: [
         { label: t('menu.help.manual'), action: cmd.openManual },
         { label: t('menu.help.shortcuts'), action: cmd.openShortcuts },
+        'separator',
         { label: t('menu.help.about'), action: cmd.openAbout },
-        { label: t('menu.help.support'), action: cmd.openSupport }
+        { label: t('menu.help.support'), action: cmd.openSupport },
+        { label: t('menu.help.checkUpdate'), action: cmd.checkUpdate }
       ]
     }
   ]

@@ -16,7 +16,7 @@ import { startFileSync } from '@/fileSync'
 import { restoreSession, startSessionAutosave } from '@/session'
 import { startWorkspaceSync } from '@/workspaceSync'
 import * as cmd from '@/commands'
-import { AboutDialog, ShortcutsDialog } from '@/components/AboutDialogs'
+import { AboutDialog, ShortcutsDialog, UpdateDialog } from '@/components/AboutDialogs'
 import { AccountDialog } from '@/components/AccountDialog'
 import { CloudOpenDialog, CloudSaveDialog } from '@/components/CloudDialogs'
 import { MacrosDialog } from '@/components/MacrosDialog'
@@ -164,6 +164,7 @@ export function App() {
       {dialog === 'cloudSave' && <CloudSaveDialog />}
       {dialog === 'shortcuts' && <ShortcutsDialog />}
       {dialog === 'about' && <AboutDialog />}
+      {dialog === 'update' && <UpdateDialog />}
     </div>
   )
 }

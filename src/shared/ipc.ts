@@ -53,7 +53,8 @@ export const IpcChannels = {
   closeWindow: 'app:close-window',
   setLocale: 'app:set-locale',
   openManual: 'app:open-manual',
-  openSupport: 'app:open-support'
+  openSupport: 'app:open-support',
+  checkUpdate: 'app:check-update'
 } as const
 
 /** Limite de texto não salvo guardado na sessão (acima disso o app volta a perguntar ao fechar). */
@@ -241,6 +242,12 @@ interface CloudSaveRequest {
 
 export type CloudSaveResult = { ok: true; file: CloudFileMeta } | { ok: false; conflict: true; current: CloudFileMeta }
 
+/** Resposta do site (version.php), já validada. */
+export interface UpdateInfo {
+  version: string
+  websiteLink: string
+}
+
 export interface AppInfo {
   version: string
   platform: string
@@ -316,6 +323,8 @@ export interface EditorApi {
   openManual(): Promise<void>
   /** Abre a página de suporte técnico do site no navegador, no idioma da interface. */
   openSupport(): Promise<void>
+  /** Consulta no site a versão mais recente publicada. */
+  checkUpdate(): Promise<UpdateInfo>
 
   getAppInfo(): Promise<AppInfo>
   /** O Main avisa que o usuário quer fechar a janela; o Renderer decide e chama closeWindow(). */

@@ -5,6 +5,7 @@ import {
   Braces,
   ListTree,
   ChevronDown,
+  ChevronRight,
   Eye,
   FilePlus,
   FolderOpen,
@@ -29,7 +30,7 @@ import {
 import * as cmd from '@/commands'
 import { LOCALES } from '@shared/i18n'
 import { applyLocale, useLocale, useT } from '@/i18n'
-import { NEW_TYPES } from '@/newTypes'
+import { NEW_TYPES, NEW_TYPE_GROUPS, type NewType } from '@/newTypes'
 import { Flag } from './Flags'
 import * as md from '@/markdown/editorFormatting'
 import { canPreview, useActiveDocument } from '@/store/documents'
@@ -76,6 +77,15 @@ const HEADINGS = [
 /** Botão "Novo" (Markdown) com seta para escolher o tipo do documento. */
 function NewMenu() {
   const t = useT()
+  const item = (type: NewType) => (
+    <DropdownMenu.Item
+      key={type.ext}
+      onSelect={() => cmd.newFile(type.ext)}
+      className="cursor-default px-3 py-1 text-[13px] outline-none data-[highlighted]:bg-accent data-[highlighted]:text-white"
+    >
+      {`.${type.ext} (${type.nameKey ? t(type.nameKey) : type.name})`}
+    </DropdownMenu.Item>
+  )
   return (
     <div className="flex items-center">
       <ToolButton icon={FilePlus} label={`${t('toolbar.new')} (Ctrl+N)`} onClick={() => cmd.newFile()} />
@@ -91,16 +101,25 @@ function NewMenu() {
           <DropdownMenu.Content
             align="start"
             sideOffset={2}
-            className="z-50 min-w-44 rounded-md border border-border bg-white py-1 shadow-lg"
+            className="z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-48 overflow-y-auto rounded-md border border-border bg-white py-1 shadow-lg"
           >
-            {NEW_TYPES.map((type) => (
-              <DropdownMenu.Item
-                key={type.ext}
-                onSelect={() => cmd.newFile(type.ext)}
-                className="cursor-default px-3 py-1.5 text-[13px] outline-none data-[highlighted]:bg-accent data-[highlighted]:text-white"
-              >
-                {`.${type.ext} (${type.nameKey ? t(type.nameKey) : type.name})`}
-              </DropdownMenu.Item>
+            {NEW_TYPES.map(item)}
+            <DropdownMenu.Separator className="my-1 h-px bg-border" />
+            {NEW_TYPE_GROUPS.map((group) => (
+              <DropdownMenu.Sub key={group.titleKey}>
+                <DropdownMenu.SubTrigger className="flex cursor-default items-center justify-between gap-4 px-3 py-1 text-[13px] outline-none data-[highlighted]:bg-accent data-[state=open]:bg-accent data-[highlighted]:text-white data-[state=open]:text-white">
+                  {t(group.titleKey)}
+                  <ChevronRight size={12} />
+                </DropdownMenu.SubTrigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.SubContent
+                    sideOffset={2}
+                    className="z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-48 overflow-y-auto rounded-md border border-border bg-white py-1 shadow-lg"
+                  >
+                    {group.types.map(item)}
+                  </DropdownMenu.SubContent>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Sub>
             ))}
           </DropdownMenu.Content>
         </DropdownMenu.Portal>

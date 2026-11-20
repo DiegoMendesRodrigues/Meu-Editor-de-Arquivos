@@ -69,6 +69,7 @@ const api: EditorApi = {
 
   openManual: () => ipcRenderer.invoke(IpcChannels.openManual),
   openSupport: () => ipcRenderer.invoke(IpcChannels.openSupport),
+  checkUpdate: () => ipcRenderer.invoke(IpcChannels.checkUpdate),
   setLocale: (locale) => ipcRenderer.invoke(IpcChannels.setLocale, locale),
   getAppInfo: () => ipcRenderer.invoke(IpcChannels.appInfo),
   onBeforeClose: (listener) => {
