@@ -41,3 +41,6 @@ desktop.ini
 
 # Configurações locais do Claude Code
 .claude/settings.local.json
+
+# Site (publicado separadamente; contém a configuração com senhas)
+website/
