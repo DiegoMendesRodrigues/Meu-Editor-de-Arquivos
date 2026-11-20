@@ -43,15 +43,13 @@ If another program changes a file you have open, the application reloads it by i
 
 ## 4. Saving and temporary documents
 
-![Notice of documents restored when the application is reopened](img/s20-restored.png)
-
 - **{{menu.file.save}}** (**Ctrl+S**) writes the document to its file. For a new document, the application asks for a name and a location.
 - **{{menu.file.saveAs}}** (**Ctrl+Shift+S**) writes a copy under another name or in another place.
 - **{{menu.file.saveAll}}** writes every document that has changes.
 
 **You do not lose what you typed.** A few seconds after each change, the application automatically keeps all open documents, including those that were never saved. This works whether or not you save.
 
-When you **close the application**, it asks nothing and discards nothing. The next time you open it, your tabs, the folder and the unsaved text come back as they were, with a yellow notice at the top of the screen. Save whenever you want to write to the actual file.
+When you **close the application**, it asks nothing and discards nothing. The next time you open it, your tabs, the folder and the unsaved text come back as they were. Save whenever you want to write to the actual file.
 
 When you **close a tab** that has changes, the application asks whether to save, not save or cancel. Two notes: the undo history (Ctrl+Z) is not kept between sessions, and automatic recovery keeps up to 100 MB of unsaved text.
 
@@ -91,11 +89,11 @@ The dictionaries ship with the application, so the checker works offline.
 
 ![Markdown document in editing mode, with the formatting toolbar](img/s03-markdown-edit.png)
 
-Markdown files (.md) open **formatted**, ready to read. To edit the text, click **{{toolbar.editText}}** (or press **Ctrl+Shift+E**); to go back to reading, click **{{toolbar.preview}}**.
+Markdown files (.md) open **formatted**, and you can keep writing directly in the formatted text. The toolbar applies formatting at the cursor or to the selection: headings, bulleted list, numbered list, indent, **bold** (Ctrl+B), *italic* (Ctrl+I), ~~strikethrough~~ (Ctrl+Shift+X), link, table and clear formatting. Ctrl+Z and Ctrl+Y undo and redo.
 
-In editing mode the toolbar offers formatting: headings, bulleted list, numbered list, indent, **bold** (Ctrl+B), *italic* (Ctrl+I), ~~strikethrough~~ (Ctrl+Shift+X), link, table and clear formatting. Select the text and click the button; with nothing selected, the application puts a template at the cursor.
+To see and edit the Markdown source, click **{{toolbar.editText}}** (or press **Ctrl+Shift+E**); to go back to the formatted text, click **{{toolbar.preview}}**. The formatting toolbar works in both modes.
 
-While reading, links open in the system browser. Images in the document are not displayed in the current version.
+When you edit the formatted text, the Markdown is rewritten in a standard style (for example, lists with `-`). Documents that contain HTML are read-only in this mode so the HTML is not lost: edit them with **{{toolbar.editText}}**. To open a link in the browser, use Ctrl+click. Images appear as a label with their name, and their address is kept in the file.
 
 ## 7. JSON files
 

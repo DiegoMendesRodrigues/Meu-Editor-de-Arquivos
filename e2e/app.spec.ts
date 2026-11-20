@@ -93,10 +93,29 @@ test.describe('visualizações', () => {
     await stubOpenDialog(app, [workspace.file('leia-me.md')])
     await page.keyboard.press('Control+O')
     await expect(page.getByRole('heading', { name: 'Título do documento' })).toBeVisible()
-    await expect(page.locator('article strong')).toHaveText('negrito')
+    await expect(page.locator('.ProseMirror strong')).toHaveText('negrito')
     await page.getByRole('button', { name: 'Editar texto' }).first().click()
     await expect(page.locator('.monaco-editor')).toBeVisible()
     await expect(page.locator('.view-lines')).toContainText('# Título do documento')
+  })
+
+  test('a visualização do Markdown é editável e aceita a formatação da barra', async ({ app, page, workspace }) => {
+    await stubOpenDialog(app, [workspace.file('leia-me.md')])
+    await page.keyboard.press('Control+O')
+    const heading = page.locator('.ProseMirror h1')
+    await expect(heading).toHaveText('Título do documento')
+    // digita no texto formatado
+    await heading.click()
+    await page.keyboard.press('End')
+    await page.keyboard.type(' novo')
+    // seleciona uma palavra e aplica negrito pela barra de ferramentas
+    await page.keyboard.press('Control+Shift+ArrowLeft')
+    await page.getByRole('button', { name: 'Negrito (Ctrl+B)' }).click()
+    await expect(page.locator('.ProseMirror h1 strong')).toHaveText('novo')
+    await expect(page.getByRole('tab', { selected: true })).toContainText('●')
+    // o texto Markdown recebe a alteração
+    await page.getByRole('button', { name: 'Editar texto' }).first().click()
+    await expect(page.locator('.view-lines')).toContainText('# Título do documento **novo**')
   })
 
   test('JSON abre em árvore', async ({ app, page, workspace }) => {
@@ -196,7 +215,8 @@ test.describe('documentos temporários (sessão)', () => {
       page = await second.firstWindow()
       await page.waitForSelector('[role=tab]')
       await expect(page.getByRole('tab')).toHaveCount(2)
-      await expect(page.getByRole('status').filter({ hasText: 'restaurados' })).toBeVisible()
+      // a restauração é silenciosa: nenhum aviso aparece
+      await expect(page.getByRole('status').filter({ hasText: 'restaurados' })).toHaveCount(0)
       await expect(page.getByRole('tab', { name: /Sem título 1[.]md/ })).toContainText('●')
       await page.getByRole('tab', { name: /notas[.]txt/ }).click()
       await expect(page.locator('.view-lines')).toContainText('EDITADO primeira laranja')
@@ -322,7 +342,7 @@ test.describe('manual do usuário', () => {
       await expect(manual.locator('main h2')).toHaveCount(15)
       // todas as telas do manual carregam (e estão no idioma do manual: cada idioma tem a sua pasta de imagens)
       const images = await manual.evaluate(() => [...document.images].map((i) => ({ src: i.getAttribute('src'), ok: i.complete && i.naturalWidth > 0 })))
-      expect(images.length).toBe(22)
+      expect(images.length).toBe(21)
       expect(images.filter((i) => !i.ok), `imagens quebradas em ${locale}`).toEqual([])
       // os rótulos do aplicativo citados no texto são os desta tela
       await expect(manual.locator('.ui').first()).toHaveText(translate(locale, 'menu.file'))

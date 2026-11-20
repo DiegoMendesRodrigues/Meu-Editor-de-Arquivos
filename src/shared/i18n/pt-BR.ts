@@ -21,6 +21,7 @@ export const ptBR = {
   "err.notAuthorized": "Acesso negado: o caminho não foi aberto pelo usuário.",
   "err.saveNotAuthorized": "Caminho não autorizado. Use \"Salvar como\".",
   "err.untrustedOrigin": "Origem não autorizada.",
+  "err.searchTimeout": "A busca demorou demais e foi interrompida. Simplifique a expressão ou restrinja os arquivos.",
   "err.outsideFolder": "fora da pasta pesquisada",
   "err.binaryOrLarge": "arquivo binário ou grande demais",
   "search.err.empty": "Digite o texto a procurar.",
@@ -176,10 +177,6 @@ export const ptBR = {
   "editor.noDocument": "Nenhum documento aberto",
   "editor.newDocument": "Novo documento",
   "editor.openFile": "Abrir arquivo",
-  "app.closeNotice": "Fechar aviso",
-  "app.restored": "{n} documentos foram restaurados com alterações ainda não salvas.",
-  "app.restored.one": "1 documento foi restaurado com alterações ainda não salvas.",
-  "app.restoredHint": "O app as guarda automaticamente; salve quando quiser gravar no arquivo.",
   "search.placeholder": "Localizar em arquivos",
   "search.queryLabel": "Texto a localizar",
   "search.caseSensitive": "Diferenciar maiúsculas",
@@ -376,10 +373,9 @@ export const ptBR = {
   "json.err.unexpected": "Valor inesperado: {found}",
   "json.err.trailing": "Conteúdo após o fim do JSON: {found}",
   "doc.untitled": "Sem título {n}",
+  "md.htmlReadOnly": "Este documento tem HTML, que a visualização não preserva. Para alterá-lo, use \"{label}\".",
   "md.linkText": "texto do link",
   "md.column": "Coluna",
-  "md.emptyDoc": "Documento vazio. Clique para editar.",
-  "md.localLink": "Link local: {href}",
 }
 
 export type Messages = typeof ptBR

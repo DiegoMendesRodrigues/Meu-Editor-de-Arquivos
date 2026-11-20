@@ -5,7 +5,7 @@ import { createMemoryStore } from '../src/db/memory.js'
 
 const PASSWORD = 'uma-senha-forte-123'
 
-function setup(overrides: { loginAttempts?: number } = {}) {
+function setup(overrides: { loginAttempts?: number; authRequestsPerWindow?: number } = {}) {
   const sent: { to: string; token: string }[] = []
   const mailer: Mailer = { async sendPasswordReset(to, token) { sent.push({ to, token }) } }
   const app = buildApp({ store: createMemoryStore(), mailer, ...overrides })
@@ -62,6 +62,22 @@ describe('contas', () => {
     for (let i = 0; i < 3; i++) await c.call('POST', '/v1/auth/login', { body: { email: 'ana@exemplo.com', password: 'errada-errada' } })
     const r = await c.call('POST', '/v1/auth/login', { body: { email: 'ana@exemplo.com', password: PASSWORD } })
     expect(r.status).toBe(429)
+  })
+
+  it('limita por IP as rotas de conta, mesmo com e-mails diferentes', async () => {
+    const c = setup({ authRequestsPerWindow: 3 })
+    for (let i = 0; i < 3; i++) {
+      const r = await c.call('POST', '/v1/auth/login', { body: { email: `pessoa${i}@exemplo.com`, password: 'errada-errada' } })
+      expect(r.status).toBe(401)
+    }
+    const r = await c.call('POST', '/v1/auth/password-reset/request', { body: { email: 'outra@exemplo.com' } })
+    expect(r.status).toBe(429)
+  })
+
+  it('envia cabeçalhos de segurança', async () => {
+    const res = await ctx.app.inject({ method: 'GET', url: '/v1/health' })
+    expect(res.headers['x-content-type-options']).toBe('nosniff')
+    expect(res.headers['cache-control']).toBe('no-store')
   })
 
   it('exige sessão válida e logout a encerra', async () => {

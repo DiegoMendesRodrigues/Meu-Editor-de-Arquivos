@@ -21,6 +21,9 @@ const norm = (p: string): string => {
 export const authorizeFile = (p: string): void => void authorizedFiles.add(norm(p))
 export const authorizeRoot = (p: string): void => void authorizedRoots.add(norm(p))
 
+/** A pasta foi aberta pelo usuário (é exatamente uma das pastas autorizadas)? */
+export const isAuthorizedRoot = (p: string): boolean => authorizedRoots.has(norm(p))
+
 export function isInside(root: string, target: string): boolean {
   const rel = relative(norm(root), norm(target))
   return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel))

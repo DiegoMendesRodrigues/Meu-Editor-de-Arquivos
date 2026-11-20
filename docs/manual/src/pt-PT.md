@@ -43,15 +43,13 @@ Se outro programa alterar um ficheiro que tem aberto, a aplicação recarrega-o 
 
 ## 4. Guardar e documentos temporários
 
-![Aviso de documentos restaurados ao reabrir a aplicação](img/s20-restored.png)
-
 - **{{menu.file.save}}** (**Ctrl+S**) grava o documento no ficheiro. Num documento novo, a aplicação pede o nome e a localização.
 - **{{menu.file.saveAs}}** (**Ctrl+Shift+S**) grava uma cópia com outro nome ou noutro local.
 - **{{menu.file.saveAll}}** grava todos os documentos com alterações.
 
 **Não perde o que escreveu.** Alguns segundos depois de cada alteração, a aplicação guarda automaticamente todos os documentos abertos, incluindo os que nunca foram guardados. Isto acontece quer guarde, quer não.
 
-Ao **fechar a aplicação**, não é perguntado nada e nada é descartado. Quando a abrir de novo, os separadores, a pasta e o texto ainda não guardado regressam como estavam, com um aviso amarelo no topo do ecrã. Guarde quando quiser gravar no ficheiro propriamente dito.
+Ao **fechar a aplicação**, não é perguntado nada e nada é descartado. Quando a abrir de novo, os separadores, a pasta e o texto ainda não guardado regressam como estavam. Guarde quando quiser gravar no ficheiro propriamente dito.
 
 Ao **fechar um separador** que tem alterações, a aplicação pergunta se quer guardar, não guardar ou cancelar. Duas notas: o histórico de anular (Ctrl+Z) não é guardado entre sessões, e a recuperação automática guarda até 100 MB de texto por guardar.
 
@@ -91,11 +89,11 @@ Os dicionários vêm com a aplicação: o corretor funciona sem internet.
 
 ![Documento Markdown em modo de edição, com a barra de formatação](img/s03-markdown-edit.png)
 
-Os ficheiros Markdown (.md) abrem **formatados**, prontos a ler. Para editar o texto, clique em **{{toolbar.editText}}** (ou use **Ctrl+Shift+E**); para voltar à leitura, clique em **{{toolbar.preview}}**.
+Os ficheiros Markdown (.md) abrem **formatados** e pode continuar a escrever diretamente no texto formatado. A barra de ferramentas aplica a formatação no lugar do cursor ou na seleção: títulos, lista com marcadores, lista numerada, recuo, **negrito** (Ctrl+B), *itálico* (Ctrl+I), ~~rasurado~~ (Ctrl+Shift+X), ligação, tabela e remover formatação. Ctrl+Z e Ctrl+Y anulam e refazem.
 
-Em modo de edição, a barra de ferramentas oferece a formatação: títulos, lista com marcas, lista numerada, avanço, **negrito** (Ctrl+B), *itálico* (Ctrl+I), ~~rasurado~~ (Ctrl+Shift+X), ligação, tabela e remover formatação. Selecione o texto e clique no botão; sem seleção, a aplicação coloca um modelo no local do cursor.
+Para ver e editar o código Markdown, clique em **{{toolbar.editText}}** (ou use **Ctrl+Shift+E**); para voltar ao texto formatado, clique em **{{toolbar.preview}}**. A barra de formatação funciona nos dois modos.
 
-Na leitura, as ligações abrem no navegador do sistema. As imagens do documento não são apresentadas na versão atual.
+Ao editar no texto formatado, o Markdown é regravado num formato padronizado (por exemplo, listas com `-`). Documentos que têm HTML ficam só de leitura nesse modo, para o HTML não se perder: edite-os em **{{toolbar.editText}}**. Para abrir uma ligação no navegador, use Ctrl+clique. As imagens aparecem como uma etiqueta com o nome, e o endereço é mantido no ficheiro.
 
 ## 7. Ficheiros JSON
 

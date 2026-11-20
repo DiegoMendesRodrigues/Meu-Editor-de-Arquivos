@@ -174,8 +174,10 @@ export function Toolbar() {
   const hasPreview = canPreview(doc)
   const isMarkdown = doc?.language === 'markdown'
   const previewing = hasPreview && doc?.mode === 'preview'
-  // A formatação só vale para Markdown em modo de edição.
-  const formatOff = !isMarkdown || previewing
+  // A formatação vale para Markdown, tanto no texto quanto na visualização (que também é editável).
+  const formatOff = !isMarkdown
+  // Desfazer/refazer: no JSON em árvore não há o que desfazer; no Markdown formatado, sim.
+  const historyOff = previewing && !isMarkdown
 
   return (
     <div className="flex h-9 shrink-0 items-center gap-0.5 border-b border-border bg-white px-2">
@@ -183,8 +185,8 @@ export function Toolbar() {
       <ToolButton icon={FolderOpen} label={`${t('toolbar.open')} (Ctrl+O)`} onClick={() => void cmd.openFile()} />
       <ToolButton icon={Save} label={`${t('toolbar.save')} (Ctrl+S)`} onClick={() => void cmd.save()} />
       <Divider />
-      <ToolButton icon={Undo2} label={`${t('toolbar.undo')} (Ctrl+Z)`} onClick={cmd.undo} disabled={previewing} />
-      <ToolButton icon={Redo2} label={`${t('toolbar.redo')} (Ctrl+Y)`} onClick={cmd.redo} disabled={previewing} />
+      <ToolButton icon={Undo2} label={`${t('toolbar.undo')} (Ctrl+Z)`} onClick={cmd.undo} disabled={historyOff} />
+      <ToolButton icon={Redo2} label={`${t('toolbar.redo')} (Ctrl+Y)`} onClick={cmd.redo} disabled={historyOff} />
       <Divider />
       <ToolButton icon={Search} label={`${t('toolbar.find')} (Ctrl+F)`} onClick={cmd.find} disabled={previewing} />
       <ToolButton icon={Replace} label={`${t('toolbar.replace')} (Ctrl+H)`} onClick={cmd.replace} disabled={previewing} />

@@ -17,6 +17,10 @@ export interface AppOptions {
   /** Tentativas de login com erro permitidas por janela (por IP + e-mail). */
   loginAttempts?: number
   loginWindowMs?: number
+  /** Requisições às rotas de conta (cadastro, login, recuperação de senha) permitidas por IP e por janela. */
+  authRequestsPerWindow?: number
+  /** Confiar no cabeçalho X-Forwarded-For (só atrás de um proxy reverso de confiança). */
+  trustProxy?: boolean
   logger?: boolean
 }
 
@@ -90,7 +94,17 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   const maxAttempts = opts.loginAttempts ?? 5
   const windowMs = opts.loginWindowMs ?? 15 * 60 * 1000
 
-  const app = Fastify({ logger: opts.logger ?? false, bodyLimit: MAX_FILE_BYTES + 1024 * 1024 })
+  const maxAuthRequests = opts.authRequestsPerWindow ?? 30
+
+  const app = Fastify({ logger: opts.logger ?? false, bodyLimit: MAX_FILE_BYTES + 1024 * 1024, trustProxy: opts.trustProxy ?? false })
+
+  // Cabeçalhos de segurança: a API só devolve JSON, que não deve ser interpretado nem guardado em cache.
+  app.addHook('onSend', async (_req, reply) => {
+    reply.header('X-Content-Type-Options', 'nosniff')
+    reply.header('Cache-Control', 'no-store')
+    reply.header('Referrer-Policy', 'no-referrer')
+    reply.header('X-Frame-Options', 'DENY')
+  })
 
   // Padrão de erro: { error: { code, message } }, sem detalhes internos.
   app.setErrorHandler((err, req, reply) => {
@@ -104,23 +118,41 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return reply.status(500).send({ error: { code: 'internal', message: 'Erro interno do servidor.' } })
   })
 
-  // Limite de tentativas de login com erro, por IP + e-mail.
+  // Contadores por janela de tempo: erros de login (por IP + e-mail) e uso das rotas de conta (por IP).
   const failures = new Map<string, { count: number; resetAt: number }>()
+  const authRequests = new Map<string, { count: number; resetAt: number }>()
   const attemptKey = (req: FastifyRequest, email: string): string => `${req.ip}|${email}`
-  const blocked = (key: string): boolean => {
-    const f = failures.get(key)
+  const over = (map: Map<string, { count: number; resetAt: number }>, key: string, limit: number): boolean => {
+    const f = map.get(key)
     if (!f) return false
     if (f.resetAt < Date.now()) {
-      failures.delete(key)
+      map.delete(key)
       return false
     }
-    return f.count >= maxAttempts
+    return f.count >= limit
   }
-  const fail = (key: string): void => {
-    const f = failures.get(key)
-    if (!f || f.resetAt < Date.now()) failures.set(key, { count: 1, resetAt: Date.now() + windowMs })
+  const count = (map: Map<string, { count: number; resetAt: number }>, key: string): void => {
+    const f = map.get(key)
+    if (!f || f.resetAt < Date.now()) map.set(key, { count: 1, resetAt: Date.now() + windowMs })
     else f.count++
   }
+  const blocked = (key: string): boolean => over(failures, key, maxAttempts)
+  const fail = (key: string): void => count(failures, key)
+  const tooMany = (): HttpError => new HttpError(429, 'too_many_attempts', 'Muitas tentativas. Aguarde alguns minutos e tente de novo.')
+  /** Limite por IP nas rotas de conta: segura cadastros em massa, envio de e-mails e tentativas com vários e-mails. */
+  const limitAuth = async (req: FastifyRequest): Promise<void> => {
+    if (over(authRequests, req.ip, maxAuthRequests)) throw tooMany()
+    count(authRequests, req.ip)
+  }
+  const authLimited = { preHandler: limitAuth }
+
+  // Limpa os contadores vencidos (sem isso, a memória cresceria com cada IP/e-mail novo).
+  const prune = setInterval(() => {
+    const now = Date.now()
+    for (const map of [failures, authRequests]) for (const [key, f] of map) if (f.resetAt < now) map.delete(key)
+  }, 60_000)
+  prune.unref()
+  app.addHook('onClose', async () => clearInterval(prune))
 
   async function issueSession(userId: string): Promise<string> {
     const token = newToken()
@@ -151,7 +183,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
 
   app.get('/v1/health', async () => ({ ok: true }))
 
-  app.post('/v1/auth/register', async (req, reply: FastifyReply) => {
+  app.post('/v1/auth/register', authLimited, async (req, reply: FastifyReply) => {
     const body = registerSchema.parse(req.body)
     const user = await store.createUser({ email: body.email, name: body.name, passwordHash: await hashPassword(body.password) })
     if (!user) throw new HttpError(409, 'email_in_use', 'Já existe uma conta com este e-mail.')
@@ -159,10 +191,10 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return reply.status(201).send({ token, user: publicUser(user) })
   })
 
-  app.post('/v1/auth/login', async (req) => {
+  app.post('/v1/auth/login', authLimited, async (req) => {
     const body = loginSchema.parse(req.body)
     const key = attemptKey(req, body.email)
-    if (blocked(key)) throw new HttpError(429, 'too_many_attempts', 'Muitas tentativas. Aguarde alguns minutos e tente de novo.')
+    if (blocked(key)) throw tooMany()
     const user = await store.findUserByEmail(body.email)
     const ok = await verifyPassword(body.password, user?.passwordHash ?? (await dummyHash))
     if (!user || !ok) {
@@ -179,7 +211,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   })
 
   // Recuperar senha: a resposta é sempre a mesma, exista ou não a conta.
-  app.post('/v1/auth/password-reset/request', async (req, reply) => {
+  app.post('/v1/auth/password-reset/request', authLimited, async (req, reply) => {
     const body = resetRequestSchema.parse(req.body)
     const user = await store.findUserByEmail(body.email)
     if (user) {
@@ -190,7 +222,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return reply.status(202).send({ ok: true })
   })
 
-  app.post('/v1/auth/password-reset/confirm', async (req, reply) => {
+  app.post('/v1/auth/password-reset/confirm', authLimited, async (req, reply) => {
     const body = resetConfirmSchema.parse(req.body)
     const userId = await store.consumeReset(hashToken(body.token))
     if (!userId) throw new HttpError(400, 'invalid_token', 'Código inválido ou expirado.')

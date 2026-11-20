@@ -1,6 +1,5 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import { useEffect, useState } from 'react'
-import { X } from 'lucide-react'
+import { useEffect } from 'react'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { MenuBar } from '@/components/MenuBar'
 import { Toolbar } from '@/components/Toolbar'
@@ -22,7 +21,7 @@ import { CloudOpenDialog, CloudSaveDialog } from '@/components/CloudDialogs'
 import { MacrosDialog } from '@/components/MacrosDialog'
 import { SnippetsDialog } from '@/components/SnippetsDialog'
 import { useDialogs } from '@/store/dialogs'
-import { applyLocale, useLocale, useT } from '@/i18n'
+import { applyLocale, useLocale } from '@/i18n'
 import { useAccount } from '@/store/account'
 import { useLibrary } from '@/store/library'
 
@@ -68,9 +67,6 @@ export function App() {
   const sidebarVisible = useView((s) => s.sidebarVisible)
   const bottomPanelVisible = useView((s) => s.bottomPanelVisible)
   const dialog = useDialogs((s) => s.open)
-  const t = useT()
-  // Quantos documentos voltaram com texto não salvo (o texto do aviso é montado ao desenhar, no idioma atual).
-  const [restoredCount, setRestoredCount] = useState(0)
   useGlobalShortcuts()
 
   // Restaura a sessão anterior; sem nada para restaurar, começa com um documento em branco.
@@ -79,10 +75,9 @@ export function App() {
     applyLocale(useLocale.getState().locale)
     let stopAutosave = () => {}
     let cancelled = false
-    void restoreSession().then(({ restored, recovered }) => {
+    void restoreSession().then(({ restored }) => {
       if (cancelled) return
       if (!restored) useDocuments.getState().newDocument()
-      setRestoredCount(recovered)
       stopAutosave = startSessionAutosave()
     })
     void useWorkspace.getState().refreshRecent()
@@ -102,14 +97,6 @@ export function App() {
     <div className="flex h-full flex-col">
       <MenuBar />
       <Toolbar />
-      {restoredCount > 0 && (
-        <div role="status" className="flex shrink-0 items-center gap-2 border-b border-amber-200 bg-amber-50 px-3 py-1.5 text-amber-900">
-          <span className="flex-1">{t('app.restored', { n: restoredCount })} {t('app.restoredHint')}</span>
-          <button type="button" aria-label={t('app.closeNotice')} onClick={() => setRestoredCount(0)} className="rounded p-0.5 hover:bg-amber-100">
-            <X size={14} />
-          </button>
-        </div>
-      )}
       <Group orientation="horizontal" className="min-h-0 flex-1">
         {sidebarVisible && (
           <>

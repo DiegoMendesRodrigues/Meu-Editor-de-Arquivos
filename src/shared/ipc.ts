@@ -63,13 +63,13 @@ export interface OpenedFile {
   size: number
 }
 
-export interface SaveRequest {
+interface SaveRequest {
   path: string
   content: string
   encoding: Encoding
 }
 
-export interface SaveAsRequest {
+interface SaveAsRequest {
   suggestedName: string
   content: string
   encoding: Encoding
@@ -92,7 +92,7 @@ export interface FolderEntry {
   isDirectory: boolean
 }
 
-export interface SearchRequest extends SearchOptions {
+interface SearchRequest extends SearchOptions {
   folder: string
   /** Padrões separados por vírgula (ex.: "*.ts, docs/**"). Vazio = todos os arquivos de texto. */
   include: string
@@ -115,7 +115,7 @@ export interface SearchResponse {
   truncated: boolean
 }
 
-export interface ReplaceRequest extends SearchRequest {
+interface ReplaceRequest extends SearchRequest {
   replacement: string
   /** Arquivos (caminhos absolutos dentro da pasta) em que a substituição será aplicada. */
   paths: string[]
@@ -190,7 +190,7 @@ export interface Macro {
   steps: MacroStep[]
 }
 
-export type LibraryKind = 'snippets' | 'macros'
+type LibraryKind = 'snippets' | 'macros'
 
 export interface AccountUser {
   id: string
@@ -220,7 +220,7 @@ export interface CloudFileContent extends CloudFileMeta {
   eol: Eol
 }
 
-export interface CloudSaveRequest {
+interface CloudSaveRequest {
   path: string
   content: string
   encoding: Encoding

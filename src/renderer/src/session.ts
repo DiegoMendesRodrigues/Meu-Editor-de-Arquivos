@@ -133,7 +133,7 @@ async function restoreDocument(s: SessionDocument): Promise<Omit<EditorDocument,
 }
 
 /** Restaura a sessão anterior. Devolve quantos documentos tinham texto recuperado. */
-export async function restoreSession(): Promise<{ restored: boolean; recovered: number }> {
+export async function restoreSession(): Promise<{ restored: boolean }> {
   let data: SessionData | null = null
   try {
     data = await window.api.loadSession()
@@ -141,7 +141,6 @@ export async function restoreSession(): Promise<{ restored: boolean; recovered: 
     data = null
   }
 
-  let recovered = 0
   if (data) {
     // O idioma escolhido antes volta; sem escolha salva, vale o do sistema (já aplicado ao iniciar).
     const { locale, ...viewValues } = data.view
@@ -167,7 +166,6 @@ export async function restoreSession(): Promise<{ restored: boolean; recovered: 
       const doc = await restoreDocument(s)
       if (!doc) continue
       if (i === data.activeIndex) activeIndex = restored.length
-      if (s.unsavedContent !== undefined && doc.content !== doc.savedContent) recovered++
       restored.push(doc)
     }
     if (restored.length > 0) useDocuments.getState().restore(restored, activeIndex)
@@ -175,7 +173,7 @@ export async function restoreSession(): Promise<{ restored: boolean; recovered: 
 
   ready = true
   const restored = useDocuments.getState().documents.length > 0
-  return { restored, recovered }
+  return { restored }
 }
 
 /** Liga a gravação automática; devolve a função que a desliga. */

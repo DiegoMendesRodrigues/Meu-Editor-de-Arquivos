@@ -6,7 +6,7 @@ import log from 'electron-log/main'
 import { z } from 'zod'
 import { LOCALES, type Locale } from '@shared/i18n'
 import { IpcChannels, SESSION_MAX_UNSAVED_CHARS, type SessionData } from '@shared/ipc'
-import { authorizeFile, authorizeRoot } from './access'
+import { authorizeFile, authorizeRoot, isAuthorized, isAuthorizedRoot } from './access'
 import { handle } from './secure'
 
 /**
@@ -63,6 +63,9 @@ async function persist(data: SessionData): Promise<void> {
   await rename(tmp, target)
 }
 
+/** A sessão só autoriza caminhos uma vez, ao abrir o app (ver sessionLoad). */
+let loadedOnce = false
+
 export function registerSessionHandlers(): void {
   handle(IpcChannels.sessionLoad, async (): Promise<SessionData | null> => {
     let data: SessionData
@@ -73,13 +76,27 @@ export function registerSessionHandlers(): void {
       return null
     }
     // Arquivos e pasta da sessão foram escolhidos pelo usuário antes; podem ser reabertos.
-    for (const doc of data.documents) if (doc.path) authorizeFile(doc.path)
-    if (data.folder) authorizeRoot(data.folder)
+    // Isso vale só na primeira leitura: depois, a sessão gravada nesta execução não amplia o acesso.
+    if (!loadedOnce) {
+      for (const doc of data.documents) if (doc.path) authorizeFile(doc.path)
+      if (data.folder) authorizeRoot(data.folder)
+    }
+    loadedOnce = true
     return data
   })
 
   handle(IpcChannels.sessionSave, async (_e, raw: unknown): Promise<void> => {
     const data = sessionSchema.parse(raw)
+    // Só entram na sessão caminhos que o usuário já autorizou (diálogo, recentes ou pasta aberta):
+    // assim, a sessão não serve para o Renderer conseguir acesso a outros arquivos na próxima abertura.
+    if (data.folder && !isAuthorizedRoot(data.folder)) data.folder = null
+    const allowed = await Promise.all(data.documents.map((d) => (d.path ? isAuthorized(d.path) : true)))
+    const kept = data.documents.filter((_, i) => allowed[i])
+    if (kept.length !== data.documents.length) {
+      log.warn('Sessão: documentos com caminhos não autorizados foram descartados.')
+      data.activeIndex = -1
+      data.documents = kept
+    }
     const size = data.documents.reduce((n, d) => n + (d.unsavedContent?.length ?? 0), 0)
     if (size > SESSION_MAX_UNSAVED_CHARS) {
       // Textos não salvos muito grandes não entram no backup; o restante da sessão sim.

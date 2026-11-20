@@ -62,8 +62,8 @@ export function openManual(): void {
     return { action: 'deny' }
   })
   win.webContents.on('will-navigate', (event, url) => {
-    // Só navega dentro da pasta do manual (índice e âncoras); o resto vai para o navegador.
-    if (!url.startsWith(rootUrl)) {
+    // Só páginas dentro da pasta do manual (a barra final evita pastas vizinhas como manual-x).
+    if (!url.startsWith(rootUrl.endsWith('/') ? rootUrl : `${rootUrl}/`)) {
       event.preventDefault()
       external(url)
     }

@@ -33,3 +33,48 @@ body {
   opacity: 0.8;
   pointer-events: none;
 }
+
+/* Janela de correções do Monaco (sugestões do corretor): 150 px mais larga. O Monaco mede cada linha
+   com "width: auto" para calcular a largura da janela; o espaço extra só entra nessa medição, e assim
+   a janela fica mais larga e os textos usam a largura toda. */
+.action-widget .monaco-list-row.action[style*='width: auto'] {
+  padding-right: 150px;
+}
+
+/* Imagens na visualização editável do Markdown: etiqueta com o texto alternativo. */
+.ProseMirror .md-image {
+  display: inline-block;
+  border: 1px solid #d4d4d8;
+  border-radius: 4px;
+  background: #f4f4f5;
+  padding: 0 6px;
+  color: #52525b;
+  font-size: 0.875em;
+}
+
+/* Listas de tarefas na visualização editável: caixa e texto na mesma linha, sem marcador. */
+.ProseMirror ul[data-type='taskList'] {
+  list-style: none;
+  padding-left: 0.25em;
+}
+.ProseMirror ul[data-type='taskList'] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+  padding-left: 0;
+}
+.ProseMirror ul[data-type='taskList'] li::marker {
+  content: none;
+}
+.ProseMirror ul[data-type='taskList'] li > label {
+  margin-top: 0.3em;
+  user-select: none;
+}
+.ProseMirror ul[data-type='taskList'] li > div > p {
+  margin: 0;
+}
+/* Citações sem as aspas automáticas do tema de tipografia. */
+.ProseMirror blockquote p::before,
+.ProseMirror blockquote p::after {
+  content: none;
+}

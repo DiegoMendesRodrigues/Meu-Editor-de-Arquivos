@@ -26,6 +26,11 @@ No app: menu **Conta → Entrar ou criar conta**, informe o endereço da API (`h
 - Publique **somente atrás de HTTPS** (proxy reverso). O app recusa `http://` fora de localhost.
 - Senhas com scrypt + sal; tokens de sessão guardados só como SHA-256; sessão de 30 dias.
 - Login com limite de tentativas (por IP + e-mail); respostas iguais para e-mail inexistente.
+- Limite por IP nas rotas de conta (cadastro, login e recuperação de senha); contadores vencidos são limpos a cada minuto.
+- Atrás de proxy reverso, defina `TRUST_PROXY=true` para os limites usarem o IP real do cliente.
+- Cabeçalhos de segurança em todas as respostas (`nosniff`, `no-store`, `no-referrer`, `DENY`).
+- O envio de e-mail é simulado (o código aparece no console, sem o e-mail da pessoa). Com `NODE_ENV=production`
+  o servidor não inicia até ser configurado um serviço de e-mail real e o `DATABASE_URL`.
 - Trocar ou redefinir a senha encerra as outras sessões.
 - Arquivos isolados por usuário; sincronização com controle de versão (409 em conflito).
 - **Recuperação de senha:** o código é apenas escrito no log do servidor. Ligue `Mailer` (`src/app.ts`) a um serviço de e-mail.

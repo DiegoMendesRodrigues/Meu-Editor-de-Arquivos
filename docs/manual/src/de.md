@@ -43,15 +43,13 @@ Wenn ein anderes Programm eine geöffnete Datei ändert, lädt die Anwendung sie
 
 ## 4. Speichern und temporäre Dokumente
 
-![Hinweis auf wiederhergestellte Dokumente beim erneuten Öffnen der Anwendung](img/s20-restored.png)
-
 - **{{menu.file.save}}** (**Ctrl+S**) schreibt das Dokument in seine Datei. Bei einem neuen Dokument fragt die Anwendung nach Name und Speicherort.
 - **{{menu.file.saveAs}}** (**Ctrl+Shift+S**) schreibt eine Kopie unter einem anderen Namen oder an einem anderen Ort.
 - **{{menu.file.saveAll}}** schreibt alle Dokumente mit Änderungen.
 
 **Von Ihnen Geschriebenes geht nicht verloren.** Wenige Sekunden nach jeder Änderung sichert die Anwendung automatisch alle geöffneten Dokumente, auch solche, die nie gespeichert wurden. Das geschieht unabhängig davon, ob Sie speichern oder nicht.
 
-Beim **Beenden der Anwendung** wird nichts gefragt und nichts verworfen. Beim nächsten Start kommen Registerkarten, Ordner und der nicht gespeicherte Text so zurück, wie sie waren, mit einem gelben Hinweis am oberen Rand. Speichern Sie, wenn Sie in die eigentliche Datei schreiben möchten.
+Beim **Beenden der Anwendung** wird nichts gefragt und nichts verworfen. Beim nächsten Start kommen Registerkarten, Ordner und der nicht gespeicherte Text so zurück, wie sie waren. Speichern Sie, wenn Sie in die eigentliche Datei schreiben möchten.
 
 Beim **Schließen einer Registerkarte** mit Änderungen fragt die Anwendung, ob Sie speichern, nicht speichern oder abbrechen möchten. Zwei Hinweise: Der Rückgängig-Verlauf (Ctrl+Z) wird nicht von einer Sitzung zur nächsten aufbewahrt, und die automatische Wiederherstellung sichert bis zu 100 MB nicht gespeicherten Text.
 
@@ -91,11 +89,11 @@ Die Wörterbücher sind im Programm enthalten: Die Prüfung funktioniert ohne In
 
 ![Markdown-Dokument im Bearbeitungsmodus mit der Formatierungsleiste](img/s03-markdown-edit.png)
 
-Markdown-Dateien (.md) werden **formatiert** geöffnet und sind sofort lesbar. Um den Text zu bearbeiten, klicken Sie auf **{{toolbar.editText}}** (oder drücken Sie **Ctrl+Shift+E**); zurück zum Lesen kommen Sie mit **{{toolbar.preview}}**.
+Markdown-Dateien (.md) öffnen sich **formatiert**, und Sie können direkt im formatierten Text weiterschreiben. Die Symbolleiste wendet die Formatierung an der Cursorposition oder auf die Auswahl an: Überschriften, Aufzählung, nummerierte Liste, Einzug, **fett** (Strg+B), *kursiv* (Strg+I), ~~durchgestrichen~~ (Strg+Shift+X), Link, Tabelle und Formatierung entfernen. Strg+Z und Strg+Y machen rückgängig und wiederholen.
 
-Im Bearbeitungsmodus bietet die Symbolleiste die Formatierung: Überschriften, Aufzählung, nummerierte Liste, Einzug, **Fett** (Ctrl+B), *Kursiv* (Ctrl+I), ~~Durchgestrichen~~ (Ctrl+Shift+X), Link, Tabelle und Formatierung entfernen. Markieren Sie den Text und klicken Sie auf die Schaltfläche; ohne Markierung setzt die Anwendung eine Vorlage an die Cursorposition.
+Um den Markdown-Quelltext zu sehen und zu bearbeiten, klicken Sie auf **{{toolbar.editText}}** (oder drücken Sie **Strg+Shift+E**); zurück zum formatierten Text geht es mit **{{toolbar.preview}}**. Die Formatierungsleiste funktioniert in beiden Modi.
 
-Beim Lesen öffnen sich Links im Browser des Systems. Bilder im Dokument werden in der aktuellen Version nicht angezeigt.
+Wenn Sie den formatierten Text bearbeiten, wird das Markdown in einem einheitlichen Stil neu geschrieben (zum Beispiel Listen mit `-`). Dokumente mit HTML sind in diesem Modus schreibgeschützt, damit das HTML nicht verloren geht: Bearbeiten Sie sie über **{{toolbar.editText}}**. Einen Link öffnen Sie mit Strg+Klick im Browser. Bilder erscheinen als Etikett mit ihrem Namen; ihre Adresse bleibt in der Datei erhalten.
 
 ## 7. JSON-Dateien
 

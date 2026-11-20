@@ -7,11 +7,13 @@ import { consumeReveal, requestReveal, setActiveEditor } from '@/editor/editorRe
 import { JsonViewer } from '@/json/JsonViewer'
 import { attachRecorder } from '@/editor/macros'
 import { registerMarkdownKeybindings } from '@/markdown/editorFormatting'
-import { MarkdownPreview } from '@/markdown/MarkdownPreview'
+import { MarkdownWysiwyg } from '@/markdown/MarkdownWysiwyg'
 import { canPreview, modelPath, useActiveDocument, useDocuments, type EditorDocument } from '@/store/documents'
 import { useView } from '@/store/view'
+import { useShallow } from 'zustand/react/shallow'
 import { newFile, openFile } from '@/commands'
-import { useT } from '@/i18n'
+import { useLocale, useT } from '@/i18n'
+import { monacoSpeaks } from '@/editor/monacoNls'
 import { attachSpellcheck, registerSpellcheck } from '@/spell/spellcheck'
 
 registerSpellcheck()
@@ -19,12 +21,22 @@ registerSpellcheck()
 function CodeEditor({ doc }: { doc: EditorDocument }) {
   const updateContent = useDocuments((s) => s.updateContent)
   const setCursor = useDocuments((s) => s.setCursor)
-  const view = useView()
+  // Só os campos usados aqui: o editor não é redesenhado quando outras preferências mudam.
+  const view = useView(
+    useShallow((s) => ({ fontSize: s.fontSize, wordWrap: s.wordWrap, showInvisibles: s.showInvisibles, tabSize: s.tabSize, insertSpaces: s.insertSpaces }))
+  )
+  const locale = useLocale((s) => s.locale)
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const spellRef = useRef<IDisposable | null>(null)
 
   const handleMount: OnMount = (ed) => {
     editorRef.current = ed
+    // O modelo é mantido entre as trocas de modo; se o texto mudou na visualização editável,
+    // traz a mudança para cá (como uma edição: Ctrl+Z volta ao texto anterior).
+    const model = ed.getModel()
+    if (model && model.getValue() !== doc.content) {
+      model.pushEditOperations([], [{ range: model.getFullModelRange(), text: doc.content }], () => null)
+    }
     setActiveEditor(ed)
     registerMarkdownKeybindings(ed)
     attachRecorder(ed)
@@ -74,9 +86,15 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
       )
     }
     apply()
-    const sub = ed.onDidChangeModelContent(apply)
+    // Ao digitar, refaz as marcas só depois de uma pausa curta (evita recriar milhares de marcas a cada tecla).
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const sub = ed.onDidChangeModelContent(() => {
+      clearTimeout(timer)
+      timer = setTimeout(apply, 120)
+    })
     const modelSub = ed.onDidChangeModel(apply)
     return () => {
+      clearTimeout(timer)
       sub.dispose()
       modelSub.dispose()
       collection.clear()
@@ -117,7 +135,9 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
         tabSize: view.tabSize,
         insertSpaces: view.insertSpaces,
         detectIndentation: false,
-        unicodeHighlight: { ambiguousCharacters: false }
+        unicodeHighlight: { ambiguousCharacters: false },
+        // Títulos da janela de correções ("Correção Rápida"): só quando já estão no idioma do app.
+        ...({ 'codeActionWidget.showHeaders': monacoSpeaks(locale) } as object)
       }}
     />
   )
@@ -128,6 +148,7 @@ export function EditorPane() {
   const doc = useActiveDocument()
   const documents = useDocuments((s) => s.documents)
   const setMode = useDocuments((s) => s.setMode)
+  const updateContent = useDocuments((s) => s.updateContent)
 
   // Descarta os modelos dos documentos fechados para liberar memória.
   useEffect(() => {
@@ -166,7 +187,8 @@ export function EditorPane() {
       // key: cada documento tem seu próprio estado de nós abertos/fechados.
       return <JsonViewer key={doc.id} content={doc.content} onEdit={edit} />
     }
-    return <MarkdownPreview content={doc.content} onEdit={() => setMode(doc.id, 'edit')} />
+    // key: cada documento tem o seu editor formatado (e o seu histórico de desfazer).
+    return <MarkdownWysiwyg key={doc.id} content={doc.content} onChange={(markdown) => updateContent(doc.id, markdown)} />
   }
   return <CodeEditor doc={doc} />
 }

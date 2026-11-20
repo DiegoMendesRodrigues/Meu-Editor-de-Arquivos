@@ -1,12 +1,7 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './editor/monacoSetup'
-import './styles.css'
-import { App } from './App'
+import { loadMonacoNls } from './editor/monacoNls'
+import { useLocale } from './i18n'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-)
+// As traduções do Monaco precisam estar prontas antes de ele ser carregado (pelo bootstrap).
+await loadMonacoNls(useLocale.getState().locale)
+await import('./bootstrap')

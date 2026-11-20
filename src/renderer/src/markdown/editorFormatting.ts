@@ -1,12 +1,16 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 /**
- * Aplica as transformações de format.ts à seleção atual do Monaco.
+ * Formatação de Markdown pela barra de ferramentas: no modo de edição de texto, aplica as
+ * transformações de format.ts à seleção do Monaco; na visualização editável, usa os comandos do
+ * editor formatado (o resultado é o mesmo Markdown).
  */
 import { t } from '@/i18n'
 import type { editor } from 'monaco-editor'
 import { monaco } from '@/editor/monacoSetup'
 import { getActiveEditor } from '@/editor/editorRef'
 import * as fmt from './format'
+import { getActiveWysiwyg } from './wysiwygRef'
+import type { Editor as Wysiwyg } from '@tiptap/react'
 
 type Editor = editor.IStandaloneCodeEditor
 
@@ -58,30 +62,69 @@ function transformSelections(transform: (text: string) => string, emptyCaretOffs
   })
 }
 
-export const heading = (level: number): void => transformLines((lines) => lines.map((l) => fmt.setHeading(l, level)))
-export const bulletList = (): void => transformLines(fmt.toggleBulletList)
-export const numberedList = (): void => transformLines(fmt.toggleNumberedList)
+/** Na visualização editável, executa a ação no editor formatado; senão, a versão do Monaco. */
+const either =
+  (rich: (ed: Wysiwyg) => void, plain: () => void) =>
+  (): void => {
+    const ed = getActiveWysiwyg()
+    if (ed) rich(ed)
+    else plain()
+  }
+
+type Level = 1 | 2 | 3 | 4 | 5 | 6
+export const heading = (level: number): void =>
+  either(
+    (ed) => (level <= 0 ? ed.chain().focus().setParagraph().run() : ed.chain().focus().setHeading({ level: Math.min(level, 6) as Level }).run()),
+    () => transformLines((lines) => lines.map((l) => fmt.setHeading(l, level)))
+  )()
+export const bulletList = either((ed) => ed.chain().focus().toggleBulletList().run(), () => transformLines(fmt.toggleBulletList))
+export const numberedList = either((ed) => ed.chain().focus().toggleOrderedList().run(), () => transformLines(fmt.toggleNumberedList))
 
 const wrap = (marker: string) => () => transformSelections((t) => fmt.toggleWrap(t, marker), marker.length)
-export const bold = wrap('**')
-export const italic = wrap('*')
-export const strikethrough = wrap('~~')
+export const bold = either((ed) => ed.chain().focus().toggleBold().run(), wrap('**'))
+export const italic = either((ed) => ed.chain().focus().toggleItalic().run(), wrap('*'))
+export const strikethrough = either((ed) => ed.chain().focus().toggleStrike().run(), wrap('~~'))
 
-export const link = (): void => transformSelections((text) => fmt.makeLink(text, t('md.linkText')))
-export const removeFormatting = (): void => transformSelections(fmt.stripFormatting)
+/** Link: com texto selecionado, vira link (o endereço é o próprio texto, se for um); sem seleção, insere um link de exemplo. */
+export const link = either(
+  (ed) => {
+    const { from, to, empty } = ed.state.selection
+    if (ed.isActive('link')) return void ed.chain().focus().extendMarkRange('link').unsetLink().run()
+    if (empty) {
+      const text = t('md.linkText')
+      return void ed.chain().focus().insertContent({ type: 'text', text, marks: [{ type: 'link', attrs: { href: 'https://' } }] }).run()
+    }
+    const selected = ed.state.doc.textBetween(from, to).trim()
+    ed.chain().focus().setLink({ href: /^(https?:\/\/|mailto:)/i.test(selected) ? selected : 'https://' }).run()
+  },
+  () => transformSelections((text) => fmt.makeLink(text, t('md.linkText')))
+)
+export const removeFormatting = either((ed) => ed.chain().focus().unsetAllMarks().clearNodes().run(), () => transformSelections(fmt.stripFormatting))
 
-export function indent(): void {
-  getActiveEditor()?.focus()
-  getActiveEditor()?.trigger('markdown-format', 'editor.action.indentLines', null)
-}
+/** Recuo: em listas, aprofunda o item; no Monaco, indenta as linhas. */
+export const indent = either(
+  (ed) => void (ed.chain().focus().sinkListItem('listItem').run() || ed.chain().focus().sinkListItem('taskItem').run()),
+  () => {
+    getActiveEditor()?.focus()
+    getActiveEditor()?.trigger('markdown-format', 'editor.action.indentLines', null)
+  }
+)
 
-export function outdent(): void {
-  getActiveEditor()?.focus()
-  getActiveEditor()?.trigger('markdown-format', 'editor.action.outdentLines', null)
-}
+export const outdent = either(
+  (ed) => void (ed.chain().focus().liftListItem('listItem').run() || ed.chain().focus().liftListItem('taskItem').run()),
+  () => {
+    getActiveEditor()?.focus()
+    getActiveEditor()?.trigger('markdown-format', 'editor.action.outdentLines', null)
+  }
+)
 
 /** Insere uma tabela 3x2 em uma linha própria, abaixo do cursor. */
 export function table(): void {
+  const rich = getActiveWysiwyg()
+  if (rich) {
+    rich.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+    return
+  }
   withEditor((ed, model) => {
     const pos = ed.getPosition()!
     const eol = model.getEOL()

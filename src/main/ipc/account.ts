@@ -138,7 +138,8 @@ async function api<T>(method: string, path: string, opts: { body?: unknown; auth
   if (res.ok || opts.allow?.includes(res.status)) return json as T
 
   const error = (json as { error?: { code?: string; message?: string } } | null)?.error
-  const message = error?.code && API_CODES.has(error.code) ? tm(`api.${error.code}` as MessageKey) : error?.message
+  // Só mensagens conhecidas, traduzidas aqui: o texto vindo do servidor não aparece direto na interface.
+  const message = error?.code && API_CODES.has(error.code) ? tm(`api.${error.code}` as MessageKey) : undefined
   if (res.status === 401 && opts.auth) {
     token = null
     user = null

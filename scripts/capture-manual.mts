@@ -265,7 +265,7 @@ async function captureLocale(locale: Locale): Promise<void> {
     await page.getByRole('tree').first().waitFor()
     await stubOpen(app, [join(folder, demo.md.name)])
     await page.keyboard.press('Control+O')
-    await page.waitForSelector('article')
+    await page.waitForSelector('.ProseMirror')
     await shot(page, img('s01-main'))
 
     // --- Botão Novo e a seta
@@ -279,7 +279,7 @@ async function captureLocale(locale: Locale): Promise<void> {
     await page.locator('.monaco-editor').waitFor()
     await shot(page, img('s03-markdown-edit'))
     await page.getByRole('button', { name: new RegExp(`^${t('toolbar.preview')}$`) }).click()
-    await page.waitForSelector('article')
+    await page.waitForSelector('.ProseMirror')
 
     // --- JSON em árvore e JSON com erro
     await stubOpen(app, [join(folder, demo.json.name)])
@@ -392,16 +392,6 @@ async function captureLocale(locale: Locale): Promise<void> {
     await page.getByRole('menuitem', { name: new RegExp(demo.user.name) }).click()
     await shotDialog(page, img('s18-account-profile'))
 
-    // --- Restauração: deixa texto não salvo, fecha o app e reabre
-    await page.locator('.monaco-editor').click()
-    await page.keyboard.press('Control+End')
-    await page.keyboard.type(' ...')
-    await sleep(2200) // o autosave grava 1,5 s depois da última alteração
-    await stubMessageBox(app)
-    await app.close()
-    ;({ app, page } = await launch(locale, userData))
-    await page.getByRole('status').filter({ hasText: /\d/ }).first().waitFor()
-    await shot(page, img('s20-restored'), { clip: { x: 0, y: 0, width: 1120, height: 330 } })
   } finally {
     await stubMessageBox(app).catch(() => undefined)
     await app.close().catch(() => undefined)

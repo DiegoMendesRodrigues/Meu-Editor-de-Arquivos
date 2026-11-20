@@ -23,7 +23,7 @@ export interface SearchMatch {
   previewStart: number
 }
 
-export const PREVIEW_MAX = 240
+const PREVIEW_MAX = 240
 
 const WORD = '[\\p{L}\\p{N}_]'
 

@@ -43,15 +43,13 @@ Si un autre programme modifie un fichier que vous avez ouvert, l'application le 
 
 ## 4. Enregistrer et documents temporaires
 
-![Avis de documents restaurés à la réouverture de l'application](img/s20-restored.png)
-
 - **{{menu.file.save}}** (**Ctrl+S**) écrit le document dans son fichier. Pour un nouveau document, l'application demande le nom et l'emplacement.
 - **{{menu.file.saveAs}}** (**Ctrl+Shift+S**) écrit une copie sous un autre nom ou à un autre endroit.
 - **{{menu.file.saveAll}}** écrit tous les documents qui ont des modifications.
 
 **Vous ne perdez pas ce que vous avez saisi.** Quelques secondes après chaque modification, l'application conserve automatiquement tous les documents ouverts, y compris ceux qui n'ont jamais été enregistrés. Cela se fait que vous enregistriez ou non.
 
-Quand vous **fermez l'application**, elle ne pose aucune question et ne supprime rien. À la prochaine ouverture, les onglets, le dossier et le texte non enregistré reviennent tels quels, avec un avis jaune en haut de l'écran. Enregistrez quand vous voulez écrire dans le véritable fichier.
+Quand vous **fermez l'application**, elle ne pose aucune question et ne supprime rien. À la prochaine ouverture, les onglets, le dossier et le texte non enregistré reviennent tels quels. Enregistrez quand vous voulez écrire dans le véritable fichier.
 
 Quand vous **fermez un onglet** contenant des modifications, l'application demande s'il faut enregistrer, ne pas enregistrer ou annuler. Deux remarques : l'historique d'annulation (Ctrl+Z) n'est pas conservé d'une session à l'autre, et la récupération automatique conserve jusqu'à 100 Mo de texte non enregistré.
 
@@ -91,11 +89,11 @@ Les dictionnaires sont fournis avec l’application : le correcteur fonctionne s
 
 ![Document Markdown en mode modification, avec la barre de mise en forme](img/s03-markdown-edit.png)
 
-Les fichiers Markdown (.md) s'ouvrent **mis en forme**, prêts à être lus. Pour modifier le texte, cliquez sur **{{toolbar.editText}}** (ou appuyez sur **Ctrl+Shift+E**) ; pour revenir à la lecture, cliquez sur **{{toolbar.preview}}**.
+Les fichiers Markdown (.md) s’ouvrent **mis en forme**, et vous pouvez continuer à écrire directement dans le texte mis en forme. La barre d’outils applique la mise en forme au curseur ou à la sélection : titres, liste à puces, liste numérotée, retrait, **gras** (Ctrl+B), *italique* (Ctrl+I), ~~barré~~ (Ctrl+Shift+X), lien, tableau et effacer la mise en forme. Ctrl+Z et Ctrl+Y annulent et rétablissent.
 
-En mode modification, la barre d'outils propose la mise en forme : titres, liste à puces, liste numérotée, retrait, **gras** (Ctrl+B), *italique* (Ctrl+I), ~~barré~~ (Ctrl+Shift+X), lien, tableau et effacement de la mise en forme. Sélectionnez le texte et cliquez sur le bouton ; sans sélection, l'application place un modèle au niveau du curseur.
+Pour voir et modifier le code Markdown, cliquez sur **{{toolbar.editText}}** (ou appuyez sur **Ctrl+Shift+E**) ; pour revenir au texte mis en forme, cliquez sur **{{toolbar.preview}}**. La barre de mise en forme fonctionne dans les deux modes.
 
-En lecture, les liens s'ouvrent dans le navigateur du système. Les images du document ne sont pas affichées dans la version actuelle.
+Quand vous modifiez le texte mis en forme, le Markdown est réécrit dans un style standard (par exemple, des listes avec `-`). Les documents qui contiennent du HTML sont en lecture seule dans ce mode, pour ne pas perdre le HTML : modifiez-les avec **{{toolbar.editText}}**. Pour ouvrir un lien dans le navigateur, utilisez Ctrl+clic. Les images apparaissent sous forme d’étiquette avec leur nom, et leur adresse est conservée dans le fichier.
 
 ## 7. Fichiers JSON
 

@@ -1,27 +1,17 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import { open, readdir, readFile, stat, writeFile } from 'node:fs/promises'
-import { join, relative, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import log from 'electron-log/main'
 import { z } from 'zod'
-import {
-  IpcChannels,
-  type ReplaceResponse,
-  type SearchFileResult,
-  type SearchResponse
-} from '@shared/ipc'
-import { buildGlobFilter, buildRegex, replaceText, searchText } from '@shared/search'
+import { IpcChannels, type ReplaceResponse, type SearchResponse } from '@shared/ipc'
+import { buildRegex } from '@shared/search'
 import { assertAuthorized, isInside } from './access'
-import { decodeText, encodeText } from './textCodec'
 import { tm } from '../i18n'
 import { handle } from './secure'
+import createSearchWorker from './searchWorker?nodeWorker'
+import { MAX_FILES_SCANNED, type ReplaceWorkResult, type WorkRequest } from './searchTypes'
 
-/** Limites para manter a interface responsiva em pastas grandes. */
-const MAX_FILE_BYTES = 5 * 1024 * 1024
-const MAX_MATCHES = 5000
-const MAX_FILES_SCANNED = 20000
-
-/** Pastas que quase nunca interessam numa busca (dependências, controle de versão, builds). */
-const IGNORED_DIRS = new Set(['node_modules', '.git', '.svn', '.hg', 'out', 'dist', 'build', '.next', '.cache', '__pycache__'])
+/** Tempo máximo de uma busca ou substituição (protege contra expressões regulares muito custosas). */
+const TIMEOUT_MS = 60_000
 
 const requestSchema = z.object({
   folder: z.string().min(1),
@@ -36,114 +26,64 @@ const replaceSchema = requestSchema.extend({
   paths: z.array(z.string().min(1)).max(MAX_FILES_SCANNED)
 })
 
-const toPosix = (p: string): string => p.split('\\').join('/')
-
-/** Arquivos com byte NUL no início são tratados como binários. */
-async function looksBinary(path: string): Promise<boolean> {
-  const fh = await open(path, 'r')
-  try {
-    const buf = Buffer.alloc(8192)
-    const { bytesRead } = await fh.read(buf, 0, buf.length, 0)
-    return buf.subarray(0, bytesRead).includes(0)
-  } finally {
-    await fh.close()
-  }
-}
-
-/** Percorre a pasta (sem seguir links simbólicos, para evitar laços e saídas da pasta). */
-async function* walk(root: string): AsyncGenerator<string> {
-  const stack = [root]
-  while (stack.length > 0) {
-    const dir = stack.pop()!
-    let dirents
-    try {
-      dirents = await readdir(dir, { withFileTypes: true })
-    } catch {
-      continue // sem permissão ou pasta removida durante a busca
+/** Executa o trabalho numa thread própria, encerrada ao terminar ou ao passar do tempo limite. */
+function runInWorker<T>(req: WorkRequest): Promise<T> {
+  return new Promise((done, fail) => {
+    const worker = createSearchWorker({})
+    const finish = (): void => {
+      clearTimeout(timer)
+      void worker.terminate()
     }
-    dirents.sort((a, b) => a.name.localeCompare(b.name))
-    const subdirs: string[] = []
-    for (const d of dirents) {
-      if (d.isDirectory()) {
-        if (!IGNORED_DIRS.has(d.name)) subdirs.push(join(dir, d.name))
-      } else if (d.isFile()) {
-        yield join(dir, d.name)
-      }
-    }
-    stack.push(...subdirs.reverse())
-  }
+    const timer = setTimeout(() => {
+      finish()
+      fail(new Error(tm('err.searchTimeout')))
+    }, TIMEOUT_MS)
+    worker.once('message', (msg: { ok: true; result: T } | { ok: false; message: string }) => {
+      finish()
+      if (msg.ok) done(msg.result)
+      else fail(new Error(msg.message))
+    })
+    worker.once('error', (err) => {
+      finish()
+      fail(err)
+    })
+    worker.postMessage(req)
+  })
 }
 
 async function searchFolder(raw: unknown): Promise<SearchResponse> {
   const req = requestSchema.parse(raw)
   const root = await assertAuthorized(req.folder)
-  const re = buildRegex(req, tm)
-  const matchesInclude = buildGlobFilter(req.include)
-
-  const files: SearchFileResult[] = []
-  let totalMatches = 0
-  let filesScanned = 0
-  let filesSkipped = 0
-  let truncated = false
-
-  for await (const path of walk(root)) {
-    const relPath = toPosix(relative(root, path))
-    if (matchesInclude && !matchesInclude(relPath)) continue
-    if (filesScanned >= MAX_FILES_SCANNED) {
-      truncated = true
-      break
-    }
-    filesScanned++
-    try {
-      if ((await stat(path)).size > MAX_FILE_BYTES || (await looksBinary(path))) {
-        filesSkipped++
-        continue
-      }
-      const text = decodeText(await readFile(path)).content.replace(/\r\n/g, '\n')
-      const matches = searchText(text, re, MAX_MATCHES - totalMatches)
-      if (matches.length > 0) {
-        files.push({ path, relPath, matches })
-        totalMatches += matches.length
-      }
-      if (totalMatches >= MAX_MATCHES) {
-        truncated = true
-        break
-      }
-    } catch {
-      filesSkipped++
-    }
-  }
-  return { files, totalMatches, filesScanned, filesSkipped, truncated }
+  buildRegex(req, tm) // valida a expressão aqui, com a mensagem de erro no idioma do usuário
+  return runInWorker<SearchResponse>({ kind: 'search', root, options: req, include: req.include })
 }
 
 async function replaceInFiles(raw: unknown): Promise<ReplaceResponse> {
   const req = replaceSchema.parse(raw)
   const root = await assertAuthorized(req.folder)
-  const re = buildRegex(req, tm)
-  const result: ReplaceResponse = { filesChanged: 0, replacements: 0, errors: [] }
-
+  buildRegex(req, tm)
+  // Só arquivos dentro da pasta pesquisada e autorizados (inclusive após resolver links).
+  const errors: string[] = []
+  const paths: string[] = []
   for (const target of req.paths) {
     const path = resolve(target)
-    const label = toPosix(relative(root, path))
     try {
-      // Só arquivos dentro da pasta pesquisada (e autorizados, inclusive após resolver links).
       if (!isInside(root, path)) throw new Error(tm('err.outsideFolder'))
-      await assertAuthorized(path)
-      const buf = await readFile(path)
-      if ((await stat(path)).size > MAX_FILE_BYTES || buf.subarray(0, 8192).includes(0)) throw new Error(tm('err.binaryOrLarge'))
-      const decoded = decodeText(buf)
-      const replaced = replaceText(decoded.content.replace(/\r\n/g, '\n'), re, req.replacement, req.regex)
-      if (replaced.count === 0) continue
-      const out = decoded.eol === 'CRLF' ? replaced.text.replace(/\n/g, '\r\n') : replaced.text
-      await writeFile(path, encodeText(out, decoded.encoding))
-      result.filesChanged++
-      result.replacements += replaced.count
-      log.info(`Substituição aplicada: ${path} (${replaced.count})`)
+      paths.push(await assertAuthorized(path))
     } catch (err) {
-      result.errors.push(`${label}: ${(err as Error).message}`)
+      errors.push(`${path}: ${(err as Error).message}`)
     }
   }
-  return result
+  const result = await runInWorker<ReplaceWorkResult>({
+    kind: 'replace',
+    root,
+    options: req,
+    replacement: req.replacement,
+    paths,
+    binaryOrLarge: tm('err.binaryOrLarge')
+  })
+  for (const line of result.changed) log.info(`Substituição aplicada: ${line}`)
+  return { filesChanged: result.filesChanged, replacements: result.replacements, errors: [...errors, ...result.errors] }
 }
 
 export function registerSearchHandlers(): void {

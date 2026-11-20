@@ -2,7 +2,7 @@
 import type { MessageKey, Params } from '../../shared/i18n/index'
 
 /** Atalhos de teclado do aplicativo, agrupados, para a janela "Atalhos de teclado". */
-export interface ShortcutGroup {
+interface ShortcutGroup {
   title: string
   items: { keys: string; action: string }[]
 }

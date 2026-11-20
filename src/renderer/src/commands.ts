@@ -3,6 +3,7 @@
  * Comandos da aplicação. Menus, toolbar e atalhos chamam estas funções,
  * para que cada ação tenha uma única implementação.
  */
+import { getActiveWysiwyg } from '@/markdown/wysiwygRef'
 import type { MessageKey } from '@shared/i18n'
 import { t } from '@/i18n'
 import { useDocuments, isDirty, canPreview, type EditorDocument } from '@/store/documents'
@@ -156,8 +157,9 @@ export async function requestQuit(): Promise<void> {
   await window.api.closeWindow()
 }
 
-export const undo = (): void => runEditorAction('undo')
-export const redo = (): void => runEditorAction('redo')
+// Na visualização editável do Markdown, desfazer e refazer valem para o editor formatado.
+export const undo = (): void => void (getActiveWysiwyg()?.chain().focus().undo().run() ?? runEditorAction('undo'))
+export const redo = (): void => void (getActiveWysiwyg()?.chain().focus().redo().run() ?? runEditorAction('redo'))
 export const find = (): void => runEditorAction('actions.find')
 export const replace = (): void => runEditorAction('editor.action.startFindReplaceAction')
 export const goToLine = (): void => runEditorAction('editor.action.gotoLine')
