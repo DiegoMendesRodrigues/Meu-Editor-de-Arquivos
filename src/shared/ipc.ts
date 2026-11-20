@@ -11,6 +11,7 @@ export type { SearchMatch, SearchOptions } from './search'
 
 export const IpcChannels = {
   openFiles: 'file:open',
+  openDropped: 'file:open-dropped',
   readFile: 'file:read',
   saveFile: 'file:save',
   saveFileAs: 'file:save-as',
@@ -247,6 +248,11 @@ export interface AppInfo {
 /** API exposta ao Renderer via contextBridge (window.api). */
 export interface EditorApi {
   openFiles(): Promise<OpenedFile[]>
+  /**
+   * Abre arquivos arrastados do explorador do sistema para a janela. Recebe os File do evento de soltar;
+   * o caminho é obtido no preload (o Renderer não o vê). Pastas e arquivos ilegíveis vêm em failed.
+   */
+  openDroppedFiles(files: File[]): Promise<{ opened: OpenedFile[]; failed: string[] }>
   /** Lê um arquivo já autorizado (dentro de uma pasta aberta ou da lista de recentes). */
   readFile(path: string): Promise<OpenedFile>
   saveFile(req: SaveRequest): Promise<SavedFile>

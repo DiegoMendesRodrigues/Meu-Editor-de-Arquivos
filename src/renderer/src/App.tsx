@@ -94,6 +94,30 @@ export function App() {
 
   // Monitoramento de alterações externas e confirmação ao fechar a janela.
   useEffect(() => startFileSync(), [])
+
+  // Arquivos arrastados do explorador do sistema para qualquer ponto da janela são abertos.
+  // Fase de captura: o editor não recebe o arquivo (nem insere o caminho como texto).
+  useEffect(() => {
+    const hasFiles = (e: DragEvent): boolean => !!e.dataTransfer?.types.includes('Files')
+    const onDragOver = (e: DragEvent): void => {
+      if (!hasFiles(e)) return
+      e.preventDefault()
+      e.stopPropagation()
+      e.dataTransfer!.dropEffect = 'copy'
+    }
+    const onDrop = (e: DragEvent): void => {
+      if (!hasFiles(e)) return
+      e.preventDefault()
+      e.stopPropagation()
+      void cmd.openDroppedFiles(Array.from(e.dataTransfer!.files))
+    }
+    window.addEventListener('dragover', onDragOver, true)
+    window.addEventListener('drop', onDrop, true)
+    return () => {
+      window.removeEventListener('dragover', onDragOver, true)
+      window.removeEventListener('drop', onDrop, true)
+    }
+  }, [])
   useEffect(() => void useLibrary.getState().load(), [])
   useEffect(() => void useAccount.getState().load(), [])
   useEffect(() => window.api.onBeforeClose(() => void cmd.requestQuit()), [])

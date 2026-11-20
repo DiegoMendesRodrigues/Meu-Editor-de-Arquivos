@@ -47,6 +47,19 @@ export async function openFile(): Promise<void> {
   }
 }
 
+/** Abre os arquivos arrastados do explorador do sistema para a janela. */
+export async function openDroppedFiles(files: File[]): Promise<void> {
+  if (files.length === 0) return
+  try {
+    const { opened, failed } = await window.api.openDroppedFiles(files)
+    docs().addOpenedFiles(opened)
+    if (opened.length > 0) refreshRecent()
+    if (failed.length > 0) window.alert(t('err.openFile') + '\n\n' + failed.join('\n'))
+  } catch (err) {
+    reportError('err.openFile', err)
+  }
+}
+
 /** Abre um arquivo pelo caminho (explorador ou recentes); se já estiver aberto, só ativa a aba. */
 export async function openPath(path: string): Promise<void> {
   const existing = docs().documents.find((d) => d.path === path)

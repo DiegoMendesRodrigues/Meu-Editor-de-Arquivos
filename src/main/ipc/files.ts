@@ -72,6 +72,22 @@ export function registerFileHandlers(): void {
     return Promise.all(result.filePaths.map(readOne))
   })
 
+  // Arquivos soltos na janela: o usuário escolheu cada um ao arrastar (como no diálogo de abrir).
+  handle(IpcChannels.openDropped, async (_e, raw: unknown) => {
+    const paths = z.array(pathSchema.max(4096)).max(100).parse(raw)
+    const opened: OpenedFile[] = []
+    const failed: string[] = []
+    for (const p of paths) {
+      try {
+        opened.push(await readOne(resolve(p)))
+      } catch (err) {
+        log.warn(`Arquivo solto não aberto: ${resolve(p)}: ${String(err)}`)
+        failed.push(basename(p))
+      }
+    }
+    return { opened, failed }
+  })
+
   handle(IpcChannels.readFile, async (_e, raw: unknown): Promise<OpenedFile> => {
     return readOne(await assertAuthorized(pathSchema.parse(raw)))
   })

@@ -1,5 +1,5 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
+import { contextBridge, ipcRenderer, webUtils, type IpcRendererEvent } from 'electron'
 import { IpcChannels, type EditorApi, type FileChange } from '@shared/ipc'
 
 /**
@@ -8,6 +8,15 @@ import { IpcChannels, type EditorApi, type FileChange } from '@shared/ipc'
  */
 const api: EditorApi = {
   openFiles: () => ipcRenderer.invoke(IpcChannels.openFiles),
+  // Só arquivos reais do disco têm caminho (um File criado pela página devolve ''), então a página
+  // não consegue pedir um caminho qualquer por aqui.
+  openDroppedFiles: (files) =>
+    ipcRenderer.invoke(
+      IpcChannels.openDropped,
+      Array.from(files)
+        .map((f) => webUtils.getPathForFile(f))
+        .filter(Boolean)
+    ),
   readFile: (path) => ipcRenderer.invoke(IpcChannels.readFile, path),
   saveFile: (req) => ipcRenderer.invoke(IpcChannels.saveFile, req),
   saveFileAs: (req) => ipcRenderer.invoke(IpcChannels.saveFileAs, req),
