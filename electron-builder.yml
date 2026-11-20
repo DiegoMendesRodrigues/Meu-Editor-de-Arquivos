@@ -22,6 +22,25 @@ win:
     - nsis
     - portable
   artifactName: ${name}-${version}-${arch}.${ext}
+# Pacote para a Microsoft Store (npm run dist:store). Os valores de identidade vêm do Partner Center:
+# Produtos → Meu Editor de Arquivos → Identidade do produto. Troque os três campos marcados antes de enviar.
+appx:
+  applicationId: MeuEditorDeArquivos
+  identityName: SUBSTITUIR.MeuEditorDeArquivos        # Package/Identity/Name
+  publisher: CN=SUBSTITUIR-PELO-ID-DO-EDITOR          # Package/Identity/Publisher
+  publisherDisplayName: Diego Mendes Rodrigues        # Package/Properties/PublisherDisplayName
+  displayName: Meu Editor de Arquivos
+  backgroundColor: transparent
+  showNameOnTiles: true
+  # Idiomas da página da loja e do pacote; o primeiro é o idioma padrão (português do Brasil).
+  languages:
+    - pt-BR
+    - pt-PT
+    - en-US
+    - es-ES
+    - fr-FR
+    - de-DE
+  artifactName: ${name}-${version}-${arch}.${ext}
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

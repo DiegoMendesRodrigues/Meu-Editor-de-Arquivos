@@ -47,6 +47,7 @@ export const de: Messages = {
   "api.folder_not_empty": "Der Ordner ist nicht leer.",
   "err.manualMissing": "Das Benutzerhandbuch wurde nicht gefunden.",
   "err.openManual": "Das Benutzerhandbuch konnte nicht geöffnet werden.",
+  "err.openSupport": "Die Seite des technischen Supports konnte nicht geöffnet werden.",
   "menu.file": "Datei",
   "menu.edit": "Bearbeiten",
   "menu.search": "Suchen",

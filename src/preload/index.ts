@@ -68,6 +68,7 @@ const api: EditorApi = {
   cloudDeleteFolder: (path) => ipcRenderer.invoke(IpcChannels.cloudDeleteFolder, path),
 
   openManual: () => ipcRenderer.invoke(IpcChannels.openManual),
+  openSupport: () => ipcRenderer.invoke(IpcChannels.openSupport),
   setLocale: (locale) => ipcRenderer.invoke(IpcChannels.setLocale, locale),
   getAppInfo: () => ipcRenderer.invoke(IpcChannels.appInfo),
   onBeforeClose: (listener) => {

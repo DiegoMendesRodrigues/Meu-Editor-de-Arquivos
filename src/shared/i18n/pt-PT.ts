@@ -47,6 +47,7 @@ export const ptPT: Messages = {
   "api.folder_not_empty": "A pasta não está vazia.",
   "err.manualMissing": "Não foi possível encontrar o manual do utilizador.",
   "err.openManual": "Não foi possível abrir o manual do utilizador.",
+  "err.openSupport": "Não foi possível abrir a página de suporte técnico.",
   "menu.file": "Ficheiro",
   "menu.edit": "Editar",
   "menu.search": "Pesquisar",

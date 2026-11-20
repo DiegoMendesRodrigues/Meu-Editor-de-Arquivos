@@ -188,7 +188,7 @@ export function MenuBar() {
         { label: t('menu.help.manual'), action: cmd.openManual },
         { label: t('menu.help.shortcuts'), action: cmd.openShortcuts },
         { label: t('menu.help.about'), action: cmd.openAbout },
-        { label: t('menu.help.support') } // ainda não disponível
+        { label: t('menu.help.support'), action: cmd.openSupport }
       ]
     }
   ]

@@ -46,6 +46,7 @@ export const ptBR = {
   "api.folder_not_empty": "A pasta não está vazia.",
   "err.manualMissing": "Não foi possível encontrar o manual do usuário.",
   "err.openManual": "Não foi possível abrir o manual do usuário.",
+  "err.openSupport": "Não foi possível abrir a página de suporte técnico.",
   "menu.file": "Arquivo",
   "menu.edit": "Editar",
   "menu.search": "Pesquisar",

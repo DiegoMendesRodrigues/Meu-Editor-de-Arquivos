@@ -1,9 +1,10 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import { BrowserWindow } from 'electron'
+import { BrowserWindow, shell } from 'electron'
 import { IpcChannels, type AppInfo } from '@shared/ipc'
 import { z } from 'zod'
 import { LOCALES, type Locale } from '@shared/i18n'
-import { setMainLocale } from '../i18n'
+import { currentLocale, setMainLocale } from '../i18n'
+import { supportUrl } from '@shared/support'
 import { openManual, refreshManual } from '../manual'
 import { handle } from './secure'
 
@@ -26,6 +27,8 @@ const localeSchema = z.enum(LOCALES.map((l) => l.code) as [Locale, ...Locale[]])
 
 export function registerAppHandlers(): void {
   handle(IpcChannels.openManual, () => openManual())
+  // O endereço é montado aqui (o Renderer não escolhe a URL aberta no navegador).
+  handle(IpcChannels.openSupport, () => shell.openExternal(supportUrl(currentLocale())))
   handle(IpcChannels.setLocale, (_e, raw: unknown) => {
     setMainLocale(localeSchema.parse(raw))
     refreshManual()

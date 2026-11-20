@@ -47,6 +47,7 @@ export const fr: Messages = {
   "api.folder_not_empty": "Le dossier n'est pas vide.",
   "err.manualMissing": "Le manuel d'utilisation est introuvable.",
   "err.openManual": "Impossible d'ouvrir le manuel d'utilisation.",
+  "err.openSupport": "Impossible d’ouvrir la page du support technique.",
   "menu.file": "Fichier",
   "menu.edit": "Édition",
   "menu.search": "Recherche",

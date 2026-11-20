@@ -47,6 +47,7 @@ export const es: Messages = {
   "api.folder_not_empty": "La carpeta no está vacía.",
   "err.manualMissing": "No se encontró el manual del usuario.",
   "err.openManual": "No se pudo abrir el manual del usuario.",
+  "err.openSupport": "No se pudo abrir la página de soporte técnico.",
   "menu.file": "Archivo",
   "menu.edit": "Editar",
   "menu.search": "Buscar",

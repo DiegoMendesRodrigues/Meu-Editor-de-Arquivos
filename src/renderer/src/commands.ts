@@ -261,6 +261,7 @@ export const saveToCloudDialog = (): void => {
   if (doc) void requestCloudSave(doc)
 }
 
+export const openSupport = (): void => void window.api.openSupport().catch((err) => reportError('err.openSupport', err))
 export const openManual = (): void => void window.api.openManual().catch((err) => reportError('err.openManual', err))
 export const openShortcuts = (): void => useDialogs.getState().show('shortcuts')
 export const openAbout = (): void => useDialogs.getState().show('about')

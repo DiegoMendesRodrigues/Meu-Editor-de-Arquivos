@@ -47,6 +47,7 @@ export const en: Messages = {
   "api.folder_not_empty": "The folder is not empty.",
   "err.manualMissing": "The user manual could not be found.",
   "err.openManual": "Could not open the user manual.",
+  "err.openSupport": "Could not open the technical support page.",
   "menu.file": "File",
   "menu.edit": "Edit",
   "menu.search": "Search",
