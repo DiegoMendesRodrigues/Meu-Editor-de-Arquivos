@@ -6,21 +6,26 @@ import { closeFolder, openFolder, openPath } from '@/commands'
 import { useT } from '@/i18n'
 import { isDirty, useDocuments } from '@/store/documents'
 import { useWorkspace } from '@/store/workspace'
+import { useCloud, useStorageMode } from '@/store/cloud'
+import { CloudTree, DOC_DRAG_TYPE, NewCloudFolder } from './CloudTree'
 
 function Section({
   title,
   actions,
+  alwaysShowActions = false,
   children
 }: {
   title: string
   actions?: React.ReactNode
+  /** Mostra os botões do título o tempo todo (e não só ao passar o mouse). */
+  alwaysShowActions?: boolean
   children: React.ReactNode
 }) {
   return (
     <section className="mb-3">
       <div className="group flex items-center px-3 py-1">
         <h2 className="flex-1 truncate text-[11px] font-semibold uppercase tracking-wide text-zinc-500">{title}</h2>
-        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100">{actions}</div>
+        <div className={`flex gap-0.5 ${alwaysShowActions ? '' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>{actions}</div>
       </div>
       {children}
     </section>
@@ -114,6 +119,8 @@ export function Sidebar() {
   const recentFiles = useWorkspace((s) => s.recentFiles)
   const clearRecent = useWorkspace((s) => s.clearRecent)
   const [reloadKey, setReloadKey] = useState(0)
+  const [newFolder, setNewFolder] = useState(false)
+  const mode = useStorageMode()
   const activePath = documents.find((d) => d.id === activeId)?.path ?? null
 
   return (
@@ -127,6 +134,12 @@ export function Sidebar() {
                 type="button"
                 title={d.path ?? d.name}
                 onClick={() => setActive(d.id)}
+                // Com a nuvem em uso, o documento pode ser arrastado para uma pasta da nuvem (envia uma cópia).
+                draggable={mode === 'cloud' && !d.cloud}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData(DOC_DRAG_TYPE, d.id)
+                  e.dataTransfer.effectAllowed = 'copy'
+                }}
                 className={`flex w-full items-center gap-2 truncate px-3 py-1 text-left hover:bg-zinc-200 ${
                   d.id === activeId ? 'bg-zinc-200 font-medium' : ''
                 }`}
@@ -140,6 +153,22 @@ export function Sidebar() {
         </ul>
       </Section>
 
+      {mode === 'cloud' ? (
+        <Section
+          title={t('sidebar.cloud')}
+          alwaysShowActions
+          actions={
+            <>
+              <IconButton icon={FolderPlus} label={t('cloud.newFolder')} onClick={() => setNewFolder(true)} />
+              <IconButton icon={RefreshCw} label={t('sidebar.refresh')} onClick={() => void useCloud.getState().load()} />
+            </>
+          }
+        >
+          {newFolder && <NewCloudFolder onDone={() => setNewFolder(false)} />}
+          <CloudTree />
+        </Section>
+      ) : (
+      <>
       <Section
         title={folder ? t('sidebar.explorerWithFolder', { name: folder.name }) : t('sidebar.explorer')}
         actions={
@@ -189,6 +218,8 @@ export function Sidebar() {
           ))}
         </ul>
       </Section>
+      </>
+      )}
     </aside>
   )
 }

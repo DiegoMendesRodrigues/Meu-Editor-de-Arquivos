@@ -39,6 +39,12 @@ export const IpcChannels = {
   cloudRead: 'cloud:read',
   cloudSave: 'cloud:save',
   cloudDelete: 'cloud:delete',
+  cloudMove: 'cloud:move',
+  workspaceGet: 'workspace:get',
+  workspacePut: 'workspace:put',
+  cloudFolders: 'cloud:folders',
+  cloudCreateFolder: 'cloud:create-folder',
+  cloudDeleteFolder: 'cloud:delete-folder',
   libraryLoad: 'library:load',
   librarySave: 'library:save',
   appInfo: 'app:info',
@@ -145,6 +151,8 @@ export interface SessionDocument {
   language?: string
   /** Vínculo com um arquivo da nuvem, se houver. */
   cloud?: { id: string; path: string; version: number }
+  /** Identificador do documento na área de trabalho sincronizada pela nuvem. */
+  syncId?: string
   unsavedContent?: string
 }
 
@@ -283,6 +291,17 @@ export interface EditorApi {
   cloudRead(id: string): Promise<CloudFileContent>
   cloudSave(req: CloudSaveRequest): Promise<CloudSaveResult>
   cloudDelete(id: string): Promise<void>
+  /** Muda o caminho do arquivo na nuvem (mover para outra pasta ou renomear). */
+  cloudMove(id: string, path: string): Promise<CloudFileMeta>
+  /** Pastas criadas na nuvem (as dos caminhos dos arquivos existem implicitamente). */
+  cloudFolders(): Promise<string[]>
+  /** Área de trabalho sincronizada entre computadores (JSON) e sua versão (0 = não existe). */
+  workspaceGet(): Promise<{ data: string | null; version: number }>
+  /** Grava a área de trabalho; ok: false quando outro computador gravou antes (versão diferente). */
+  workspacePut(data: string, baseVersion: number): Promise<{ ok: true; version: number } | { ok: false }>
+  cloudCreateFolder(path: string): Promise<void>
+  /** Exclui a pasta da nuvem; só funciona com a pasta vazia. */
+  cloudDeleteFolder(path: string): Promise<void>
 
   /** Avisa o processo principal do idioma da interface (diálogos nativos e mensagens de erro). */
   setLocale(locale: Locale): Promise<void>

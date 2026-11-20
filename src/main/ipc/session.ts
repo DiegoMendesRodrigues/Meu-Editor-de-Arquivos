@@ -28,6 +28,7 @@ export const sessionSchema = z.object({
         eol: z.enum(['LF', 'CRLF']),
         language: z.string().max(40).optional(),
         cloud: z.object({ id: z.string().min(1).max(64), path: z.string().min(1).max(512), version: z.number().int().min(0) }).optional(),
+        syncId: z.string().min(1).max(64).optional(),
         unsavedContent: z.string().optional()
       })
     )

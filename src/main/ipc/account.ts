@@ -95,8 +95,14 @@ function check<T>(schema: z.ZodType<T>, value: unknown): T {
 }
 
 /** Códigos de erro da API que têm mensagem traduzida. */
-const API_CODES = new Set(['invalid_request', 'email_in_use', 'invalid_credentials', 'too_many_attempts', 'wrong_password', 'invalid_token', 'not_found', 'too_large', 'internal'])
+const API_CODES = new Set(['invalid_request', 'email_in_use', 'invalid_credentials', 'too_many_attempts', 'wrong_password', 'invalid_token', 'not_found', 'too_large', 'internal', 'path_in_use', 'folder_not_empty'])
 const passwordSchema = z.string().min(1).max(200)
+/** Caminho na nuvem: relativo, com "/", sem "..", "." nem segmentos vazios. */
+const cloudPathSchema = z
+  .string()
+  .min(1)
+  .max(512)
+  .refine((p) => !p.includes('\\') && p.split('/').every((seg) => seg !== '' && seg !== '.' && seg !== '..'))
 
 class ApiError extends Error {
   constructor(
@@ -242,5 +248,37 @@ export function registerAccountHandlers(): void {
 
   handle(IpcChannels.cloudDelete, async (_e, raw: unknown) => {
     await api('DELETE', `/v1/files/${encodeURIComponent(z.string().min(1).max(64).parse(raw))}`, { auth: true })
+  })
+
+  handle(IpcChannels.cloudMove, async (_e, rawId: unknown, rawPath: unknown): Promise<CloudFileMeta> => {
+    const id = z.string().min(1).max(64).parse(rawId)
+    const path = cloudPathSchema.parse(rawPath)
+    const res = await api<{ file: CloudFileMeta }>('PATCH', `/v1/files/${encodeURIComponent(id)}`, { auth: true, body: { path } })
+    return toMeta(res.file)
+  })
+
+  handle(IpcChannels.workspaceGet, async () => {
+    const res = await api<{ data: string | null; version: number }>('GET', '/v1/workspace', { auth: true })
+    return z.object({ data: z.string().nullable(), version: z.number().int().min(0) }).parse({ data: res.data, version: res.version })
+  })
+
+  handle(IpcChannels.workspacePut, async (_e, rawData: unknown, rawVersion: unknown) => {
+    const data = z.string().max(10 * 1024 * 1024).parse(rawData)
+    const baseVersion = z.number().int().min(0).parse(rawVersion)
+    const res = await api<{ version?: number }>('PUT', '/v1/workspace', { auth: true, body: { data, baseVersion }, allow: [409] })
+    return typeof res.version === 'number' ? { ok: true as const, version: res.version } : { ok: false as const }
+  })
+
+  handle(IpcChannels.cloudFolders, async (): Promise<string[]> => {
+    const res = await api<{ folders: string[] }>('GET', '/v1/folders', { auth: true })
+    return z.array(z.string().max(512)).parse(res.folders)
+  })
+
+  handle(IpcChannels.cloudCreateFolder, async (_e, raw: unknown) => {
+    await api('POST', '/v1/folders', { auth: true, body: { path: cloudPathSchema.parse(raw) } })
+  })
+
+  handle(IpcChannels.cloudDeleteFolder, async (_e, raw: unknown) => {
+    await api('DELETE', `/v1/folders?path=${encodeURIComponent(cloudPathSchema.parse(raw))}`, { auth: true })
   })
 }

@@ -1,7 +1,7 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { randomUUID } from 'node:crypto'
 import mysql, { type Pool, type PoolConnection, type ResultSetHeader, type RowDataPacket } from 'mysql2/promise'
-import type { FileMeta, RemoteFile, Store, UpsertResult, User } from './store.js'
+import type { DeleteFolderResult, FileMeta, MoveResult, PutWorkspaceResult, RemoteFile, Store, UpsertResult, User, Workspace } from './store.js'
 
 /** Implementação para MySQL/MariaDB. Todas as consultas são parametrizadas. */
 export function createMysqlStore(uri: string): Store {
@@ -134,6 +134,59 @@ export function createMysqlStore(uri: string): Store {
     async deleteFile(userId, id) {
       const [res] = await pool.execute<ResultSetHeader>('DELETE FROM files WHERE user_id = ? AND id = ?', [userId, id])
       return res.affectedRows === 1
+    },
+    async moveFile(userId, id, newPath): Promise<MoveResult> {
+      return withTransaction(async (conn) => {
+        const [rows] = await conn.execute<RowDataPacket[]>(`SELECT ${META_COLUMNS} FROM files WHERE user_id = ? AND id = ? FOR UPDATE`, [userId, id])
+        if (!rows[0]) return { ok: false, reason: 'not_found' }
+        const current = toMeta(rows[0])
+        if (current.path === newPath) return { ok: true, file: current }
+        const now = new Date()
+        try {
+          await conn.execute('UPDATE files SET path = ?, version = version + 1, updated_at = ? WHERE id = ?', [newPath, now, id])
+        } catch (err) {
+          if ((err as { code?: string }).code === 'ER_DUP_ENTRY') return { ok: false, reason: 'exists' }
+          throw err
+        }
+        return { ok: true, file: { ...current, path: newPath, version: current.version + 1, updatedAt: now } }
+      })
+    },
+    async listFolders(userId) {
+      const [rows] = await pool.execute<RowDataPacket[]>('SELECT path FROM folders WHERE user_id = ? ORDER BY path', [userId])
+      return rows.map((r) => r.path as string)
+    },
+    async createFolder(userId, path) {
+      await pool.execute('INSERT IGNORE INTO folders (user_id, path) VALUES (?, ?)', [userId, path])
+    },
+    async deleteFolder(userId, path): Promise<DeleteFolderResult> {
+      // Os curingas do LIKE no nome da pasta são escapados: "%", "_" e "\" valem como texto.
+      const prefix = `${path.replace(/[\\%_]/g, (c) => `\\${c}`)}/%`
+      const [inside] = await pool.execute<RowDataPacket[]>(
+        'SELECT (SELECT COUNT(*) FROM files WHERE user_id = ? AND path LIKE ?) + (SELECT COUNT(*) FROM folders WHERE user_id = ? AND path LIKE ?) AS n',
+        [userId, prefix, userId, prefix]
+      )
+      if (Number(inside[0]?.n) > 0) return 'not_empty'
+      const [res] = await pool.execute<ResultSetHeader>('DELETE FROM folders WHERE user_id = ? AND path = ?', [userId, path])
+      return res.affectedRows === 1 ? 'ok' : 'not_found'
+    },
+    async getWorkspace(userId): Promise<Workspace | null> {
+      const [rows] = await pool.execute<RowDataPacket[]>('SELECT data, version, updated_at FROM workspaces WHERE user_id = ?', [userId])
+      const r = rows[0]
+      return r ? { data: r.data as string, version: Number(r.version), updatedAt: new Date(r.updated_at) } : null
+    },
+    async putWorkspace(userId, data, baseVersion): Promise<PutWorkspaceResult> {
+      return withTransaction(async (conn) => {
+        const [rows] = await conn.execute<RowDataPacket[]>('SELECT data, version, updated_at FROM workspaces WHERE user_id = ? FOR UPDATE', [userId])
+        const r = rows[0]
+        const current: Workspace = r
+          ? { data: r.data as string, version: Number(r.version), updatedAt: new Date(r.updated_at) }
+          : { data: '', version: 0, updatedAt: new Date(0) }
+        if (current.version !== baseVersion) return { ok: false, current }
+        const now = new Date()
+        if (r) await conn.execute('UPDATE workspaces SET data = ?, version = ?, updated_at = ? WHERE user_id = ?', [data, baseVersion + 1, now, userId])
+        else await conn.execute('INSERT INTO workspaces (user_id, data, version, updated_at) VALUES (?, ?, 1, ?)', [userId, data, now])
+        return { ok: true, workspace: { data, version: baseVersion + 1, updatedAt: now } }
+      })
     },
     async close() {
       await pool.end()

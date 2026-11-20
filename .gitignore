@@ -1,8 +1,43 @@
+# Dependências
 node_modules/
+
+# Build e empacotamento
 out/
 dist/
-*.log
-.DS_Store
+release/
+build-output/
 *.tsbuildinfo
+
+# Testes
 test-results/
 playwright-report/
+blob-report/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# Variáveis de ambiente e segredos (nunca versionar)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Servidor (API)
+server/dist/
+server/node_modules/
+server/data/
+
+# Editores e sistema operacional
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Configurações locais do Claude Code
+.claude/settings.local.json

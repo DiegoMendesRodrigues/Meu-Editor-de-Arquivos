@@ -1,5 +1,8 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useMemo } from 'react'
+import { Cloud, HardDrive } from 'lucide-react'
+import { useAccount } from '@/store/account'
+import { useCloud, useStorageMode } from '@/store/cloud'
 import { languageLabel } from '@/editor/languages'
 import { useT } from '@/i18n'
 import { useActiveDocument, useDocuments } from '@/store/documents'
@@ -17,6 +20,8 @@ export function StatusBar() {
   const recording = useLibrary((s) => s.recording)
   // O tamanho só é recalculado quando o texto muda (não a cada movimento do cursor), importante em arquivos grandes.
   const content = doc?.content
+  const mode = useStorageMode()
+  const user = useAccount((s) => s.status.user)
   const size = useMemo(() => (content === undefined ? 0 : encoder.encode(content).length), [content])
 
   return (
@@ -40,6 +45,18 @@ export function StatusBar() {
       ) : (
         <span>{t('status.ready')}</span>
       )}
+      {/* Local de armazenamento em uso; com a conta conectada, o clique alterna entre nuvem e disco. */}
+      <button
+        type="button"
+        disabled={!user}
+        onClick={() => useCloud.getState().setPreferCloud(mode !== 'cloud')}
+        title={mode === 'cloud' ? t('storage.cloud') : t('storage.local')}
+        aria-label={mode === 'cloud' ? t('storage.cloud') : t('storage.local')}
+        data-storage={mode}
+        className={`${doc ? '' : 'ml-auto '}flex items-center rounded px-1 hover:bg-zinc-300 disabled:hover:bg-transparent`}
+      >
+        {mode === 'cloud' ? <Cloud size={14} className="text-sky-600" /> : <HardDrive size={14} />}
+      </button>
     </footer>
   )
 }

@@ -39,3 +39,20 @@ CREATE TABLE IF NOT EXISTS files (
   UNIQUE KEY uq_files_user_path (user_id, path),
   CONSTRAINT fk_files_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Pastas criadas pelo usuário (as pastas dos caminhos dos arquivos existem implicitamente).
+CREATE TABLE IF NOT EXISTS folders (
+  user_id CHAR(36)     NOT NULL,
+  path    VARCHAR(512) NOT NULL,
+  PRIMARY KEY (user_id, path),
+  CONSTRAINT fk_folders_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Área de trabalho sincronizada entre computadores: abas abertas e textos ainda não salvos (JSON).
+CREATE TABLE IF NOT EXISTS workspaces (
+  user_id    CHAR(36)    NOT NULL PRIMARY KEY,
+  data       MEDIUMTEXT  NOT NULL,
+  version    INT         NOT NULL,
+  updated_at DATETIME(3) NOT NULL,
+  CONSTRAINT fk_workspaces_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

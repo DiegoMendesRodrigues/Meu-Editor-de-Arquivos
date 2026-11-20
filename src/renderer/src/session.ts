@@ -36,6 +36,7 @@ export function snapshot(includeUnsaved: boolean): SessionData {
     eol: d.eol,
     language: d.language,
     ...(d.cloud ? { cloud: d.cloud } : {}),
+    ...(d.syncId ? { syncId: d.syncId } : {}),
     ...(includeUnsaved && (isDirty(d) || d.path === null) ? { unsavedContent: d.content } : {})
   }))
 
@@ -108,7 +109,7 @@ export async function flushSession(includeUnsaved: boolean): Promise<boolean> {
 
 /** Reconstrói um documento da sessão; devolve null se não houver como recuperá-lo. */
 async function restoreDocument(s: SessionDocument): Promise<Omit<EditorDocument, 'id'> | null> {
-  const base = { name: s.name, mode: s.mode, encoding: s.encoding, eol: s.eol, language: s.language ?? languageFromName(s.name), ...(s.cloud ? { cloud: s.cloud } : {}) }
+  const base = { name: s.name, mode: s.mode, encoding: s.encoding, eol: s.eol, language: s.language ?? languageFromName(s.name), ...(s.cloud ? { cloud: s.cloud } : {}), ...(s.syncId ? { syncId: s.syncId } : {}) }
   if (s.path === null) {
     return s.unsavedContent === undefined ? null : { ...base, path: null, content: s.unsavedContent, savedContent: '' }
   }

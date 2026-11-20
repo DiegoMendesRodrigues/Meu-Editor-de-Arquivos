@@ -51,6 +51,12 @@ const api: EditorApi = {
   cloudRead: (id) => ipcRenderer.invoke(IpcChannels.cloudRead, id),
   cloudSave: (req) => ipcRenderer.invoke(IpcChannels.cloudSave, req),
   cloudDelete: (id) => ipcRenderer.invoke(IpcChannels.cloudDelete, id),
+  cloudMove: (id, path) => ipcRenderer.invoke(IpcChannels.cloudMove, id, path),
+  workspaceGet: () => ipcRenderer.invoke(IpcChannels.workspaceGet),
+  workspacePut: (data, baseVersion) => ipcRenderer.invoke(IpcChannels.workspacePut, data, baseVersion),
+  cloudFolders: () => ipcRenderer.invoke(IpcChannels.cloudFolders),
+  cloudCreateFolder: (path) => ipcRenderer.invoke(IpcChannels.cloudCreateFolder, path),
+  cloudDeleteFolder: (path) => ipcRenderer.invoke(IpcChannels.cloudDeleteFolder, path),
 
   openManual: () => ipcRenderer.invoke(IpcChannels.openManual),
   setLocale: (locale) => ipcRenderer.invoke(IpcChannels.setLocale, locale),

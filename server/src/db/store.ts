@@ -31,6 +31,19 @@ export interface UpsertFileInput {
   force: boolean
 }
 
+export type MoveResult = { ok: true; file: FileMeta } | { ok: false; reason: 'not_found' | 'exists' }
+
+export type DeleteFolderResult = 'ok' | 'not_found' | 'not_empty'
+
+/** Área de trabalho sincronizada (abas e textos não salvos), em JSON, com versão. */
+export interface Workspace {
+  data: string
+  version: number
+  updatedAt: Date
+}
+
+export type PutWorkspaceResult = { ok: true; workspace: Workspace } | { ok: false; current: Workspace }
+
 export type UpsertResult = { ok: true; file: FileMeta } | { ok: false; current: FileMeta }
 
 export interface Store {
@@ -54,6 +67,19 @@ export interface Store {
   getFile(userId: string, id: string): Promise<RemoteFile | null>
   upsertFile(userId: string, input: UpsertFileInput): Promise<UpsertResult>
   deleteFile(userId: string, id: string): Promise<boolean>
+
+  getWorkspace(userId: string): Promise<Workspace | null>
+  /** Grava a área de trabalho se a versão do cliente for a atual (0 = ainda não existe). */
+  putWorkspace(userId: string, data: string, baseVersion: number): Promise<PutWorkspaceResult>
+  /** Muda o caminho (pasta e/ou nome) do arquivo; falha se já houver um arquivo no destino. */
+  moveFile(userId: string, id: string, newPath: string): Promise<MoveResult>
+
+  /** Pastas criadas pelo usuário (as pastas dos caminhos dos arquivos também existem, implicitamente). */
+  listFolders(userId: string): Promise<string[]>
+  /** Cria a pasta (sem erro se já existir). */
+  createFolder(userId: string, path: string): Promise<void>
+  /** Remove a pasta, só se estiver vazia (sem arquivos nem subpastas). */
+  deleteFolder(userId: string, path: string): Promise<DeleteFolderResult>
 
   close(): Promise<void>
 }

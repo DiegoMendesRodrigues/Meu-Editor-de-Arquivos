@@ -11,10 +11,12 @@ import { useWorkspace } from '@/store/workspace'
 import { getActiveEditor, revealInDocument, runEditorAction } from '@/editor/editorRef'
 import { useSearch } from '@/store/search'
 import { useView } from '@/store/view'
-import { pushToCloud } from '@/cloud'
+import { pushToCloud, requestCloudSave } from '@/cloud'
+import { storageMode } from '@/store/cloud'
 import { useDialogs } from '@/store/dialogs'
 import { useLibrary } from '@/store/library'
 import { playMacro, startRecording, stopRecording } from '@/editor/macros'
+import { flushWorkspace } from '@/workspaceSync'
 import { flushSession, hasUnsavedText, unsavedFitsInSession } from '@/session'
 
 const docs = () => useDocuments.getState()
@@ -35,6 +37,8 @@ export function newFile(extension?: string): void {
 }
 
 export async function openFile(): Promise<void> {
+  // Com a conta conectada (e a nuvem escolhida no rodapé), abrir usa a nuvem.
+  if (storageMode() === 'cloud') return useDialogs.getState().show('cloudOpen')
   try {
     docs().addOpenedFiles(await window.api.openFiles())
     refreshRecent()
@@ -68,6 +72,7 @@ export const closeFolder = (): void => useWorkspace.getState().setFolder(null)
 
 export async function saveAs(doc = active()): Promise<boolean> {
   if (!doc) return false
+  if (storageMode() === 'cloud') return requestCloudSave(doc)
   try {
     const content = doc.content
     const saved = await window.api.saveFileAs({ suggestedName: doc.path ?? doc.name, content, encoding: doc.encoding })
@@ -149,6 +154,7 @@ export async function closeAll(): Promise<void> {
  * falha ao gravar) é que o app pergunta o que fazer com os não salvos.
  */
 export async function requestQuit(): Promise<void> {
+  await flushWorkspace()
   if (!hasUnsavedText() || unsavedFitsInSession()) {
     if (await flushSession(true)) return window.api.closeWindow()
   }
@@ -238,7 +244,8 @@ export function playLastMacro(): void {
 export const openAccount = (): void => useDialogs.getState().show('account')
 export const openCloudFiles = (): void => useDialogs.getState().show('cloudOpen')
 export const saveToCloudDialog = (): void => {
-  if (active()) useDialogs.getState().show('cloudSave')
+  const doc = active()
+  if (doc) void requestCloudSave(doc)
 }
 
 export const openManual = (): void => void window.api.openManual().catch((err) => reportError('err.openManual', err))

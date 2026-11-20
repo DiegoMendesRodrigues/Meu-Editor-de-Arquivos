@@ -1,6 +1,6 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { randomUUID } from 'node:crypto'
-import type { FileMeta, RemoteFile, Store, User } from './store.js'
+import type { FileMeta, RemoteFile, Store, User, Workspace } from './store.js'
 
 const meta = ({ content: _c, ...m }: RemoteFile): FileMeta => m
 
@@ -10,6 +10,13 @@ export function createMemoryStore(): Store {
   const sessions = new Map<string, { userId: string; expiresAt: Date }>()
   const resets = new Map<string, { userId: string; expiresAt: Date; used: boolean }>()
   const files = new Map<string, RemoteFile & { userId: string }>()
+  const folders = new Map<string, Set<string>>() // usuário -> pastas criadas
+  const workspaces = new Map<string, Workspace>()
+  const userFolders = (userId: string): Set<string> => {
+    let set = folders.get(userId)
+    if (!set) folders.set(userId, (set = new Set()))
+    return set
+  }
 
   return {
     async createUser({ email, name, passwordHash }) {
@@ -91,6 +98,41 @@ export function createMemoryStore(): Store {
       if (!f || f.userId !== userId) return false
       files.delete(id)
       return true
+    },
+    async moveFile(userId, id, newPath) {
+      const f = files.get(id)
+      if (!f || f.userId !== userId) return { ok: false, reason: 'not_found' }
+      if (f.path === newPath) return { ok: true, file: meta(f) }
+      if ([...files.values()].some((o) => o.userId === userId && o.path === newPath)) return { ok: false, reason: 'exists' }
+      f.path = newPath
+      f.version += 1
+      f.updatedAt = new Date()
+      return { ok: true, file: meta(f) }
+    },
+    async listFolders(userId) {
+      return [...userFolders(userId)].sort((a, b) => a.localeCompare(b))
+    },
+    async createFolder(userId, path) {
+      userFolders(userId).add(path)
+    },
+    async deleteFolder(userId, path) {
+      const set = userFolders(userId)
+      const prefix = `${path}/`
+      const hasFiles = [...files.values()].some((f) => f.userId === userId && f.path.startsWith(prefix))
+      const hasSub = [...set].some((p) => p.startsWith(prefix))
+      if (hasFiles || hasSub) return 'not_empty'
+      return set.delete(path) ? 'ok' : 'not_found'
+    },
+    async getWorkspace(userId) {
+      const w = workspaces.get(userId)
+      return w ? { ...w } : null
+    },
+    async putWorkspace(userId, data, baseVersion) {
+      const current = workspaces.get(userId)
+      if ((current?.version ?? 0) !== baseVersion) return { ok: false, current: current ?? { data: '', version: 0, updatedAt: new Date(0) } }
+      const w: Workspace = { data, version: baseVersion + 1, updatedAt: new Date() }
+      workspaces.set(userId, w)
+      return { ok: true, workspace: { ...w } }
     },
     async close() {}
   }

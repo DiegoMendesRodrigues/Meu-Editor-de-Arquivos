@@ -14,6 +14,7 @@ import { useView } from '@/store/view'
 import { useWorkspace } from '@/store/workspace'
 import { startFileSync } from '@/fileSync'
 import { restoreSession, startSessionAutosave } from '@/session'
+import { startWorkspaceSync } from '@/workspaceSync'
 import * as cmd from '@/commands'
 import { AboutDialog, ShortcutsDialog } from '@/components/AboutDialogs'
 import { AccountDialog } from '@/components/AccountDialog'
@@ -74,16 +75,20 @@ export function App() {
     // Avisa o processo principal do idioma inicial (o do sistema, ou inglês se não houver tradução).
     applyLocale(useLocale.getState().locale)
     let stopAutosave = () => {}
+    let stopSync = () => {}
     let cancelled = false
     void restoreSession().then(({ restored }) => {
       if (cancelled) return
       if (!restored) useDocuments.getState().newDocument()
       stopAutosave = startSessionAutosave()
+      // Com a conta conectada, as abas e os textos não salvos também ficam na nuvem.
+      stopSync = startWorkspaceSync()
     })
     void useWorkspace.getState().refreshRecent()
     return () => {
       cancelled = true
       stopAutosave()
+      stopSync()
     }
   }, [])
 

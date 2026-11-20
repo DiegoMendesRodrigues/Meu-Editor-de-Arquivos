@@ -188,3 +188,57 @@ describe('arquivos na nuvem', () => {
     expect((await ctx.call('GET', '/v1/files')).status).toBe(401)
   })
 })
+
+describe('pastas na nuvem', () => {
+  let ctx: ReturnType<typeof setup>
+  let token: string
+  beforeEach(async () => {
+    ctx = setup()
+    token = await ctx.register()
+  })
+  const put = (path: string) =>
+    ctx.call('PUT', '/v1/files', { token, body: { path, content: 'x', encoding: 'UTF-8', baseVersion: null } })
+
+  it('cria pastas (com as de cima), lista e só exclui pasta vazia', async () => {
+    expect((await ctx.call('POST', '/v1/folders', { token, body: { path: 'a/b' } })).status).toBe(201)
+    expect((await ctx.call('GET', '/v1/folders', { token })).body.folders).toEqual(['a', 'a/b'])
+    expect((await ctx.call('DELETE', '/v1/folders?path=a', { token })).status).toBe(409)
+    expect((await ctx.call('DELETE', '/v1/folders?path=a%2Fb', { token })).status).toBe(204)
+    expect((await ctx.call('DELETE', '/v1/folders?path=a', { token })).status).toBe(204)
+    expect((await ctx.call('DELETE', '/v1/folders?path=a', { token })).status).toBe(404)
+  })
+
+  it('move o arquivo para outra pasta e recusa destino ocupado', async () => {
+    const a = (await put('nota.md')).body.file
+    await put('docs/nota.md')
+    expect((await ctx.call('PATCH', `/v1/files/${a.id}`, { token, body: { path: 'docs/nota.md' } })).status).toBe(409)
+    const moved = await ctx.call('PATCH', `/v1/files/${a.id}`, { token, body: { path: 'outra/nota.md' } })
+    expect(moved.status).toBe(200)
+    expect(moved.body.file.path).toBe('outra/nota.md')
+    expect(moved.body.file.version).toBe(2)
+    expect((await ctx.call('PATCH', `/v1/files/${a.id}`, { token, body: { path: '../fora.md' } })).status).toBe(400)
+  })
+
+  it('pastas e arquivos de um usuário não aparecem para outro', async () => {
+    await ctx.call('POST', '/v1/folders', { token, body: { path: 'privada' } })
+    const a = (await put('privada/x.md')).body.file
+    const other = await ctx.register('bia@exemplo.com', 'Bia')
+    expect((await ctx.call('GET', '/v1/folders', { token: other })).body.folders).toEqual([])
+    expect((await ctx.call('PATCH', `/v1/files/${a.id}`, { token: other, body: { path: 'y.md' } })).status).toBe(404)
+  })
+})
+
+describe('área de trabalho sincronizada', () => {
+  it('grava com versão, recusa versão antiga e é separada por usuário', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    expect((await ctx.call('GET', '/v1/workspace', { token })).body).toEqual({ data: null, version: 0, updatedAt: null })
+    expect((await ctx.call('PUT', '/v1/workspace', { token, body: { data: '{"a":1}', baseVersion: 0 } })).body.version).toBe(1)
+    expect((await ctx.call('PUT', '/v1/workspace', { token, body: { data: '{"a":2}', baseVersion: 0 } })).status).toBe(409)
+    expect((await ctx.call('PUT', '/v1/workspace', { token, body: { data: '{"a":2}', baseVersion: 1 } })).body.version).toBe(2)
+    expect((await ctx.call('GET', '/v1/workspace', { token })).body.data).toBe('{"a":2}')
+    const other = await ctx.register('bia@exemplo.com', 'Bia')
+    expect((await ctx.call('GET', '/v1/workspace', { token: other })).body.version).toBe(0)
+    expect((await ctx.call('GET', '/v1/workspace')).status).toBe(401)
+  })
+})

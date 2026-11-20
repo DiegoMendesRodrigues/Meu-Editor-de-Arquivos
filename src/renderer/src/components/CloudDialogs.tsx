@@ -1,11 +1,12 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useEffect, useState } from 'react'
 import type { CloudFileMeta } from '@shared/ipc'
-import { openFromCloud, pushToCloud } from '@/cloud'
+import { finishCloudSave, openFromCloud, pendingCloudSaveDoc, pushToCloud } from '@/cloud'
+import { allFolders, baseName, isValidCloudName, joinPath, parentOf, useCloud } from '@/store/cloud'
 import { useLocale, useT } from '@/i18n'
 import { errorMessage, useAccount } from '@/store/account'
 import { useDialogs } from '@/store/dialogs'
-import { useActiveDocument } from '@/store/documents'
+import { useActiveDocument, useDocuments } from '@/store/documents'
 import { Modal, buttonClass, fieldClass, primaryButtonClass } from './Modal'
 
 const formatSize = (b: number): string => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(1)} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`)
@@ -91,40 +92,67 @@ export function CloudOpenDialog() {
 
 export function CloudSaveDialog() {
   const t = useT()
-  const close = useDialogs((s) => s.close)
+  const closeDialog = useDialogs((s) => s.close)
   const user = useAccount((s) => s.status.user)
-  const doc = useActiveDocument()
-  const [path, setPath] = useState(doc?.cloud?.path ?? doc?.name ?? '')
+  const files = useCloud((s) => s.files)
+  const folders = useCloud((s) => s.folders)
+  const activeDoc = useActiveDocument()
+  const [docId] = useState(() => pendingCloudSaveDoc() ?? activeDoc?.id)
+  const doc = useDocuments((s) => s.documents.find((d) => d.id === docId))
+  const [folder, setFolder] = useState(() => (doc?.cloud ? parentOf(doc.cloud.path) : useCloud.getState().targetFolder))
+  const [name, setName] = useState(() => (doc?.cloud ? baseName(doc.cloud.path) : doc?.name ?? ''))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const options = allFolders(files, folders)
+  if (!options.includes(folder)) options.push(folder)
+
+  useEffect(() => {
+    if (user) void useCloud.getState().load()
+  }, [user])
+
+  const close = (saved = false): void => {
+    finishCloudSave(saved)
+    closeDialog()
+  }
 
   const submit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
     if (!doc) return
-    const clean = path.trim()
-    if (!clean || clean.startsWith('/') || clean.includes('\\') || clean.split('/').some((p) => p === '' || p === '.' || p === '..')) {
-      return setError(t('cloud.save.invalidPath'))
-    }
+    if (!isValidCloudName(name)) return setError(t('cloud.save.invalidName'))
     setBusy(true)
-    const ok = await pushToCloud(doc, clean)
+    const ok = await pushToCloud(doc, joinPath(folder, name.trim()))
     setBusy(false)
-    if (ok) close()
+    if (ok) close(true)
   }
 
   return (
-    <Modal title={t('cloud.save.title')} description={t('cloud.save.description')} onClose={close}>
+    <Modal title={t('cloud.save.title')} description={t('cloud.save.description')} onClose={() => close(false)}>
       {!user ? (
-        <NeedLogin onClose={close} />
+        <NeedLogin onClose={() => close(false)} />
       ) : (
         <form onSubmit={(e) => void submit(e)} className="flex max-w-md flex-col gap-3 text-sm">
           <label className="text-xs text-zinc-600">
-            {t('cloud.save.path')}
-            <input value={path} onChange={(e) => setPath(e.target.value)} aria-label={t('cloud.save.path')} className={fieldClass} autoFocus />
+            {t('cloud.save.folder')}
+            <select value={folder} onChange={(e) => setFolder(e.target.value)} aria-label={t('cloud.save.folder')} className={fieldClass}>
+              {options.map((f) => (
+                <option key={f} value={f}>
+                  {f === '' ? t('cloud.root') : f}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-zinc-600">
+            {t('cloud.save.name')}
+            <input value={name} onChange={(e) => setName(e.target.value)} aria-label={t('cloud.save.name')} className={fieldClass} autoFocus />
           </label>
           {error && <p role="alert" className="text-xs text-red-700">{error}</p>}
           <div className="flex gap-2">
-            <button type="submit" disabled={busy || !doc} className={primaryButtonClass}>{busy ? t('cloud.save.sending') : t('cloud.save.title')}</button>
-            <button type="button" className={buttonClass} onClick={close}>{t('common.cancel')}</button>
+            <button type="submit" disabled={busy || !doc} className={primaryButtonClass}>
+              {busy ? t('cloud.save.sending') : t('cloud.save.title')}
+            </button>
+            <button type="button" className={buttonClass} onClick={() => close(false)}>
+              {t('common.cancel')}
+            </button>
           </div>
         </form>
       )}

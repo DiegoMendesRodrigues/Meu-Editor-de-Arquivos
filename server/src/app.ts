@@ -273,6 +273,49 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return { file: fileMeta(result.file) }
   })
 
+  // Mover ou renomear: muda o caminho do arquivo (pasta e/ou nome).
+  app.patch('/v1/files/:id', auth, async (req) => {
+    const { id } = z.object({ id: z.string().min(1).max(64) }).parse(req.params)
+    const body = z.object({ path: cloudPathSchema }).parse(req.body)
+    const result = await store.moveFile(req.user!.id, id, body.path)
+    if (!result.ok && result.reason === 'not_found') throw new HttpError(404, 'not_found', 'Arquivo não encontrado.')
+    if (!result.ok) throw new HttpError(409, 'path_in_use', 'Já existe um arquivo com este nome nesta pasta.')
+    return { file: fileMeta(result.file) }
+  })
+
+  // Área de trabalho (abas e textos não salvos) sincronizada entre os computadores do usuário.
+  app.get('/v1/workspace', auth, async (req) => {
+    const w = await store.getWorkspace(req.user!.id)
+    return w ? { data: w.data, version: w.version, updatedAt: w.updatedAt.toISOString() } : { data: null, version: 0, updatedAt: null }
+  })
+
+  app.put('/v1/workspace', auth, async (req) => {
+    const body = z.object({ data: z.string().max(MAX_FILE_BYTES), baseVersion: z.number().int().min(0) }).parse(req.body)
+    if (Buffer.byteLength(body.data, 'utf8') > MAX_FILE_BYTES) throw new HttpError(413, 'too_large', 'O arquivo passa de 10 MB.')
+    const result = await store.putWorkspace(req.user!.id, body.data, body.baseVersion)
+    if (!result.ok) throw new HttpError(409, 'workspace_conflict', 'A área de trabalho mudou em outro computador.')
+    return { version: result.workspace.version, updatedAt: result.workspace.updatedAt.toISOString() }
+  })
+
+  app.get('/v1/folders', auth, async (req) => ({ folders: await store.listFolders(req.user!.id) }))
+
+  app.post('/v1/folders', auth, async (req, reply) => {
+    const body = z.object({ path: cloudPathSchema }).parse(req.body)
+    const user = req.user!.id
+    // Cria também as pastas acima (a/b/c cria a e a/b), para a árvore ficar completa.
+    const parts = body.path.split('/')
+    for (let i = 1; i <= parts.length; i++) await store.createFolder(user, parts.slice(0, i).join('/'))
+    return reply.status(201).send({ path: body.path })
+  })
+
+  app.delete('/v1/folders', auth, async (req, reply) => {
+    const { path } = z.object({ path: cloudPathSchema }).parse(req.query)
+    const result = await store.deleteFolder(req.user!.id, path)
+    if (result === 'not_found') throw new HttpError(404, 'not_found', 'Pasta não encontrada.')
+    if (result === 'not_empty') throw new HttpError(409, 'folder_not_empty', 'A pasta não está vazia.')
+    return reply.status(204).send()
+  })
+
   app.delete('/v1/files/:id', auth, async (req, reply) => {
     const { id } = z.object({ id: z.string().min(1).max(64) }).parse(req.params)
     if (!(await store.deleteFile(req.user!.id, id))) throw new HttpError(404, 'not_found', 'Arquivo não encontrado.')

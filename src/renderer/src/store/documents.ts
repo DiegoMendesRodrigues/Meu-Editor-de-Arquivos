@@ -24,6 +24,8 @@ export interface EditorDocument {
   missingOnDisk?: boolean
   /** Vínculo com o arquivo na nuvem (id, caminho lógico e a versão sincronizada). */
   cloud?: CloudRef
+  /** Identificador entre computadores, para a área de trabalho sincronizada pela nuvem. */
+  syncId?: string
 }
 
 export interface CloudRef {
@@ -63,9 +65,16 @@ interface DocumentsState {
   addCloudFile(file: CloudFileContent): void
   /** Registra a gravação na nuvem: o texto atual passa a ser o sincronizado. */
   markCloudSaved(id: string, cloud: CloudRef, content: string): void
+  /** Atualiza as abas de um arquivo da nuvem que foi movido (novo caminho e versão). */
+  updateCloudPath(cloudId: string, path: string, version: number): void
   setEncoding(id: string, encoding: Encoding): void
   /** Converte as quebras de linha do texto (e do documento) para o formato escolhido. */
   setEol(id: string, eol: Eol): void
+  /**
+   * Aplica a área de trabalho sincronizada: documentos sem id são novos. A aba ativa continua a mesma,
+   * se ainda existir; senão vai para a indicada por activeSyncId ou para a última.
+   */
+  replaceDocuments(documents: (EditorDocument | Omit<EditorDocument, 'id'>)[], activeSyncId: string | null): void
   /** Substitui todos os documentos pelos da sessão restaurada. */
   restore(documents: Omit<EditorDocument, 'id'>[], activeIndex: number): void
 }
@@ -76,6 +85,8 @@ const CRLF = String.fromCharCode(13, 10)
 const EOL_PATTERN = new RegExp(`${CRLF}|${String.fromCharCode(13)}|${LF}`, 'g')
 let seq = 0
 const nextId = (): string => `doc-${++seq}`
+/** Identificador do documento entre computadores (área de trabalho sincronizada). */
+export const newSyncId = (): string => crypto.randomUUID()
 
 export const isDirty = (d: EditorDocument): boolean =>
   d.content !== d.savedContent || d.encoding !== (d.savedEncoding ?? d.encoding)
@@ -102,7 +113,8 @@ export const useDocuments = create<DocumentsState>((set) => ({
         language: languageFromName(name),
         encoding: 'UTF-8',
         eol: defaultEol,
-        mode: 'edit'
+        mode: 'edit',
+        syncId: newSyncId()
       }
       return { documents: [...s.documents, doc], activeId: doc.id, untitledCounter: n }
     }),
@@ -175,6 +187,16 @@ export const useDocuments = create<DocumentsState>((set) => ({
       )
     })),
 
+  replaceDocuments: (incoming, activeSyncId) =>
+    set((s) => {
+      const documents = incoming.map((d) => ('id' in d ? d : { ...d, id: nextId() }))
+      const wanted = activeSyncId ? documents.find((d) => d.syncId === activeSyncId) : undefined
+      const kept = documents.find((d) => d.id === s.activeId)
+      const activeId = wanted?.id ?? kept?.id ?? documents[documents.length - 1]?.id ?? null
+      const untitledCounter = Math.max(s.untitledCounter, ...documents.filter((d) => !d.path).map((d) => untitledNumber(d.name)))
+      return { documents, activeId, untitledCounter }
+    }),
+
   restore: (restored, activeIndex) => {
     const documents = restored.map((d) => ({ ...d, id: nextId() }))
     // Continua a numeração dos documentos sem título (em qualquer idioma) a partir do maior número restaurado.
@@ -206,14 +228,27 @@ export const useDocuments = create<DocumentsState>((set) => ({
         savedEncoding: file.encoding,
         eol: file.eol,
         mode: canPreviewLanguage(language) ? 'preview' : 'edit',
-        cloud: { id: file.id, path: file.path, version: file.version }
+        cloud: { id: file.id, path: file.path, version: file.version },
+        syncId: newSyncId()
       }
       return { documents: [...s.documents, doc], activeId: doc.id }
     }),
 
   markCloudSaved: (id, cloud, content) =>
     set((s) => ({
-      documents: s.documents.map((d) => (d.id === id ? { ...d, cloud, savedContent: content, savedEncoding: d.encoding } : d))
+      documents: s.documents.map((d) => {
+        if (d.id !== id) return d
+        // O nome da aba passa a ser o do arquivo na nuvem (e a linguagem segue a extensão).
+        const name = cloud.path.split('/').pop() ?? cloud.path
+        return { ...d, cloud, name, language: languageFromName(name), savedContent: content, savedEncoding: d.encoding }
+      })
+    })),
+
+  updateCloudPath: (cloudId, path, version) =>
+    set((s) => ({
+      documents: s.documents.map((d) =>
+        d.cloud?.id === cloudId ? { ...d, name: path.split('/').pop() ?? path, cloud: { ...d.cloud, path, version } } : d
+      )
     })),
 
   setLanguage: (id, language) =>
