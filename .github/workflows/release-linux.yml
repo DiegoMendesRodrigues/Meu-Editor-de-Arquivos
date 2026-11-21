@@ -27,8 +27,12 @@ jobs:
       - name: Testes
         run: npm test
 
+      # --publish never: em build de tag o electron-builder tenta publicar sozinho e falha sem GH_TOKEN;
+      # quem anexa os arquivos ao release é o passo "Anexar ao release", mais abaixo.
       - name: Gerar .deb e AppImage
-        run: npm run dist:linux
+        run: npm run build && npx electron-builder --linux --publish never
+        env:
+          CI: true
 
       - name: Listar os arquivos gerados
         run: ls -lh dist/*.deb dist/*.AppImage dist/latest-linux.yml
