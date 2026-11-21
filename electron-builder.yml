@@ -44,6 +44,24 @@ appx:
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+  # Ícones do aplicativo no instalador, no desinstalador e no cabeçalho das telas.
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: ${productName}
+  # Telas e botões no idioma do Windows de quem instala (inglês se não for um dos seis).
+  multiLanguageInstaller: true
+  displayLanguageSelector: false
+  installerLanguages:
+    - en_US
+    - pt_BR
+    - pt_PT
+    - es_ES
+    - fr_FR
+    - de_DE
 linux:
   target:
     - deb
