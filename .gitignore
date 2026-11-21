@@ -44,3 +44,6 @@ desktop.ini
 
 # Site (publicado separadamente; contém a configuração com senhas)
 website/
+
+# Instruções locais do Claude Code
+CLAUDE.md
