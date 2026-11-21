@@ -38,7 +38,7 @@ Cada `listing.md` traz os campos da página da loja: descrição, novidades, rec
    - Classificação etária: responda ao questionário (sem conteúdo sensível).
    - Pacotes: envie os `.appx` de `dist/`.
    - Listagens da Store: adicione os seis idiomas e preencha cada um com o `listing.md` e as telas da pasta do idioma. Comece pelo Português (Brasil).
-6. **Envie para certificação.** Depois da publicação, coloque o endereço da loja em `website/includes/bootstrap.php` (`STORE_URL`) para o botão "Microsoft Store" do site funcionar.
+6. **Envie para certificação.** O endereço da loja (`https://apps.microsoft.com/detail/9P9LZ413B1XL`, ID da Store 9P9LZ413B1XL) já está em `website/includes/bootstrap.php` (`STORE_URL`); o botão "Microsoft Store" do site só abre a página depois que o aplicativo for publicado.
 
 ## Antes de enviar
 
