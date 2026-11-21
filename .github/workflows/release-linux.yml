@@ -1,0 +1,52 @@
+# Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
+# Gera os pacotes Linux (.deb e AppImage) num Ubuntu e os anexa ao release do GitHub.
+# Uso: crie um release (Releases → Draft a new release → Publish) ou rode manualmente em Actions → Run workflow.
+name: Pacotes Linux
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write # necessário para anexar os arquivos ao release
+
+jobs:
+  linux:
+    runs-on: ubuntu-22.04 # base mais antiga = melhor compatibilidade com Debian 12/13 e Ubuntu 22.04+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Testes
+        run: npm test
+
+      - name: Gerar .deb e AppImage
+        run: npm run dist:linux
+
+      - name: Listar os arquivos gerados
+        run: ls -lh dist/*.deb dist/*.AppImage dist/latest-linux.yml
+
+      - name: Guardar como artefato (download pela aba Actions)
+        uses: actions/upload-artifact@v4
+        with:
+          name: meu-editor-de-arquivos-linux
+          path: |
+            dist/*.deb
+            dist/*.AppImage
+            dist/latest-linux.yml
+
+      - name: Anexar ao release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.deb
+            dist/*.AppImage
+            dist/latest-linux.yml
