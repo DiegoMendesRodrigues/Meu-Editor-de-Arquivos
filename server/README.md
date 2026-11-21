@@ -49,3 +49,12 @@ A camada MySQL (`src/db/mysql.ts`) ainda **não foi testada contra um servidor r
 
 `POST /v1/auth/register`, `/login`, `/logout`, `/password-reset/request`, `/password-reset/confirm`;
 `GET|PATCH /v1/me`, `POST /v1/me/password`; `GET /v1/files`, `GET /v1/files/:id`, `PUT /v1/files`, `DELETE /v1/files/:id`.
+
+## Pacote de instalação
+
+```powershell
+npm run package   # gera release/meu-editor-api-<versão>.tar.gz e .zip
+```
+
+O pacote traz o JavaScript compilado, o instalador para Debian/Ubuntu (`install.sh`, serviço systemd),
+um exemplo de proxy nginx com HTTPS e as instruções em `installer/INSTALL.md` (inglês) e `installer/INSTALL.pt-BR.md`.

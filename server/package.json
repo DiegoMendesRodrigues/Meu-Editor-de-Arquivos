@@ -9,15 +9,19 @@
     "start": "tsx src/index.ts",
     "migrate": "tsx src/migrate.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.build.json",
+    "package": "node scripts/package.mjs"
   },
   "dependencies": {
     "fastify": "^5.12.8",
     "mysql2": "^3.24.6",
+    "nodemailer": "^7.0.13",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
+    "@types/nodemailer": "^7.0.12",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.1.1"

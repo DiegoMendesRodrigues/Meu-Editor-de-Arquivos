@@ -1,0 +1,30 @@
+# Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
+[Unit]
+Description=Meu Editor de Arquivos - API
+After=network-online.target mysql.service mariadb.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=meu-editor-api
+Group=meu-editor-api
+WorkingDirectory=/opt/meu-editor-api
+EnvironmentFile=/etc/meu-editor-api/api.env
+ExecStart=/usr/bin/env node server.js
+Restart=on-failure
+RestartSec=5
+
+# Isolamento
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ReadOnlyPaths=/opt/meu-editor-api
+
+[Install]
+WantedBy=multi-user.target
