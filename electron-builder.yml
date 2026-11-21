@@ -22,6 +22,8 @@ win:
     - nsis
     - portable
   artifactName: ${name}-${version}-${arch}.${ext}
+portable:
+  artifactName: ${name}-portable-${version}-${arch}.${ext}
 # Pacote para a Microsoft Store (npm run dist:store). Os valores de identidade vêm do Partner Center:
 # Produtos → Meu Editor de Arquivos → Identidade do produto. Troque os três campos marcados antes de enviar.
 appx:
@@ -42,6 +44,7 @@ appx:
     - de-DE
   artifactName: ${name}-${version}-${arch}.${ext}
 nsis:
+  artifactName: ${name}-setup-${version}-${arch}.${ext}
   oneClick: false
   allowToChangeInstallationDirectory: true
   # Ícones do aplicativo no instalador, no desinstalador e no cabeçalho das telas.
