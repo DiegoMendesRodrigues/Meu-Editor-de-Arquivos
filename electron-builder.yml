@@ -25,11 +25,11 @@ win:
 portable:
   artifactName: ${name}-portable-${version}-${arch}.${ext}
 # Pacote para a Microsoft Store (npm run dist:store). Os valores de identidade vêm do Partner Center:
-# Produtos → Meu Editor de Arquivos → Identidade do produto. Troque os três campos marcados antes de enviar.
+# Produtos → Meu Editor de Arquivos → Identidade do produto. ID da Store: 9P9LZ413B1XL.
 appx:
   applicationId: MeuEditorDeArquivos
-  identityName: SUBSTITUIR.MeuEditorDeArquivos        # Package/Identity/Name
-  publisher: CN=SUBSTITUIR-PELO-ID-DO-EDITOR          # Package/Identity/Publisher
+  identityName: DiegoMendesRodrigues.MeuEditordeArquivos  # Package/Identity/Name
+  publisher: CN=9B7A62C5-2D2E-42C3-AEAC-C3C5FFA0E614      # Package/Identity/Publisher
   publisherDisplayName: Diego Mendes Rodrigues        # Package/Properties/PublisherDisplayName
   displayName: Meu Editor de Arquivos
   backgroundColor: transparent
