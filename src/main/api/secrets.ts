@@ -12,9 +12,9 @@
 
 export interface Cipher {
   /** O sistema oferece cifra persistente? */
-  available(): boolean
-  encrypt(plain: string): string
-  decrypt(encoded: string): string
+  available(): Promise<boolean>
+  encrypt(plain: string): Promise<string>
+  decrypt(encoded: string): Promise<string>
 }
 
 export interface VaultStorage {
@@ -39,6 +39,8 @@ export class SecretVault {
    */
   private undecryptable = new Map<string, Map<string, string>>()
   private writing: Promise<void> = Promise.resolve()
+  /** A última leitura do arquivo falhou: enquanto for assim, nada é gravado (para não apagar os segredos). */
+  private readFailed = false
 
   constructor(
     private readonly cipher: Cipher,
@@ -47,7 +49,7 @@ export class SecretVault {
   ) {}
 
   /** Os segredos sobrevivem ao fechar o app? */
-  get persistent(): boolean {
+  isPersistent(): Promise<boolean> {
     return this.cipher.available()
   }
 
@@ -57,14 +59,19 @@ export class SecretVault {
   }
 
   private async readFromDisk(): Promise<void> {
-    if (!this.cipher.available()) return
+    if (!(await this.cipher.available())) return
     let text: string | null
     try {
       text = await this.storage.read()
     } catch (err) {
+      // Falha de leitura (talvez passageira): não grava por cima do arquivo, que pode ter segredos válidos.
+      // A próxima operação tenta ler de novo.
       this.onError(`cofre ilegível: ${String(err)}`)
+      this.readFailed = true
+      this.loading = null
       return
     }
+    this.readFailed = false
     if (!text) return
     try {
       const data = JSON.parse(text) as Partial<StoredVault>
@@ -76,7 +83,7 @@ export class SecretVault {
         for (const [name, encoded] of Object.entries(entries)) {
           if (typeof encoded !== 'string') continue
           try {
-            map.set(name, this.cipher.decrypt(encoded))
+            map.set(name, await this.cipher.decrypt(encoded))
           } catch {
             // Cifrado em outro usuário ou computador: o segredo precisa ser informado de novo.
             kept.set(name, encoded)
@@ -91,24 +98,27 @@ export class SecretVault {
   }
 
   private persist(): Promise<void> {
-    if (!this.cipher.available()) return Promise.resolve()
-    // Object.fromEntries cria propriedades próprias (um escopo ou nome "__proto__" não vira protótipo).
-    const scopes = new Set([...this.values.keys(), ...this.undecryptable.keys()])
-    const data: StoredVault = {
-      version: 1,
-      scopes: Object.fromEntries(
-        [...scopes].map((scope) => [
-          scope,
-          Object.fromEntries([
-            ...(this.undecryptable.get(scope) ?? []),
-            ...[...(this.values.get(scope) ?? [])].map(([name, value]) => [name, this.cipher.encrypt(value)])
-          ])
-        ])
-      )
-    }
-    const text = JSON.stringify(data)
-    // Gravações em fila: a última sempre vence, sem duas escritas simultâneas no mesmo arquivo.
-    this.writing = this.writing.then(() => this.storage.write(text)).catch((err) => this.onError(`falha ao gravar o cofre: ${String(err)}`))
+    // Cifra e grava dentro da fila: nunca duas escritas ao mesmo tempo, e o estado é lido na vez de cada uma
+    // (a última gravação sempre reflete o estado mais recente).
+    this.writing = this.writing
+      .then(async () => {
+        if (!(await this.cipher.available())) return
+        if (this.readFailed) {
+          this.onError('cofre não gravado: a leitura do arquivo falhou')
+          return
+        }
+        // Object.fromEntries cria propriedades próprias (um escopo ou nome "__proto__" não vira protótipo).
+        const scopes = new Set([...this.values.keys(), ...this.undecryptable.keys()])
+        const out: [string, Record<string, string>][] = []
+        for (const scope of scopes) {
+          const entries: [string, string][] = [...(this.undecryptable.get(scope) ?? [])]
+          for (const [name, value] of this.values.get(scope) ?? []) entries.push([name, await this.cipher.encrypt(value)])
+          out.push([scope, Object.fromEntries(entries)])
+        }
+        const data: StoredVault = { version: 1, scopes: Object.fromEntries(out) }
+        await this.storage.write(JSON.stringify(data))
+      })
+      .catch((err) => this.onError(`falha ao gravar o cofre: ${String(err)}`))
     return this.writing
   }
 

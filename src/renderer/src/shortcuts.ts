@@ -75,7 +75,8 @@ export function shortcutGroups(t: Translate): ShortcutGroup[] {
       title: t('sc.group.macros'),
       items: [
         { keys: 'Ctrl+Shift+R', action: t('sc.macroRecord') },
-        { keys: 'Ctrl+Shift+M', action: t('menu.tools.macroRunLast') }
+        { keys: 'Ctrl+Shift+M', action: t('menu.tools.macroRunLast') },
+        { keys: 'Ctrl+Shift+I', action: t('menu.tools.ai') }
       ]
     },
     {

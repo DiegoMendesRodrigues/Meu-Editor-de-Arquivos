@@ -13,19 +13,38 @@ import { handle } from '../ipc/secure'
 import { isAuthorized, isInside } from '../ipc/access'
 import { tm } from '../i18n'
 import { createFileStore, createMonitorService, type MonitorService } from './monitor'
-import { executeMonitor } from './monitorRunner'
+import { cloudDirExists, executeMonitor, type CloudReader } from './monitorRunner'
+import { cloudListAll, cloudReadText, isCloudSignedIn } from '../ipc/account'
 
 let service: MonitorService | null = null
+
+/** A nuvem da conta, lida pelo Main (só leitura; o monitor nunca grava nela). */
+const cloudReader: CloudReader = { signedIn: isCloudSignedIn, listAll: cloudListAll, readText: cloudReadText }
 
 function getService(): MonitorService {
   return (service ??= createMonitorService({
     store: createFileStore(join(app.getPath('userData'), 'api-monitors.json'), (m) => log.warn(m)),
-    execute: executeMonitor,
+    execute: (monitor, signal) => executeMonitor(monitor, signal, cloudReader),
+    checkCloud: async (dir, environment) => {
+      if (!isCloudSignedIn()) return 'notSignedIn'
+      try {
+        const listing = await cloudListAll()
+        if (!cloudDirExists(dir, listing)) return 'notFound'
+        if (environment && !listing.files.some((f) => f.path === environment)) return 'notFound'
+        return 'ok'
+      } catch {
+        return isCloudSignedIn() ? 'notFound' : 'notSignedIn'
+      }
+    },
     isAuthorized,
     isInsideDir: isInside,
     notify: (monitor, notice, run) => {
       if (!Notification.isSupported()) return
       const failed = notice === 'failed'
+      if (failed && run.code === 'notSignedIn') {
+        new Notification({ title: tm('apiClient.monitor.notify.failedTitle'), body: tm('apiClient.monitor.notify.notSignedInBody', { name: monitor.name }) }).show()
+        return
+      }
       new Notification({
         title: tm(failed ? 'apiClient.monitor.notify.failedTitle' : 'apiClient.monitor.notify.recoveredTitle'),
         body: tm(failed ? 'apiClient.monitor.notify.failedBody' : 'apiClient.monitor.notify.recoveredBody', {

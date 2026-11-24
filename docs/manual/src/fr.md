@@ -131,6 +131,15 @@ Dans les documents Markdown, texte (.txt) et LaTeX, les mots absents du dictionn
 
 Les dictionnaires sont fournis avec l’application : le correcteur fonctionne sans Internet.
 
+### Assistant IA (Ollama)
+
+L'**{{ai.title}}** utilise un modèle d'IA qui tourne sur votre propre ordinateur grâce à Ollama (ollama.com) : rien ne part sur internet. Installez Ollama, téléchargez un modèle (par exemple <code>ollama pull llama3.2</code>) et ouvrez le panneau avec **{{menu.tools}} → {{menu.tools.ai}}** ou **Ctrl+Maj+I**.
+
+- Choisissez le modèle, saisissez votre question et suivez la réponse pendant sa génération ; **{{ai.stop}}** l'interrompt et **{{ai.newChat}}** repart de zéro.
+- Les **{{ai.quick.label}}** portent sur la sélection (ou le document entier) : **{{ai.quick.explain}}**, **{{ai.quick.improve}}**, **{{ai.quick.fix}}**, **{{ai.quick.summarize}}**, **{{ai.quick.translate}}**, **{{ai.quick.document}}** et **{{ai.quick.tests}}**.
+- Dans les blocs de code de la réponse, utilisez **{{ai.code.copy}}**, **{{ai.code.insert}}** ou **{{ai.code.replace}}**.
+- La conversation reste uniquement en mémoire et disparaît à la fermeture de l'application. Par défaut, l'assistant ne communique qu'avec un Ollama de cet ordinateur.
+
 ## 6. Markdown
 
 ![Document Markdown en mode modification, avec la barre de mise en forme](img/s03-markdown-edit.png)
@@ -254,6 +263,12 @@ Un moniteur relance l'exécution d'une collection toutes les quelques minutes et
 Dans l'onglet **{{apiClient.tab.tests}}**, sous les assertions, se trouvent deux scripts JavaScript facultatifs : **{{apiClient.scripts.pre}}** (peut modifier l'URL, les en-têtes et le corps) et **{{apiClient.scripts.post}}** (peut vérifier la réponse avec <code>test</code> et <code>expect</code> et garder des valeurs avec <code>env.set</code>). L'alias <code>pm</code> accepte l'essentiel des scripts Postman. Les scripts s'exécutent isolés, sans réseau, fichiers ni accès à l'ordinateur, avec des limites de temps et de mémoire ; ce qu'ils écrivent avec <code>console.log</code> apparaît dans le bloc **{{apiClient.scripts.console}}** de la réponse.
 
 Les scripts que vous n'avez pas écrits (importés ou reçus d'une autre personne) ne s'exécutent pas d'eux-mêmes : la requête affiche un avis avec **{{apiClient.scripts.trustCollection}}**. La confiance ne vaut que sur cet ordinateur et tombe si les scripts changent.
+
+### IA dans le client d'API
+
+Dans le panneau de la réponse, **{{ai.api.explain}}** demande à l'assistant d'expliquer la réponse et **{{ai.api.suggestTests}}** propose des assertions pour l'onglet **{{apiClient.tab.tests}}**. D'un clic droit sur une collection, **{{ai.api.document}}** rédige sa documentation. Les en-têtes d'authentification et les valeurs secrètes ne sont pas envoyés au modèle.
+
+Dans les scripts, <code>pm.sendRequest</code> effectue des requêtes auxiliaires (par exemple pour obtenir un jeton), avec les mêmes règles de secrets que les requêtes normales et au maximum 10 par script.
 
 ### Sécurité
 

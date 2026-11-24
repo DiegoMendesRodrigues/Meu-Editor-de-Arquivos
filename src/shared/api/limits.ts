@@ -65,6 +65,11 @@ export const API_LIMITS = {
   /** gRPC: chamadas abertas por janela, tamanho de uma mensagem e arquivos .proto. */
   grpcCalls: 10,
   grpcMessageBytes: 4 * 1024 * 1024,
+  /** Streaming: mensagens por segundo enviadas ao Renderer por chamada; o excesso é descartado e contado. */
+  grpcEventsPerSecond: 200,
+  /** Fila curta do que passou do limite na janela, e descartes numa janela que pausam o stream até a próxima. */
+  grpcEventQueue: 100,
+  grpcPauseDropped: 1000,
   protoFileBytes: 2 * 1024 * 1024,
   /** Monitores: quantos ao mesmo tempo e quantas execuções o gráfico guarda. */
   monitors: 20,
@@ -74,6 +79,9 @@ export const API_LIMITS = {
   scriptCpuMaxMs: 10_000,
   scriptMemoryBytes: 32 * 1024 * 1024,
   scriptConsoleLines: 1000,
+  /** pm.sendRequest: chamadas por script e tempo limite de cada uma (a rede não conta como CPU do script). */
+  scriptSendRequests: 10,
+  scriptSendTimeoutMs: 15_000,
   mockIdleMs: 8 * 3600_000
 } as const
 

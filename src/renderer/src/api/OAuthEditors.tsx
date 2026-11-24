@@ -6,6 +6,7 @@ import type { ApiOAuthProgress, ApiOAuthTokenInfo } from '@shared/api/protocol'
 import { parseApiRequest, type Auth } from '@shared/api/schema'
 import type { MessageKey } from '@shared/i18n'
 import { useT } from '@/i18n'
+import { Modal, primaryButtonClass } from '@/components/Modal'
 import { useDocuments } from '@/store/documents'
 import { getSendContext, type SendContext } from '@/store/api'
 
@@ -125,6 +126,7 @@ export function OAuth2Editor({ auth, onChange, docId }: { auth: OAuth2; onChange
   const [info, setInfo] = useState<ApiOAuthTokenInfo | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [confirmHost, setConfirmHost] = useState<string | null>(null)
   const [device, setDevice] = useState<ApiOAuthProgress | null>(null)
   const runRef = useRef<string | null>(null)
   const [scopesText, setScopesText] = useState(auth.scopes.join(' '))
@@ -169,7 +171,7 @@ export function OAuth2Editor({ auth, onChange, docId }: { auth: OAuth2; onChange
     []
   )
 
-  const obtain = async (): Promise<void> => {
+  const obtain = async (confirmSecretHost?: string): Promise<void> => {
     const runId = crypto.randomUUID()
     runRef.current = runId
     setBusy(true)
@@ -183,8 +185,9 @@ export function OAuth2Editor({ auth, onChange, docId }: { auth: OAuth2; onChange
       // Documento inválido: mantém a verificação ligada.
     }
     try {
-      const result = await window.api.apiOAuthAuthorize({ runId, auth, environment: ctx.environment, collection: ctx.collection, verifyTls })
-      if (!result.ok) setError(result.code)
+      const result = await window.api.apiOAuthAuthorize({ runId, auth, environment: ctx.environment, collection: ctx.collection, verifyTls, ...(confirmSecretHost ? { confirmSecretHost } : {}) })
+      if (!result.ok && result.code === 'secretHostNotConfirmed' && result.host) setConfirmHost(result.host)
+      else if (!result.ok) setError(result.code)
     } catch {
       setError('unknown')
     } finally {
@@ -319,6 +322,27 @@ export function OAuth2Editor({ auth, onChange, docId }: { auth: OAuth2; onChange
             <p>{t('apiClient.oauth.deviceVisit', { url: device.verificationUri ?? '' })}</p>
             <p className="mt-1 select-all font-mono text-lg font-semibold tracking-widest">{device.userCode}</p>
           </div>
+        )}
+        {confirmHost && (
+          <Modal title={t('apiClient.secretHost.title', { host: confirmHost })} description={t('apiClient.secretHost.body', { host: confirmHost })} onClose={() => setConfirmHost(null)} size="sm">
+            <div className="flex justify-end gap-2">
+              <button type="button" className={buttonClass} onClick={() => setConfirmHost(null)}>
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                className={primaryButtonClass}
+                data-testid="api-secret-host-confirm"
+                onClick={() => {
+                  const host = confirmHost
+                  setConfirmHost(null)
+                  void obtain(host)
+                }}
+              >
+                {t('apiClient.secretHost.confirm')}
+              </button>
+            </div>
+          </Modal>
         )}
         {error && (
           <p role="alert" className="text-[12.5px] text-red-600">

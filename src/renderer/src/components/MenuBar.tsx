@@ -222,6 +222,7 @@ export function MenuBar() {
         { label: t('menu.tools.macroRunLast'), shortcut: 'Ctrl+Shift+M', action: hasRecording && !recording ? cmd.playLastMacro : undefined },
         { label: t('menu.tools.macros'), action: cmd.openMacros },
         { label: t('menu.tools.openTerminal'), action: cmd.openTerminal },
+        { label: t('menu.tools.ai'), shortcut: 'Ctrl+Shift+I', action: cmd.toggleAssistant },
         { label: t('menu.tools.apiClient'), shortcut: 'Ctrl+Shift+A', action: cmd.openApiClient },
         { label: t('menu.tools.apiWebSocket'), action: cmd.newWebSocketDocument },
         { label: t('menu.tools.apiGrpc'), action: cmd.newGrpcDocument },
@@ -242,7 +243,6 @@ export function MenuBar() {
         },
         'separator',
         { label: t('menu.tools.compare') },
-        { label: t('menu.tools.ai') },
         'separator',
         ...HASH_ALGORITHMS.map((algorithm) => ({
           label: algorithm,

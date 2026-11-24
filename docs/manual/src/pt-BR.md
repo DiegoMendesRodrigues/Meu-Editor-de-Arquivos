@@ -131,6 +131,15 @@ Em documentos Markdown, de texto (.txt) e LaTeX, as palavras que não estão no 
 
 Os dicionários vêm com o aplicativo: o corretor funciona sem internet.
 
+### Assistente de IA (Ollama)
+
+O **{{ai.title}}** usa um modelo de IA que roda no seu próprio computador, pelo Ollama (ollama.com): nada sai para a internet. Instale o Ollama, baixe um modelo (por exemplo, <code>ollama pull llama3.2</code>) e abra o painel em **{{menu.tools}} → {{menu.tools.ai}}** ou com **Ctrl+Shift+I**.
+
+- Escolha o modelo, escreva a pergunta e acompanhe a resposta enquanto ela é gerada; **{{ai.stop}}** interrompe e **{{ai.newChat}}** começa do zero.
+- As **{{ai.quick.label}}** trabalham sobre a seleção (ou o documento inteiro): **{{ai.quick.explain}}**, **{{ai.quick.improve}}**, **{{ai.quick.fix}}**, **{{ai.quick.summarize}}**, **{{ai.quick.translate}}**, **{{ai.quick.document}}** e **{{ai.quick.tests}}**.
+- Nos blocos de código da resposta, use **{{ai.code.copy}}**, **{{ai.code.insert}}** ou **{{ai.code.replace}}**.
+- A conversa fica só na memória e some ao fechar o aplicativo. Por padrão, o assistente só conversa com um Ollama deste computador.
+
 ## 6. Markdown
 
 ![Documento Markdown em modo de edição, com a barra de formatação](img/s03-markdown-edit.png)
@@ -254,6 +263,12 @@ Um monitor repete a execução de uma coleção a cada tantos minutos e avisa po
 Na aba **{{apiClient.tab.tests}}**, abaixo das asserções, há dois scripts opcionais em JavaScript: **{{apiClient.scripts.pre}}** (pode mudar a URL, os cabeçalhos e o corpo) e **{{apiClient.scripts.post}}** (pode conferir a resposta com <code>test</code> e <code>expect</code> e guardar valores com <code>env.set</code>). O alias <code>pm</code> aceita o básico dos scripts do Postman. Os scripts rodam isolados, sem rede, arquivos nem acesso ao computador, com limite de tempo e de memória; o que eles escrevem com <code>console.log</code> aparece no bloco **{{apiClient.scripts.console}}** da resposta.
 
 Scripts que você não escreveu (importados ou recebidos de outra pessoa) não rodam sozinhos: a requisição mostra um aviso com **{{apiClient.scripts.trustCollection}}**. A confiança vale só neste computador e cai se os scripts mudarem.
+
+### IA no Cliente de API
+
+No painel da resposta, **{{ai.api.explain}}** pede ao assistente uma explicação da resposta e **{{ai.api.suggestTests}}** sugere asserções para a aba **{{apiClient.tab.tests}}**. No botão direito da coleção, **{{ai.api.document}}** escreve a documentação. Os cabeçalhos de autenticação e os valores secretos não são enviados ao modelo.
+
+Nos scripts, <code>pm.sendRequest</code> faz requisições auxiliares (por exemplo, para buscar um token), com as mesmas regras de segredos das requisições comuns e no máximo 10 por script.
 
 ### Segurança
 

@@ -1,6 +1,6 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useMemo, useState } from 'react'
-import { BookmarkPlus, CheckCircle2, Copy, ExternalLink, Save, ShieldAlert, TriangleAlert, XCircle } from 'lucide-react'
+import { BookmarkPlus, CheckCircle2, Copy, ExternalLink, FlaskConical, Save, ShieldAlert, Sparkles, TriangleAlert, XCircle } from 'lucide-react'
 import type { ScriptLogLine } from '@shared/api/protocol'
 import type { Assertion } from '@shared/api/schema'
 import type { MessageKey } from '@shared/i18n'
@@ -8,6 +8,7 @@ import { useT } from '@/i18n'
 import { useDocuments } from '@/store/documents'
 import { useNotice } from '@/store/notice'
 import { assertionSummary } from '../TestsEditor'
+import { explainResponseWithAi, suggestTestsWithAi } from '@/ai/apiActions'
 import { bodyKind, bodyText, formatBytes, formatMs, statusClass, toSavedResponse, type ViewResponse } from './model'
 import { ResponseBody } from './ResponseBody'
 
@@ -281,6 +282,14 @@ export function ResponseView({
         </span>
         {res.sentAt && saved && <span className="text-zinc-500">{res.sentAt}</span>}
         <span className="ml-auto flex items-center gap-1">
+          <button type="button" onClick={() => explainResponseWithAi(res)} title={t('ai.api.note')} data-testid="api-ai-explain" className="flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-zinc-200">
+            <Sparkles size={13} /> {t('ai.api.explain')}
+          </button>
+          {!saved && (
+            <button type="button" onClick={() => suggestTestsWithAi(res)} title={t('ai.api.note')} data-testid="api-ai-tests" className="flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-zinc-200">
+              <FlaskConical size={13} /> {t('ai.api.suggestTests')}
+            </button>
+          )}
           <button type="button" disabled={!textual} onClick={() => void navigator.clipboard.writeText(text)} title={t('apiClient.response.copyBody')} aria-label={t('apiClient.response.copyBody')} className="rounded p-1 hover:bg-zinc-200 disabled:opacity-40">
             <Copy size={14} />
           </button>

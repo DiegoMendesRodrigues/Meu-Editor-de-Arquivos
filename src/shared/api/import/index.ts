@@ -14,6 +14,7 @@ import { parseInsomnia } from './insomnia'
 import { parseOpenApi } from './openapi'
 import { parsePostman } from './postman'
 import { parseWsdl } from './wsdl'
+import type { WsdlFilesOption } from './wsdlFiles'
 import { urlFromParams } from '../urlParams'
 
 export { detectFormat } from './detect'
@@ -28,7 +29,7 @@ function parseStructured(text: string, yamlAllowed: boolean): unknown {
   }
 }
 
-function run(text: string, format: DetectedFormat): ParsedImport {
+function run(text: string, format: DetectedFormat, wsdl?: WsdlFilesOption): ParsedImport {
   switch (format) {
     case 'curl': return parseCurl(text)
     case 'http': return parseHttp(text)
@@ -36,16 +37,16 @@ function run(text: string, format: DetectedFormat): ParsedImport {
     case 'openapi': return parseOpenApi(parseStructured(text, true))
     case 'insomnia': return parseInsomnia(parseStructured(text, false))
     case 'har': return parseHar(parseStructured(text, false))
-    case 'wsdl': return parseWsdl(text)
+    case 'wsdl': return parseWsdl(text, wsdl)
   }
 }
 
 /** Analisa o texto no formato dado (ou detectado, com "auto"). Nunca lança: devolve o código do problema. */
-export function parseImport(text: string, format: ApiImportFormat = 'auto'): ApiImportResponse {
+export function parseImport(text: string, format: ApiImportFormat = 'auto', wsdl?: WsdlFilesOption): ApiImportResponse {
   const resolved = format === 'auto' ? detectFormat(text) : format
   if (!resolved) return { ok: false, code: 'unknownFormat' }
   try {
-    const parsed = run(text, resolved)
+    const parsed = run(text, resolved, wsdl)
     // Convenção do .apireq: a URL traz a query (a tabela Params é a mesma query, sincronizada no construtor).
     const items = parsed.items.map((it) => ({ ...it, request: { ...it.request, url: urlFromParams(it.request.url, it.request.params) } }))
     return { ok: true, format: resolved, ...parsed, items }

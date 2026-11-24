@@ -12,10 +12,11 @@ export const secretVault = new SecretVault(
   {
     // No Linux sem chaveiro, o Electron pode usar o "basic_text" (chave fixa no código) e ainda dizer que
     // há cifra: nesse caso os segredos ficam só na memória.
-    available: () =>
-      safeStorage.isEncryptionAvailable() && (process.platform !== 'linux' || safeStorage.getSelectedStorageBackend() !== 'basic_text'),
-    encrypt: (plain) => safeStorage.encryptString(plain).toString('base64'),
-    decrypt: (encoded) => safeStorage.decryptString(Buffer.from(encoded, 'base64'))
+    available: async () =>
+      (await safeStorage.isAsyncEncryptionAvailable()) && (process.platform !== 'linux' || safeStorage.getSelectedStorageBackend() !== 'basic_text'),
+    encrypt: async (plain) => (await safeStorage.encryptStringAsync(plain)).toString('base64'),
+    // Os dados da API síncrona antiga são lidos normalmente pela assíncrona.
+    decrypt: async (encoded) => (await safeStorage.decryptStringAsync(Buffer.from(encoded, 'base64'))).result
   },
   {
     read: async () => {

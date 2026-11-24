@@ -16,7 +16,7 @@ const MAX_FILES = 2000
 const MAX_DEPTH = 8
 const COLLECTION_FILE = 'collection.apicol'
 
-type Failure = Omit<ApiMonitorRun, 'at'>
+export type Failure = Omit<ApiMonitorRun, 'at'>
 const FAILED: Failure = { ok: false, passed: 0, failed: 0, errors: 1, totalMs: 0, avgMs: 0 }
 
 /** Lista os arquivos da pasta (sem seguir links, sem ocultos), com caminho relativo em "/". */
@@ -70,9 +70,90 @@ export function summarize(items: { errorCode?: string; timeMs?: number; tests: {
   return { ok: items.length > 0 && failed === 0 && errors === 0, passed, failed, errors, totalMs: total, avgMs: timed ? Math.round(total / timed) : 0 }
 }
 
-export async function executeMonitor(monitor: ApiMonitor, signal: AbortSignal): Promise<Failure> {
-  const dir = resolve(monitor.collectionDir)
-  const files = await walk(dir)
+/** De onde a coleção é lida: disco ou nuvem (sempre só leitura). */
+export interface CollectionSource {
+  list(): Promise<{ path: string; rel: string }[]>
+  read(path: string): Promise<string | null>
+  /** Caminho do arquivo (ambiente) fora da lista, só do disco. */
+  readEnvironment(path: string): Promise<string | null>
+}
+
+export function diskSource(collectionDir: string): CollectionSource {
+  return {
+    list: () => walk(resolve(collectionDir)),
+    read: readText,
+    readEnvironment: (p) => readText(resolve(p))
+  }
+}
+
+/** Acesso à nuvem da conta, pelo Main (injetado para teste). */
+export interface CloudReader {
+  signedIn(): boolean
+  listAll(): Promise<{ files: { id: string; path: string }[]; folders: string[] }>
+  readText(id: string): Promise<string>
+}
+
+const isHiddenName = (name: string): boolean => name.startsWith('.') || name === 'node_modules'
+
+/** A pasta da nuvem existe (tem arquivos ou está na lista de pastas)? */
+export function cloudDirExists(dir: string, listing: { files: { path: string }[]; folders: string[] }): boolean {
+  const prefix = `${dir}/`
+  return listing.folders.some((f) => f === dir || f.startsWith(prefix)) || listing.files.some((f) => f.path.startsWith(prefix))
+}
+
+export function cloudSource(collectionDir: string, reader: CloudReader): CollectionSource {
+  const ids = new Map<string, string>()
+  let loaded: Promise<void> | null = null
+  const load = (): Promise<void> =>
+    (loaded ??= reader.listAll().then(({ files }) => {
+      for (const f of files) ids.set(f.path, f.id)
+    }))
+  const readById = async (path: string): Promise<string | null> => {
+    await load()
+    const id = ids.get(path)
+    if (!id) return null
+    try {
+      const text = await reader.readText(id)
+      return text.length > API_LIMITS.requestFileChars ? null : text
+    } catch {
+      return null
+    }
+  }
+  return {
+    async list() {
+      await load()
+      const prefix = `${collectionDir}/`
+      const out: { path: string; rel: string }[] = []
+      for (const path of ids.keys()) {
+        if (!path.startsWith(prefix) || out.length >= MAX_FILES) continue
+        const rel = path.slice(prefix.length)
+        const parts = rel.split('/')
+        if (parts.length - 1 > MAX_DEPTH || parts.some(isHiddenName)) continue
+        out.push({ path, rel })
+      }
+      return out
+    },
+    read: readById,
+    readEnvironment: readById
+  }
+}
+
+export async function executeMonitor(monitor: ApiMonitor, signal: AbortSignal, reader?: CloudReader): Promise<Failure> {
+  if (monitor.location === 'cloud') {
+    // Sem conta conectada (ou sessão expirada): é falha, com o motivo para a notificação dizer.
+    if (!reader || !reader.signedIn()) return { ...FAILED, code: 'notSignedIn' }
+    try {
+      return await executeFromSource(monitor, cloudSource(monitor.collectionDir, reader), signal)
+    } catch {
+      return reader.signedIn() ? FAILED : { ...FAILED, code: 'notSignedIn' }
+    }
+  }
+  return executeFromSource(monitor, diskSource(monitor.collectionDir), signal)
+}
+
+export async function executeFromSource(monitor: ApiMonitor, source: CollectionSource, signal: AbortSignal): Promise<Failure> {
+  const files = await source.list()
+  const readText = source.read
   let collection = null
   const colFile = files.find((f) => f.rel === COLLECTION_FILE)
   const colText = colFile ? await readText(colFile.path) : null
@@ -87,7 +168,7 @@ export async function executeMonitor(monitor: ApiMonitor, signal: AbortSignal): 
 
   let environment = null
   if (monitor.environment) {
-    const text = await readText(resolve(monitor.environment))
+    const text = await source.readEnvironment(monitor.environment)
     let parsed
     try {
       parsed = text ? apiEnvironmentSchema.safeParse(JSON.parse(text)) : null

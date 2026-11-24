@@ -5,12 +5,14 @@ import { create } from 'zustand'
 import { API_LIMITS } from '@shared/api/limits'
 import type { ApiGrpcEvent, ApiGrpcMethodKind, ApiGrpcService } from '@shared/api/protocol'
 import { apiGrpcSchema, type ApiGrpc, type KeyValue } from '@shared/api/schema'
+import { dirOfPath, relativizeProtoPaths } from '@shared/api/grpcPaths'
 import { applyEol } from '@shared/eol'
 import type { MessageKey } from '@shared/i18n'
 import { Modal, buttonClass, fieldClass, primaryButtonClass } from '@/components/Modal'
 import { useT } from '@/i18n'
 import { getSendContext } from '@/store/api'
 import { useDocuments, type EditorDocument } from '@/store/documents'
+import { useWorkspace } from '@/store/workspace'
 import { BodyMonaco } from './BodyMonaco'
 import { KeyValueTable } from './KeyValueTable'
 
@@ -26,6 +28,8 @@ interface LogEntry {
   codeName?: string
   details?: string
   truncated?: boolean
+  /** Resumo: mensagens recebidas que não foram exibidas (limite de eventos por segundo). */
+  dropped?: number
 }
 
 interface GrpcState {
@@ -88,7 +92,7 @@ export function cancelGrpcCall(docId: string): void {
 
 /** Chave i18n do erro; `code` vem do Main (ApiErrorCode ou um código do gRPC). */
 export function grpcErrorKey(code: string): string {
-  if (['protoInvalid', 'reflectionUnavailable', 'methodNotFound', 'messageInvalid', 'tooManyCalls'].includes(code)) return `apiClient.grpc.error.${code}`
+  if (['protoInvalid', 'protoNotAuthorized', 'reflectionUnavailable', 'methodNotFound', 'messageInvalid', 'tooManyCalls'].includes(code)) return `apiClient.grpc.error.${code}`
   return `apiClient.error.${code}`
 }
 
@@ -154,6 +158,16 @@ export function GrpcView({ doc }: { doc: EditorDocument }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [protoKey])
 
+  // Primeiro salvamento: os .proto que estavam absolutos e ficam na pasta do .apigrpc passam a relativos.
+  const docPath = doc.path
+  const prevPath = useRef(docPath)
+  useEffect(() => {
+    // Só na transição "sem arquivo" para "salvo" (abrir um documento antigo não o altera).
+    if (!prevPath.current && docPath) makeProtoPathsRelative()
+    prevPath.current = docPath
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docPath])
+
   useEffect(() => {
     const el = logRef.current
     if (el && stick.current) el.scrollTop = el.scrollHeight
@@ -186,10 +200,23 @@ export function GrpcView({ doc }: { doc: EditorDocument }) {
   const busy = state.status !== 'idle'
   const running = state.status === 'running'
 
-  const common = async () => {
+  /** Com o .apigrpc salvo, grava os caminhos dos .proto relativos à pasta dele (só os que estão nela ou abaixo). */
+  function makeProtoPathsRelative(): ApiGrpc | null {
+    if (!grpc || !doc.path || grpc.source.type !== 'proto') return null
+    const base = dirOfPath(doc.path)
+    const files = relativizeProtoPaths(base, grpc.source.files)
+    const importPaths = relativizeProtoPaths(base, grpc.source.importPaths)
+    if (files === grpc.source.files && importPaths === grpc.source.importPaths) return null
+    const next: ApiGrpc = { ...grpc, source: { ...grpc.source, files, importPaths } }
+    write(next)
+    return next
+  }
+
+  const common = async (source: ApiGrpc['source'] = grpc.source) => {
     const ctx = await getSendContext(doc)
     return {
-      source: grpc.source,
+      // Caminhos relativos valem contra a pasta do .apigrpc: o Main resolve (e recusa o que sai dela).
+      source: source.type === 'proto' && doc.path ? { ...source, baseDir: dirOfPath(doc.path) } : source,
       // O Main exige um endereço; com .proto não há rede, então um espaço reservado basta.
       address: grpc.address.trim() === '' ? 'localhost' : grpc.address,
       tls: grpc.settings.tls,
@@ -204,13 +231,14 @@ export function GrpcView({ doc }: { doc: EditorDocument }) {
     if (!grpc || state.loadingServices) return
     patch(doc.id, { loadingServices: true, error: null })
     try {
-      const result = await window.api.apiGrpcLoad({ ...(await common()), ...(host ? { confirmSecretHost: host } : {}) })
+      const current = makeProtoPathsRelative() ?? grpc
+      const result = await window.api.apiGrpcLoad({ ...(await common(current.source)), ...(host ? { confirmSecretHost: host } : {}) })
       if (result.ok) {
         patch(doc.id, { services: result.services, loadingServices: false })
         // Primeira carga sem escolha: já seleciona o primeiro serviço e método.
         if (grpc.service === '' && result.services[0]?.methods[0]) {
           const m = result.services[0].methods[0]
-          write({ ...grpc, service: result.services[0].name, method: m.name, message: m.template })
+          write({ ...current, service: result.services[0].name, method: m.name, message: m.template })
         }
         return
       }
@@ -238,7 +266,7 @@ export function GrpcView({ doc }: { doc: EditorDocument }) {
           finishCall(doc.id)
           return
         }
-        appendEntry(doc.id, { type: e.type, direction: e.direction, at: e.at, data: e.data, details: e.details, truncated: e.truncated })
+        appendEntry(doc.id, { type: e.type, direction: e.direction, at: e.at, data: e.data, details: e.details, truncated: e.truncated, dropped: e.dropped })
       })
     )
     try {
@@ -277,10 +305,20 @@ export function GrpcView({ doc }: { doc: EditorDocument }) {
     if (grpc.source.type !== 'proto') return
     const paths = await window.api.apiPickFiles('proto', true).catch(() => [] as string[])
     if (paths.length === 0) return
-    const files = [...new Set([...grpc.source.files, ...paths])].slice(0, 50)
+    // Documento salvo: caminhos relativos à pasta do .apigrpc quando o arquivo está nela ou abaixo; senão, absolutos.
+    const chosen = doc.path ? relativizeProtoPaths(dirOfPath(doc.path), paths) : paths
+    const files = [...new Set([...grpc.source.files, ...chosen])].slice(0, 50)
     loadedOnce.current = false
     patch(doc.id, { services: [] })
     write({ ...grpc, source: { ...grpc.source, files } })
+  }
+
+  // Os arquivos podem estar numa pasta que ainda não foi aberta neste computador: abrir a pasta os autoriza.
+  const openFolderAndReload = async (): Promise<void> => {
+    const folder = await window.api.openFolder().catch(() => null)
+    if (!folder) return
+    useWorkspace.getState().setFolder(folder)
+    await loadServices()
   }
 
   const saveCurrent = (): void => {
@@ -435,6 +473,16 @@ export function GrpcView({ doc }: { doc: EditorDocument }) {
       {state.error && (
         <div role="alert" className="flex items-center gap-1.5 border-b border-red-300 bg-red-50 px-3 py-1 text-[12.5px] text-red-700" data-testid="grpc-error">
           <TriangleAlert size={14} /> {t(state.error as MessageKey)}
+          {state.error === 'apiClient.grpc.error.protoNotAuthorized' && (
+            <span className="ml-2 flex items-center gap-1.5">
+              <button type="button" className={`${buttonClass} !py-0.5`} onClick={() => void pickProtos()} data-testid="grpc-reselect-proto">
+                {t('apiClient.grpc.protoReselect')}
+              </button>
+              <button type="button" className={`${buttonClass} !py-0.5`} onClick={() => void openFolderAndReload()} data-testid="grpc-open-folder">
+                {t('apiClient.grpc.protoOpenFolder')}
+              </button>
+            </span>
+          )}
         </div>
       )}
 
@@ -551,13 +599,16 @@ export function GrpcView({ doc }: { doc: EditorDocument }) {
                   onClick={() => setSelected(e.n === selected ? null : e.n)}
                   data-testid="grpc-entry"
                   data-type={e.type}
+                  data-dropped={e.dropped}
                   data-direction={e.direction}
                   className={`flex w-full items-baseline gap-2 border-b border-border/50 px-3 py-0.5 text-left hover:bg-zinc-100 ${selected === e.n ? 'bg-blue-50' : ''}`}
                 >
                   <span className="shrink-0 text-zinc-400">{hhmmss(e.at)}</span>
                   {e.direction === 'in' ? <ArrowDown size={13} className="shrink-0 text-emerald-600" aria-label={t('apiClient.grpc.dir.in')} /> : <ArrowUp size={13} className="shrink-0 text-sky-600" aria-label={t('apiClient.grpc.dir.out')} />}
-                  <span className={`min-w-0 flex-1 truncate ${statusOk ? 'text-emerald-700' : statusBad || e.type === 'error' ? 'text-red-600' : e.type === 'metadata' ? 'font-sans text-zinc-500' : ''}`}>
-                    {e.type === 'status'
+                  <span className={`min-w-0 flex-1 truncate ${e.dropped !== undefined ? 'font-sans text-amber-700' : ''} ${statusOk ? 'text-emerald-700' : statusBad || e.type === 'error' ? 'text-red-600' : e.type === 'metadata' ? 'font-sans text-zinc-500' : ''}`}>
+                    {e.dropped !== undefined
+                      ? t('apiClient.grpc.dropped', { count: String(e.dropped) })
+                      : e.type === 'status'
                       ? `${e.codeName ?? ''} (${e.code ?? ''})${e.details ? ` ${e.details}` : ''}`
                       : e.type === 'error'
                         ? t(grpcErrorKey(e.data) as MessageKey)

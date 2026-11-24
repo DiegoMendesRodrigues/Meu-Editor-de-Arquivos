@@ -3,12 +3,15 @@ import { readFile, stat } from 'node:fs/promises'
 import log from 'electron-log/main'
 import { z } from 'zod'
 import { API_LIMITS } from '@shared/api/limits'
+import { detectFormat } from '@shared/api/import'
+import type { WsdlFilesOption } from '@shared/api/import/wsdlFiles'
 import { IMPORT_FORMATS, type ApiImportResponse } from '@shared/api/protocol'
 import { apiEnvironmentSchema, apiRequestSchema } from '@shared/api/schema'
 import { IpcChannels } from '@shared/ipc'
 import { assertAuthorized } from '../ipc/access'
 import { handle } from '../ipc/secure'
 import createImportWorker from './importWorker?nodeWorker'
+import { collectWsdlFiles } from './wsdlFiles'
 
 /** Canal de importação: a análise roda numa thread com tempo limite, e o resultado passa pelos schemas. */
 
@@ -18,7 +21,7 @@ const inputSchema = z.object({
   format: z.enum(IMPORT_FORMATS)
 })
 
-function runInWorker(text: string, format: z.infer<typeof inputSchema>['format']): Promise<ApiImportResponse> {
+function runInWorker(text: string, format: z.infer<typeof inputSchema>['format'], wsdl?: WsdlFilesOption): Promise<ApiImportResponse> {
   return new Promise((done) => {
     const worker = createImportWorker({})
     let finished = false
@@ -35,7 +38,7 @@ function runInWorker(text: string, format: z.infer<typeof inputSchema>['format']
       log.warn(`Falha na thread de importação: ${err.message}`)
       finish({ ok: false, code: 'invalid' })
     })
-    worker.postMessage({ text, format })
+    worker.postMessage({ text, format, wsdl })
   })
 }
 
@@ -60,13 +63,18 @@ export function registerImportHandlers(): void {
   handle(IpcChannels.apiImportParse, async (_e, raw: unknown): Promise<ApiImportResponse> => {
     const input = inputSchema.parse(raw)
     let text = input.text
+    let wsdlPath: string | undefined
     if (text === undefined) {
       if (!input.path) return { ok: false, code: 'invalid' }
       const path = await assertAuthorized(input.path)
       if ((await stat(path)).size > API_LIMITS.importChars) return { ok: false, code: 'tooLarge' }
       text = await readFile(path, 'utf8')
+      wsdlPath = path
     }
     if (text.length > API_LIMITS.importChars) return { ok: false, code: 'tooLarge' }
-    return validate(await runInWorker(text, input.format))
+    // WSDL do disco: o Main lê os arquivos referenciados; colado como texto não há pasta base.
+    const isWsdl = input.format === 'wsdl' || (input.format === 'auto' && detectFormat(text) === 'wsdl')
+    const wsdl = wsdlPath && isWsdl ? await collectWsdlFiles(wsdlPath, text).catch(() => undefined) : undefined
+    return validate(await runInWorker(text, input.format, wsdl))
   })
 }

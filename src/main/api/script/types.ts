@@ -47,11 +47,29 @@ export interface ScriptOutput {
   req?: ScriptRequestView
 }
 
+/**
+ * pm.sendRequest: o sandbox entrega um JSON ao host e recebe outro (a rede fica no Main). Nunca rejeita:
+ * o erro volta no próprio JSON, como { ok: false, code }.
+ */
+export type ScriptSendFn = (requestJson: string) => Promise<string>
+
+/** Thread -> Main: pedido de rede do script. */
+export interface ScriptNetRequest {
+  netRequest: number
+  json: string
+}
+
+/** Main -> thread: resposta do pedido. */
+export interface ScriptNetReply {
+  netReply: number
+  json: string
+}
+
 /** O mínimo que o runner usa de um worker_thread. */
 export interface ScriptWorkerLike {
-  postMessage(msg: ScriptInput): void
+  postMessage(msg: ScriptInput | ScriptNetReply): void
   terminate(): Promise<number> | void
-  on(event: 'message', fn: (msg: ScriptOutput) => void): unknown
+  on(event: 'message', fn: (msg: ScriptOutput | ScriptNetRequest) => void): unknown
   on(event: 'error', fn: (err: Error) => void): unknown
   on(event: 'exit', fn: (code: number) => void): unknown
 }

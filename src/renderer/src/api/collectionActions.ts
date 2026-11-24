@@ -1,6 +1,7 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 /** Ações das coleções na barra lateral: criar, documentar e abrir arquivos. Erros viram um aviso traduzido. */
 import { newApiRequest, serializeApiRequest } from '@shared/api/schema'
+import { documentCollectionWithAi as documentCollectionWithAiPrompt } from '@/ai/apiActions'
 import { DEFAULT_DOC_LABELS, generateCollectionMarkdown, type DocLabels } from '@shared/api/docs'
 import type { MessageKey } from '@shared/i18n'
 import { openPath } from '@/commands'
@@ -54,14 +55,28 @@ export async function createFolderIn(dir: string, name: string): Promise<boolean
 /** Gera o Markdown da coleção e abre numa aba nova, na visualização formatada. */
 export async function documentCollection(dir: string): Promise<void> {
   try {
-    const tree = await readCollection(dir)
-    // Rótulos da documentação no idioma do app.
-    const labels = Object.fromEntries(Object.keys(DEFAULT_DOC_LABELS).map((k) => [k, t(`apiClient.docs.${k}` as MessageKey)])) as unknown as DocLabels
-    const markdown = generateCollectionMarkdown(tree, labels)
-    useDocuments.getState().newDocumentWithContent(`${tree.collection?.name || t('apiClient.col.newName')}.md`, markdown)
+    const { name, markdown } = await collectionMarkdown(dir)
+    useDocuments.getState().newDocumentWithContent(`${name}.md`, markdown)
   } catch {
     fail()
   }
+}
+
+/** Menu da coleção → "Gerar documentação com IA": o assistente parte do Markdown que o app já gera. */
+export async function documentCollectionWithAi(dir: string): Promise<void> {
+  try {
+    const { name, markdown } = await collectionMarkdown(dir)
+    documentCollectionWithAiPrompt(name, markdown)
+  } catch {
+    fail()
+  }
+}
+
+async function collectionMarkdown(dir: string): Promise<{ name: string; markdown: string }> {
+  const tree = await readCollection(dir)
+  // Rótulos da documentação no idioma do app.
+  const labels = Object.fromEntries(Object.keys(DEFAULT_DOC_LABELS).map((k) => [k, t(`apiClient.docs.${k}` as MessageKey)])) as unknown as DocLabels
+  return { name: tree.collection?.name || t('apiClient.col.newName'), markdown: generateCollectionMarkdown(tree, labels) }
 }
 
 /** Abre as configurações (collection.apicol) da coleção. */

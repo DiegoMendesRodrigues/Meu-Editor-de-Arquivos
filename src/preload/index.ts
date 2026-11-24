@@ -172,6 +172,16 @@ const api: EditorApi = {
   },
   apiScriptTrust: (input) => ipcRenderer.invoke(IpcChannels.apiScriptTrust, input),
   apiScriptIsTrusted: (input) => ipcRenderer.invoke(IpcChannels.apiScriptIsTrusted, input),
+  aiStatus: () => ipcRenderer.invoke(IpcChannels.aiStatus),
+  aiGetSettings: () => ipcRenderer.invoke(IpcChannels.aiGetSettings),
+  aiSetSettings: (settings) => ipcRenderer.invoke(IpcChannels.aiSetSettings, settings),
+  aiChat: (input) => ipcRenderer.invoke(IpcChannels.aiChat, input),
+  aiCancel: (id) => ipcRenderer.invoke(IpcChannels.aiCancel, id),
+  onAiChunk: (listener) => {
+    const handler = (_e: IpcRendererEvent, chunk: Parameters<typeof listener>[0]): void => listener(chunk)
+    ipcRenderer.on(IpcChannels.aiChunk, handler)
+    return () => void ipcRenderer.off(IpcChannels.aiChunk, handler)
+  },
   onBeforeClose: (listener) => {
     const handler = () => listener()
     ipcRenderer.on(IpcChannels.beforeClose, handler)

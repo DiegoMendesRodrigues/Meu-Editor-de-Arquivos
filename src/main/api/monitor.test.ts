@@ -6,11 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { API_LIMITS } from '@shared/api/limits'
 import type { ApiMonitorInput, ApiMonitorRun, ApiMonitorState } from '@shared/api/protocol'
 import { createFileStore, createMonitorService, type MonitorDeps, type MonitorNotice } from './monitor'
-import { summarize } from './monitorRunner'
+import { cloudDirExists, executeMonitor, summarize, type CloudReader } from './monitorRunner'
 
 const ID = '11111111-1111-4111-8111-111111111111'
 const input = (p: Partial<ApiMonitorInput> = {}): ApiMonitorInput => ({ id: ID, name: 'Saúde', collectionDir: '/colecao', intervalMin: 1, ...p })
-const stored = (runs: ApiMonitorRun[] = []) => ({ id: ID, name: 'Saúde', collectionDir: '/colecao', intervalMin: 1, enabled: true, requests: [] as string[], notifyOnFailure: true, runs })
+const stored = (runs: ApiMonitorRun[] = []) => ({ id: ID, name: 'Saúde', collectionDir: '/colecao', location: 'disk' as const, intervalMin: 1, enabled: true, requests: [] as string[], notifyOnFailure: true, runs })
 const OK: Omit<ApiMonitorRun, 'at'> = { ok: true, passed: 2, failed: 0, errors: 0, totalMs: 40, avgMs: 20 }
 const BAD: Omit<ApiMonitorRun, 'at'> = { ok: false, passed: 1, failed: 1, errors: 0, totalMs: 50, avgMs: 25 }
 
@@ -28,6 +28,7 @@ function setup(over: Partial<MonitorDeps> = {}, initial?: Parameters<typeof memo
     store,
     execute,
     isAuthorized: async () => true,
+    checkCloud: async () => 'ok' as const,
     isInsideDir: () => true,
     notify: (_m, n) => void notices.push(n),
     emit: (s) => void events.push(s),
@@ -228,5 +229,77 @@ describe('resumo da execução', () => {
     expect(r).toEqual({ ok: false, passed: 2, failed: 1, errors: 1, totalMs: 40, avgMs: 20 })
     expect(summarize([{ timeMs: 5, tests: [{ passed: true }] }]).ok).toBe(true)
     expect(summarize([]).ok).toBe(false)
+  })
+})
+
+
+describe('monitor de coleção da nuvem', () => {
+  const cloud = (p: Partial<ApiMonitorInput> = {}): ApiMonitorInput => input({ location: 'cloud', collectionDir: 'equipe/api', ...p })
+
+  it('na nuvem não pede autorização de disco: confere a conta e a pasta', async () => {
+    const isAuthorized = vi.fn(async () => false)
+    const checkCloud = vi.fn(async () => 'ok' as const)
+    const { svc } = setup({ isAuthorized, checkCloud })
+    expect((await svc.save(cloud())).ok).toBe(true)
+    expect(isAuthorized).not.toHaveBeenCalled()
+    expect(checkCloud).toHaveBeenCalledWith('equipe/api', undefined)
+    svc.stop()
+  })
+
+  it('recusa sem conta conectada e com pasta inexistente', async () => {
+    const a = setup({ checkCloud: async () => 'notSignedIn' })
+    expect(await a.svc.save(cloud())).toEqual({ ok: false, code: 'notSignedIn' })
+    const b = setup({ checkCloud: async () => 'notFound' })
+    expect(await b.svc.save(cloud())).toEqual({ ok: false, code: 'cloudNotFound' })
+  })
+
+  it('alterar só o estado de um monitor salvo não exige a conta de novo', async () => {
+    const checkCloud = vi.fn(async () => 'ok' as const)
+    const { svc } = setup({ checkCloud })
+    await svc.save(cloud())
+    checkCloud.mockResolvedValue('notSignedIn' as never)
+    expect((await svc.save(cloud({ enabled: false }))).ok).toBe(true)
+    svc.stop()
+  })
+
+  it('monitores antigos (sem location) continuam no disco', async () => {
+    const { svc } = setup()
+    const res = await svc.save(input())
+    expect(res.ok && res.monitor.location).toBe('disk')
+    svc.stop()
+  })
+
+  const reader = (signedIn: boolean, files: Record<string, string>): CloudReader & { reads: string[] } => {
+    const reads: string[] = []
+    return {
+      reads,
+      signedIn: () => signedIn,
+      listAll: async () => ({ files: Object.keys(files).map((path) => ({ id: path, path })), folders: [] }),
+      readText: async (id) => {
+        reads.push(id)
+        return files[id]
+      }
+    }
+  }
+  const monitor = (): import('@shared/api/protocol').ApiMonitor => ({ id: ID, name: 'N', collectionDir: 'equipe/api', location: 'cloud', requests: [], intervalMin: 1, enabled: true, notifyOnFailure: true })
+
+  it('sem conta conectada a execução falha com o código notSignedIn', async () => {
+    const run = await executeMonitor(monitor(), new AbortController().signal, reader(false, {}))
+    expect(run).toMatchObject({ ok: false, errors: 1, code: 'notSignedIn' })
+    expect(await executeMonitor(monitor(), new AbortController().signal)).toMatchObject({ code: 'notSignedIn' })
+  })
+
+  it('lê só dentro da pasta, ignora ocultos e coleção sem requisições falha', async () => {
+    const r = reader(true, { 'equipe/api/.oculto/a.apireq': '{}', 'outra/b.apireq': '{}', 'equipe/api/leia.txt': 'x' })
+    const run = await executeMonitor(monitor(), new AbortController().signal, r)
+    expect(run.ok).toBe(false)
+    expect(r.reads).not.toContain('outra/b.apireq')
+    expect(r.reads).not.toContain('equipe/api/.oculto/a.apireq')
+  })
+
+  it('cloudDirExists reconhece pasta por arquivo ou por lista de pastas', () => {
+    expect(cloudDirExists('a/b', { files: [{ path: 'a/b/x.apireq' }], folders: [] })).toBe(true)
+    expect(cloudDirExists('a/b', { files: [], folders: ['a/b'] })).toBe(true)
+    expect(cloudDirExists('a/b', { files: [{ path: 'a/bc/x' }], folders: ['a'] })).toBe(false)
   })
 })

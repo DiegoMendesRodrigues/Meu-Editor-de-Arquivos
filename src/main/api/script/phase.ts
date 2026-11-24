@@ -10,6 +10,7 @@ import { VARIABLE_NAME_RE } from '@shared/api/variables'
 import type { Resolver } from '../resolve'
 import { secretVault } from '../vault'
 import { runScript } from './index'
+import { createScriptSender } from './netSend'
 import type { ScriptErrorCode, ScriptPhase, ScriptRequestView, ScriptResponseView } from './types'
 
 export interface PhaseResult {
@@ -24,7 +25,7 @@ export interface PhaseResult {
 
 const MAX_EXTRACTED = 200
 
-export async function runScriptPhase(opts: { phase: ScriptPhase; code: string; r: Resolver; req: ScriptRequestView; res?: ScriptResponseView }): Promise<PhaseResult> {
+export async function runScriptPhase(opts: { phase: ScriptPhase; code: string; r: Resolver; req: ScriptRequestView; res?: ScriptResponseView; signal?: AbortSignal }): Promise<PhaseResult> {
   const { r } = opts
   const snap = r.snapshot()
   const out = await runScript({
@@ -37,7 +38,7 @@ export async function runScriptPhase(opts: { phase: ScriptPhase; code: string; r
     secretNames: snap.secretNames,
     req: opts.req,
     res: opts.res
-  })
+  }, createScriptSender(r, opts.signal))
 
   // Segredo que o script leu passa a ser "usado": o host precisa estar confirmado e o valor é mascarado.
   const secretNames = new Set(snap.secretNames)

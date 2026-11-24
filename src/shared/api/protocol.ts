@@ -323,7 +323,9 @@ export const oauthInputSchema = z.object({
   auth: authSchema,
   environment: environmentPayloadSchema.nullable().default(null),
   collection: collectionPayloadSchema.nullable().default(null),
-  verifyTls: z.boolean().default(true)
+  verifyTls: z.boolean().default(true),
+  /** Confirmação de envio de segredos para o host do token (como em api:send). */
+  confirmSecretHost: z.string().max(255).optional()
 })
 export type ApiOAuthInput = z.input<typeof oauthInputSchema>
 
@@ -337,7 +339,7 @@ export interface ApiOAuthProgress {
 
 export type ApiOAuthResult =
   | { ok: true; tokenVar: string; expiresAt?: string; hasRefreshToken: boolean }
-  | { ok: false; code: 'cancelled' | 'timeout' | 'denied' | 'stateMismatch' | 'invalidResponse' | 'network' | 'invalidConfig' | 'noVault' | 'unknown' }
+  | { ok: false; code: 'cancelled' | 'timeout' | 'denied' | 'stateMismatch' | 'invalidResponse' | 'network' | 'invalidConfig' | 'noVault' | 'secretHostNotConfirmed' | 'unknown'; host?: string }
 
 /** Estado do token guardado no cofre (sem o valor). */
 export interface ApiOAuthTokenInfo {
@@ -424,7 +426,13 @@ export interface ApiMockLogEntry {
 
 /** De onde vêm os serviços: arquivos .proto (escolhidos em diálogo) ou a reflexão do servidor. */
 export const grpcSourceSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('proto'), files: z.array(z.string().max(4096)).min(1).max(50), importPaths: z.array(z.string().max(4096)).max(20).default([]) }),
+  z.object({
+    type: z.literal('proto'),
+    files: z.array(z.string().max(4096)).min(1).max(50),
+    importPaths: z.array(z.string().max(4096)).max(20).default([]),
+    /** Pasta do .apigrpc: os caminhos relativos de files e importPaths são resolvidos contra ela (no Main). */
+    baseDir: z.string().min(1).max(4096).optional()
+  }),
   z.object({ type: z.literal('reflection') })
 ])
 export type ApiGrpcSource = z.infer<typeof grpcSourceSchema>
@@ -460,7 +468,7 @@ export interface ApiGrpcService {
 }
 export type ApiGrpcLoadResult =
   | { ok: true; services: ApiGrpcService[] }
-  | { ok: false; code: ApiErrorCode | 'protoInvalid' | 'reflectionUnavailable'; host?: string }
+  | { ok: false; code: ApiErrorCode | 'protoInvalid' | 'protoNotAuthorized' | 'reflectionUnavailable'; host?: string }
 
 export const grpcStartInputSchema = z.object({
   callId: z.string().uuid(),
@@ -475,7 +483,7 @@ export const grpcStartInputSchema = z.object({
 export type ApiGrpcStartInput = z.input<typeof grpcStartInputSchema>
 export type ApiGrpcStartResult =
   | { ok: true }
-  | { ok: false; code: ApiErrorCode | 'protoInvalid' | 'reflectionUnavailable' | 'methodNotFound' | 'messageInvalid' | 'tooManyCalls'; host?: string }
+  | { ok: false; code: ApiErrorCode | 'protoInvalid' | 'protoNotAuthorized' | 'reflectionUnavailable' | 'methodNotFound' | 'messageInvalid' | 'tooManyCalls'; host?: string }
 
 export interface ApiGrpcEvent {
   callId: string
@@ -490,6 +498,8 @@ export interface ApiGrpcEvent {
   /** Detalhe do status vindo do servidor: o Renderer mostra só como texto, nunca como HTML. */
   details?: string
   truncated?: boolean
+  /** Mensagens recebidas que não foram exibidas (limite de eventos por segundo); vem num evento message de resumo. */
+  dropped?: number
 }
 
 /* ------------------------------------------------------------------ monitoramento (fase 5) */
@@ -499,6 +509,8 @@ export const monitorSchema = z.object({
   name: z.string().min(1).max(L.nameChars),
   /** Pasta da coleção (precisa estar autorizada quando o monitor é criado). */
   collectionDir: z.string().min(1).max(4096),
+  /** Onde a coleção está. Na nuvem, `collectionDir` é o caminho da pasta na nuvem e o monitor só lê. */
+  location: z.enum(['disk', 'cloud']).default('disk'),
   /** Caminhos relativos das requisições; vazio = todas. */
   requests: z.array(z.string().max(4096)).max(500).default([]),
   environment: z.string().max(4096).optional(),
@@ -518,6 +530,8 @@ export interface ApiMonitorRun {
   errors: number
   totalMs: number
   avgMs: number
+  /** Motivo conhecido da falha, quando não veio das requisições (sem conta conectada ou sessão expirada). */
+  code?: 'notSignedIn'
 }
 export interface ApiMonitorState extends ApiMonitor {
   /** Últimas execuções, da mais antiga para a mais nova (no máximo API_LIMITS.monitorRuns). */
@@ -525,7 +539,7 @@ export interface ApiMonitorState extends ApiMonitor {
   running: boolean
   nextAt?: string
 }
-export type ApiMonitorSaveResult = { ok: true; monitor: ApiMonitorState } | { ok: false; code: 'notAuthorized' | 'tooManyMonitors' | 'invalid' }
+export type ApiMonitorSaveResult = { ok: true; monitor: ApiMonitorState } | { ok: false; code: 'notAuthorized' | 'tooManyMonitors' | 'invalid' | 'notSignedIn' | 'cloudNotFound' }
 export interface ApiMonitorEvent {
   monitor: ApiMonitorState
 }

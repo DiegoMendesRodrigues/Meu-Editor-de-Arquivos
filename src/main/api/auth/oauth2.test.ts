@@ -6,14 +6,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({
   app: { getLocale: () => 'pt-BR', getPath: () => '.' },
-  safeStorage: { isEncryptionAvailable: () => false },
+  safeStorage: { isAsyncEncryptionAvailable: async () => false },
   shell: { openExternal: vi.fn() }
 }))
 vi.mock('electron-log/main', () => ({ default: { warn: vi.fn() } }))
 // Cofre em memória (sem cifra do sistema): é o mesmo SecretVault, só sem o Electron.
 vi.mock('../vault', async () => {
   const { SecretVault } = await import('../secrets')
-  return { secretVault: new SecretVault({ available: () => false, encrypt: (s) => s, decrypt: (s) => s }, { read: async () => null, write: async () => {} }) }
+  return { secretVault: new SecretVault({ available: async () => false, encrypt: async (s) => s, decrypt: async (s) => s }, { read: async () => null, write: async () => {} }) }
 })
 
 import { secretVault } from '../vault'
@@ -279,5 +279,44 @@ describe('Password (legado)', () => {
     expect(srv.calls[0]!.form.get('grant_type')).toBe('password')
     expect(srv.calls[0]!.form.get('username')).toBe('ana')
     expect(await authorizeOAuth2('env12', { ...auth, username: undefined }, { ...opts, openExternal: vi.fn() })).toEqual({ ok: false, code: 'invalidConfig' })
+  })
+})
+
+describe('confirmação de host para segredos', () => {
+  it('host não confirmado: devolve secretHostNotConfirmed com o host e não envia nada', async () => {
+    const srv = await tokenServer(() => ({ body: { access_token: 'X', expires_in: 3600 } }))
+    const guardHosts = vi.fn(async (hosts: string[]) => hosts[0])
+    const auth = baseAuth({ tokenUrl: `${srv.url}/token`, clientSecret: '{{segredo}}' })
+    const r = await authorizeOAuth2('envg1', auth, { ...opts, resolve: (t) => t.replace('{{segredo}}', 's'), guardHosts, openExternal: vi.fn() })
+    expect(r).toEqual({ ok: false, code: 'secretHostNotConfirmed', host: new URL(srv.url).host })
+    expect(srv.calls).toHaveLength(0)
+  })
+
+  it('host confirmado: segue e obtém o token', async () => {
+    const srv = await tokenServer(() => ({ body: { access_token: 'OK1', expires_in: 3600 } }))
+    const guardHosts = vi.fn(async () => undefined)
+    const r = await authorizeOAuth2('envg2', baseAuth({ tokenUrl: `${srv.url}/token` }), { ...opts, guardHosts, openExternal: vi.fn() })
+    expect(r).toMatchObject({ ok: true })
+    expect(guardHosts).toHaveBeenCalledWith([new URL(srv.url).host], undefined)
+    expect(srv.calls).toHaveLength(1)
+  })
+
+  it('Device Code confere também o host do endpoint do dispositivo', async () => {
+    const srv = await tokenServer(() => ({ body: {} }))
+    const guardHosts = vi.fn(async () => undefined)
+    await authorizeOAuth2('envg3', baseAuth({ flow: 'deviceCode', authUrl: 'https://auth.exemplo.com.br/device', tokenUrl: `${srv.url}/token` }), { ...opts, guardHosts, openExternal: vi.fn(), sleep: async () => {} })
+    expect((guardHosts.mock.calls[0] as unknown as [string[]])[0]).toEqual([new URL(srv.url).host, 'auth.exemplo.com.br'])
+  })
+
+  it('renovação com refresh token: passa o escopo do cofre e não envia sem confirmação', async () => {
+    const srv = await tokenServer(() => ({ body: { access_token: 'N', expires_in: 3600 } }))
+    await secretVault.set('envg4', 'token', 'velho')
+    await secretVault.set('envg4', 'token.__expiresAt', new Date(Date.now() - 1000).toISOString())
+    await secretVault.set('envg4', 'token.__refresh', 'rt')
+    const guardHosts = vi.fn(async (hosts: string[]) => hosts[0])
+    const token = await getOAuth2AccessToken('envg4', baseAuth({ flow: 'authorizationCode', tokenUrl: `${srv.url}/t` }), { ...opts, guardHosts })
+    expect(token).toBeUndefined()
+    expect(guardHosts).toHaveBeenCalledWith([new URL(srv.url).host], 'envg4')
+    expect(srv.calls).toHaveLength(0)
   })
 })

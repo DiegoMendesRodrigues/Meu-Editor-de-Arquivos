@@ -4,9 +4,9 @@ import { SecretVault, type Cipher, type VaultStorage } from './secrets'
 
 /** Cifra de mentira para o teste: reversível e visivelmente diferente do texto puro. */
 const fakeCipher = (available = true): Cipher => ({
-  available: () => available,
-  encrypt: (plain) => Buffer.from(`enc:${plain}`).toString('base64'),
-  decrypt: (encoded) => {
+  available: async () => available,
+  encrypt: async (plain) => Buffer.from(`enc:${plain}`).toString('base64'),
+  decrypt: async (encoded) => {
     const text = Buffer.from(encoded, 'base64').toString()
     if (!text.startsWith('enc:')) throw new Error('outra chave')
     return text.slice(4)
@@ -36,6 +36,29 @@ describe('cofre de segredos', () => {
     expect(await again.get('hml', 'token')).toBe('segredo-123')
     expect(await again.has('hml', 'token')).toBe(true)
     expect(await again.has('prod', 'token')).toBe(false)
+  })
+
+  it('falha passageira na leitura não regrava o arquivo por cima dos segredos', async () => {
+    const storage = memoryStorage()
+    await new SecretVault(fakeCipher(), storage).set('hml', 'token', 'segredo-123')
+    const saved = storage.text
+    let fail = true
+    const flaky: VaultStorage = {
+      read: async () => {
+        if (fail) throw new Error('EBUSY')
+        return storage.text
+      },
+      write: storage.write
+    }
+    const vault = new SecretVault(fakeCipher(), flaky)
+    await vault.set('hml', 'outro', 'x')
+    expect(storage.text).toBe(saved)
+    // Na próxima operação a leitura funciona: os segredos antigos voltam e os novos são gravados juntos.
+    fail = false
+    await vault.set('hml', 'mais', 'y')
+    const again = new SecretVault(fakeCipher(), storage)
+    expect(await again.get('hml', 'token')).toBe('segredo-123')
+    expect(await again.get('hml', 'mais')).toBe('y')
   })
 
   it('lista só os nomes, separados por escopo', async () => {
@@ -69,7 +92,7 @@ describe('cofre de segredos', () => {
   it('sem cifra do sistema, fica só na memória e não grava no disco', async () => {
     const storage = memoryStorage()
     const vault = new SecretVault(fakeCipher(false), storage)
-    expect(vault.persistent).toBe(false)
+    expect(await vault.isPersistent()).toBe(false)
     await vault.set('hml', 'token', 'x')
     expect(await vault.get('hml', 'token')).toBe('x')
     expect(storage.text).toBeNull()
@@ -79,7 +102,7 @@ describe('cofre de segredos', () => {
     const errors: string[] = []
     expect(await new SecretVault(fakeCipher(), memoryStorage('{ quebrado'), (m) => errors.push(m)).names('x')).toEqual([])
     expect(errors.length).toBe(1)
-    const other = JSON.stringify({ version: 1, scopes: { hml: { token: Buffer.from('outra').toString('base64'), ok: fakeCipher().encrypt('v') } } })
+    const other = JSON.stringify({ version: 1, scopes: { hml: { token: Buffer.from('outra').toString('base64'), ok: await fakeCipher().encrypt('v') } } })
     const vault = new SecretVault(fakeCipher(), memoryStorage(other))
     expect(await vault.names('hml')).toEqual(['ok'])
   })

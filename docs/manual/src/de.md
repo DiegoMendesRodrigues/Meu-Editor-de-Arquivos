@@ -131,6 +131,15 @@ In Markdown-, Text- (.txt) und LaTeX-Dokumenten werden Wörter, die nicht im Wö
 
 Die Wörterbücher sind im Programm enthalten: Die Prüfung funktioniert ohne Internet.
 
+### KI-Assistent (Ollama)
+
+Der **{{ai.title}}** verwendet ein KI-Modell, das über Ollama (ollama.com) auf Ihrem eigenen Computer läuft: Nichts geht ins Internet. Installieren Sie Ollama, laden Sie ein Modell herunter (zum Beispiel <code>ollama pull llama3.2</code>) und öffnen Sie das Fenster über **{{menu.tools}} → {{menu.tools.ai}}** oder mit **Strg+Umschalt+I**.
+
+- Wählen Sie das Modell, geben Sie Ihre Frage ein und verfolgen Sie die Antwort, während sie entsteht; **{{ai.stop}}** bricht ab, **{{ai.newChat}}** beginnt neu.
+- Die **{{ai.quick.label}}** wirken auf die Auswahl (oder das ganze Dokument): **{{ai.quick.explain}}**, **{{ai.quick.improve}}**, **{{ai.quick.fix}}**, **{{ai.quick.summarize}}**, **{{ai.quick.translate}}**, **{{ai.quick.document}}** und **{{ai.quick.tests}}**.
+- In den Codeblöcken der Antwort nutzen Sie **{{ai.code.copy}}**, **{{ai.code.insert}}** oder **{{ai.code.replace}}**.
+- Die Unterhaltung bleibt nur im Speicher und verschwindet beim Schließen der App. Standardmäßig spricht der Assistent nur mit einem Ollama auf diesem Computer.
+
 ## 6. Markdown
 
 ![Markdown-Dokument im Bearbeitungsmodus mit der Formatierungsleiste](img/s03-markdown-edit.png)
@@ -254,6 +263,12 @@ Ein Monitor wiederholt die Ausführung einer Sammlung alle paar Minuten und meld
 Auf der Registerkarte **{{apiClient.tab.tests}}** gibt es unter den Assertions zwei optionale JavaScript-Skripte: **{{apiClient.scripts.pre}}** (kann URL, Header und Body ändern) und **{{apiClient.scripts.post}}** (kann die Antwort mit <code>test</code> und <code>expect</code> prüfen und Werte mit <code>env.set</code> speichern). Der Alias <code>pm</code> unterstützt die Grundlagen von Postman-Skripten. Die Skripte laufen isoliert, ohne Netzwerk, Dateien oder Zugriff auf den Computer, mit Zeit- und Speicherlimit; was sie mit <code>console.log</code> ausgeben, erscheint im Block **{{apiClient.scripts.console}}** der Antwort.
 
 Skripte, die Sie nicht selbst geschrieben haben (importiert oder von anderen erhalten), laufen nicht von selbst: Die Anfrage zeigt einen Hinweis mit **{{apiClient.scripts.trustCollection}}**. Das Vertrauen gilt nur auf diesem Computer und entfällt, wenn sich die Skripte ändern.
+
+### KI im API-Client
+
+Im Antwortbereich bittet **{{ai.api.explain}}** den Assistenten, die Antwort zu erklären, und **{{ai.api.suggestTests}}** schlägt Assertions für die Registerkarte **{{apiClient.tab.tests}}** vor. Per Rechtsklick auf eine Sammlung schreibt **{{ai.api.document}}** deren Dokumentation. Authentifizierungs-Header und geheime Werte werden nicht an das Modell gesendet.
+
+In Skripten stellt <code>pm.sendRequest</code> Hilfsanfragen (zum Beispiel, um ein Token zu holen), mit denselben Regeln für Geheimnisse wie normale Anfragen und höchstens 10 pro Skript.
 
 ### Sicherheit
 

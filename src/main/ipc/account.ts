@@ -35,15 +35,26 @@ interface Persisted {
 let serverUrl: string | null = null
 let token: string | null = null
 let user: AccountUser | null = null
+/** Há cofre do sistema para lembrar a sessão? (consultado uma vez, na carga da conta) */
+let rememberSession = false
 
 const storePath = (): string => join(app.getPath('userData'), 'cloud.json')
-const canRemember = (): boolean => safeStorage.isEncryptionAvailable()
+const canRemember = (): Promise<boolean> => safeStorage.isAsyncEncryptionAvailable()
 
-async function persist(): Promise<void> {
+let persisting: Promise<void> = Promise.resolve()
+/** Gravações em fila: nunca duas ao mesmo tempo no mesmo arquivo temporário. */
+function persist(): Promise<void> {
+  persisting = persisting.then(persistNow).catch(() => log.warn('Não foi possível cifrar a sessão da conta'))
+  return persisting
+}
+
+async function persistNow(): Promise<void> {
+  const remember = await canRemember().catch(() => false)
+  rememberSession = remember
   const data: Persisted = {
     serverUrl,
-    tokenEnc: token && canRemember() ? safeStorage.encryptString(token).toString('base64') : null,
-    user: token && canRemember() ? user : null
+    tokenEnc: token && remember ? (await safeStorage.encryptStringAsync(token)).toString('base64') : null,
+    user: token && remember ? user : null
   }
   try {
     const tmp = `${storePath()}.tmp`
@@ -55,11 +66,13 @@ async function persist(): Promise<void> {
 }
 
 export async function loadAccount(): Promise<void> {
+  rememberSession = await canRemember().catch(() => false)
   try {
     const data = JSON.parse(await readFile(storePath(), 'utf8')) as Partial<Persisted>
     serverUrl = typeof data.serverUrl === 'string' ? data.serverUrl : null
-    if (data.tokenEnc && canRemember()) {
-      token = safeStorage.decryptString(Buffer.from(data.tokenEnc, 'base64'))
+    if (data.tokenEnc && rememberSession) {
+      // Os dados da API síncrona antiga são lidos normalmente pela assíncrona.
+      token = (await safeStorage.decryptStringAsync(Buffer.from(data.tokenEnc, 'base64'))).result
       user = data.user ?? null
     }
   } catch {
@@ -67,7 +80,7 @@ export async function loadAccount(): Promise<void> {
   }
 }
 
-const status = (): AccountStatus => ({ serverUrl, user: token ? user : null, rememberSession: canRemember() })
+const status = (): AccountStatus => ({ serverUrl, user: token ? user : null, rememberSession })
 
 /** HTTPS é obrigatório, exceto para o próprio computador (desenvolvimento). */
 const serverUrlSchema = z
@@ -176,6 +189,23 @@ async function startSession(res: { token: string; user: AccountUser }): Promise<
 }
 
 const toMeta = (f: CloudFileMeta): CloudFileMeta => ({ id: f.id, path: f.path, version: f.version, size: f.size, updatedAt: f.updatedAt })
+
+/* Leitura da nuvem para o Main (monitores): reaproveita api(), com o token que só existe aqui. */
+
+/** Há conta conectada com sessão válida (até a próxima resposta 401)? */
+export const isCloudSignedIn = (): boolean => !!serverUrl && !!token
+
+export async function cloudListAll(): Promise<{ files: CloudFileMeta[]; folders: string[] }> {
+  const res = await api<{ files: CloudFileMeta[] }>('GET', '/v1/files', { auth: true })
+  const folders = await api<{ folders: string[] }>('GET', '/v1/folders', { auth: true })
+  return { files: res.files.map(toMeta), folders: z.array(z.string().max(512)).parse(folders.folders) }
+}
+
+/** Conteúdo em texto de um arquivo da nuvem (como está guardado; só leitura). */
+export async function cloudReadText(id: string): Promise<string> {
+  const res = await api<{ file: { content: string } }>('GET', `/v1/files/${encodeURIComponent(z.string().min(1).max(64).parse(id))}`, { auth: true })
+  return res.file.content
+}
 
 export function registerAccountHandlers(): void {
   handle(IpcChannels.accountStatus, () => status())

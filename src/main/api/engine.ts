@@ -191,7 +191,7 @@ export async function executeRequest(input: ParsedSendInput, options: ExecuteOpt
         headers: request.headers.filter((h) => h.enabled && h.key.trim() !== '').map((h): [string, string] => [r.resolve(h.key).trim(), r.resolve(h.value)]),
         body: r.resolve(scriptBodyText(request.body))
       }
-      const phase = await runScriptPhase({ phase: 'pre', code: preCode, r, req: before })
+      const phase = await runScriptPhase({ phase: 'pre', code: preCode, r, req: before, signal: options.signal })
       scriptLogs.push(...phase.logs)
       scriptExtracted.push(...phase.extracted)
       if (phase.error) return fail(phase.error)
@@ -228,7 +228,17 @@ export async function executeRequest(input: ParsedSendInput, options: ExecuteOpt
         break
       }
       case 'oauth2': {
-        const token = await getOAuth2AccessToken(r.scope, auth, { verifyTls: s.verifyTls, signal: options.signal, resolve: r.resolve })
+        const token = await getOAuth2AccessToken(r.scope, auth, { verifyTls: s.verifyTls, signal: options.signal,
+          resolve: r.resolve,
+          // A renovação automática manda segredos ao host do token: só para host já confirmado (sem pedir no meio do envio).
+          guardHosts: async (hosts, extraScope) => {
+            const scopes = new Set(r.secretScopes)
+            if (extraScope) scopes.add(extraScope)
+            if (scopes.size === 0) return undefined
+            for (const host of hosts) if (!(await isHostTrusted(scopes, host))) return host
+            return undefined
+          }
+        })
         if (token) {
           r.addSecret(token)
           authHeaders.push(['Authorization', `Bearer ${token}`])
@@ -429,6 +439,7 @@ export async function executeRequest(input: ParsedSendInput, options: ExecuteOpt
         phase: 'post',
         code: postCode,
         r,
+        signal: options.signal,
         req: {
           method: request.method,
           url: r.mask(hideUrlPassword(url.href)),

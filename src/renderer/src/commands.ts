@@ -24,6 +24,7 @@ import { useNotice } from '@/store/notice'
 import { selectedText } from '@/textCommands'
 import { createTerminal } from '@/terminal/terminalBus'
 import { useApiStore } from '@/store/api'
+import { useAi } from '@/ai/store'
 export { autoFormat, collapseSpaces, convertCase, trimSpaces, urlEncodeDecode } from '@/textCommands'
 
 const docs = () => useDocuments.getState()
@@ -47,6 +48,11 @@ export function newFile(extension?: string): void {
 export function openApiClient(): void {
   useApiStore.getState().setSidebarOn(true)
   docs().newDocument('apireq')
+}
+
+/** Ferramentas → Assistente de IA (Ctrl+Shift+I): abre ou fecha o painel à direita. */
+export function toggleAssistant(): void {
+  useAi.getState().toggle()
 }
 
 /** Ferramentas → Ambientes: um ambiente novo, aberto no construtor. */

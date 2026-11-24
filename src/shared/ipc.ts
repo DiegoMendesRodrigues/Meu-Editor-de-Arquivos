@@ -2,6 +2,7 @@
 import type { FolderColor } from './folderColors'
 import type { Locale } from './i18n'
 import type { SearchMatch, SearchOptions } from './search'
+import type { AiChatInput, AiChatResult, AiChunk, AiSetSettingsResult, AiSettings, AiStatus } from './ai'
 import type {
   ApiCookieJarEntry,
   ApiHistoryEntry,
@@ -147,7 +148,13 @@ export const IpcChannels = {
   apiMonitorRunNow: 'api:monitor-run-now',
   apiMonitorEvent: 'api:monitor-event',
   apiScriptTrust: 'api:script-trust',
-  apiScriptIsTrusted: 'api:script-is-trusted'
+  apiScriptIsTrusted: 'api:script-is-trusted',
+  aiStatus: 'ai:status',
+  aiGetSettings: 'ai:get-settings',
+  aiSetSettings: 'ai:set-settings',
+  aiChat: 'ai:chat',
+  aiCancel: 'ai:cancel',
+  aiChunk: 'ai:chunk'
 } as const
 
 /** Cofre de segredos do Cliente de API: persistent = false quando o sistema não oferece cifra (só memória). */
@@ -551,6 +558,13 @@ export interface EditorApi {
   /** Registra a confiança nos scripts (da requisição ou da coleção inteira). */
   apiScriptTrust(input: ApiScriptTrustInput): Promise<void>
   apiScriptIsTrusted(input: ApiScriptTrustInput): Promise<boolean>
+  /** Assistente de IA local (Ollama): estado, configuração e conversa com streaming (eventos em onAiChunk). */
+  aiStatus(): Promise<AiStatus>
+  aiGetSettings(): Promise<AiSettings>
+  aiSetSettings(settings: AiSettings): Promise<AiSetSettingsResult>
+  aiChat(input: AiChatInput): Promise<AiChatResult>
+  aiCancel(id: string): Promise<void>
+  onAiChunk(listener: (chunk: AiChunk) => void): () => void
   /** O Main avisa que o usuário quer fechar a janela; o Renderer decide e chama closeWindow(). */
   onBeforeClose(listener: () => void): () => void
   closeWindow(): Promise<void>

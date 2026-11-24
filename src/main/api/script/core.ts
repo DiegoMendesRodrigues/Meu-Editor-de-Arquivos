@@ -5,10 +5,11 @@
  * arquivos: só a API do prelude, e do host apenas as funções de crypto e uuid (node:crypto).
  */
 import { createHash, createHmac, randomUUID } from 'node:crypto'
-import { newQuickJSWASMModule, shouldInterruptAfterDeadline, Scope, type QuickJSContext, type QuickJSHandle, type QuickJSWASMModule } from 'quickjs-emscripten'
+import { newQuickJSWASMModule, Scope, type QuickJSContext, type QuickJSHandle, type QuickJSWASMModule } from 'quickjs-emscripten'
+import { API_LIMITS } from '@shared/api/limits'
 import type { ScriptLogLine, ScriptTestResult } from '@shared/api/protocol'
 import { PRELUDE } from './prelude'
-import type { ScriptErrorCode, ScriptInput, ScriptOutput } from './types'
+import type { ScriptErrorCode, ScriptInput, ScriptOutput, ScriptSendFn } from './types'
 
 const STACK_BYTES = 200 * 1024
 /** Folga para o prelude montar a API e para a coleta final depois de um erro. */
@@ -63,8 +64,15 @@ function sanitize(raw: unknown, input: ScriptInput): Pick<ScriptOutput, 'logs' |
   return { logs, tests, envSets, varSets, secretsRead, ...(req ? { req } : {}) }
 }
 
-/** Instala as funções do host (só crypto e uuid) no escopo global do sandbox. */
-function installHost(ctx: QuickJSContext, scope: Scope): void {
+/** O que o host oferece além de crypto e uuid: o envio de pm.sendRequest (sem ele, toda chamada falha). */
+export interface ScriptHost {
+  send: ScriptSendFn
+}
+
+const sendError = (code: string): string => JSON.stringify({ ok: false, code })
+
+/** Instala as funções do host (crypto, uuid e o pedido de rede) no escopo global do sandbox. */
+function installHost(ctx: QuickJSContext, scope: Scope, host: ScriptHost | undefined, pending: Set<Promise<void>>): void {
   const str = (h: Parameters<QuickJSContext['getString']>[0]): string => ctx.getString(h)
   const def = (name: string, fn: (...args: string[]) => string): void => {
     const f = scope.manage(
@@ -86,6 +94,35 @@ function installHost(ctx: QuickJSContext, scope: Scope): void {
   def('__uuid', () => randomUUID())
   def('__b64e', (data) => Buffer.from(data, 'utf8').toString('base64'))
   def('__b64d', (data) => Buffer.from(data, 'base64').toString('utf8'))
+
+  // pm.sendRequest: devolve uma Promise do QuickJS, resolvida quando o host responde (o laço de jobs espera).
+  let sends = 0
+  const sendFn = scope.manage(
+    ctx.newFunction('__send', (jsonHandle) => {
+      const deferred = scope.manage(ctx.newPromise())
+      const json = ctx.getString(jsonHandle)
+      const settle = (out: string): void => {
+        if (!deferred.alive || !ctx.alive) return
+        const h = ctx.newString(out)
+        deferred.resolve(h)
+        h.dispose()
+      }
+      if (!host || ++sends > API_LIMITS.scriptSendRequests) {
+        settle(sendError(host ? 'tooManyRequests' : 'invalidRequest'))
+        return deferred.handle
+      }
+      const p: Promise<void> = host
+        .send(json)
+        .catch(() => sendError('unknown'))
+        .then((out) => {
+          pending.delete(p)
+          settle(out)
+        })
+      pending.add(p)
+      return deferred.handle
+    })
+  )
+  ctx.setProp(ctx.global, '__send', sendFn)
 }
 
 interface VmError {
@@ -103,26 +140,29 @@ function lineOf(stack: string | undefined): number | undefined {
  * Roda um script no sandbox e devolve console, testes, variáveis e a requisição final. Nunca lança:
  * erros e estouros viram `error` (scriptTimeout, scriptMemory ou scriptError) com a linha no console.
  */
-export async function runScriptCore(input: ScriptInput): Promise<ScriptOutput> {
+export async function runScriptCore(input: ScriptInput, host?: ScriptHost): Promise<ScriptOutput> {
   let QuickJS: QuickJSWASMModule
   try {
     QuickJS = await loadModule()
   } catch {
     return emptyOutput('scriptError')
   }
-  return Scope.withScope((scope) => {
+  return Scope.withScopeAsync(async (scope) => {
     const runtime = scope.manage(QuickJS.newRuntime())
     runtime.setMemoryLimit(input.memoryBytes)
     runtime.setMaxStackSize(STACK_BYTES)
     let timedOut = false
+    // O prazo de CPU é um instante que a espera pela rede (pm.sendRequest) empurra para frente.
+    let deadline = 0
     const arm = (ms: number): void => {
-      const should = shouldInterruptAfterDeadline(Date.now() + ms)
-      runtime.setInterruptHandler((rt) => {
-        const stop = should(rt)
+      deadline = Date.now() + ms
+      runtime.setInterruptHandler(() => {
+        const stop = Date.now() > deadline
         if (stop) timedOut = true
         return stop
       })
     }
+    const pending = new Set<Promise<void>>()
     const ctx = scope.manage(runtime.newContext())
 
     let collectFn: QuickJSHandle
@@ -138,7 +178,7 @@ export async function runScriptCore(input: ScriptInput): Promise<ScriptOutput> {
 
     try {
       arm(COLLECT_MS + input.cpuMs)
-      installHost(ctx, scope)
+      installHost(ctx, scope, host, pending)
       const prelude = scope.manage(ctx.unwrapResult(ctx.evalCode(PRELUDE, 'prelude.js')))
       const state = {
         phase: input.phase,
@@ -162,14 +202,21 @@ export async function runScriptCore(input: ScriptInput): Promise<ScriptOutput> {
     } else {
       scope.manage(run.value)
       // Promessas (test assíncrono, async/await) avançam aqui.
-      for (let guard = 0; guard < 1000; guard++) {
+      for (let guard = 0; guard < 5000; guard++) {
         const jobs = runtime.executePendingJobs()
         if (jobs.error) {
           fail(ctx.dump(scope.manage(jobs.error)) as VmError)
           break
         }
-        if (jobs.value === 0) break
+        if (jobs.value > 0) continue
+        if (pending.size === 0) break
+        // Esperando a rede: o tempo parado não é CPU do script.
+        const t0 = Date.now()
+        await Promise.race([...pending])
+        deadline += Date.now() - t0
       }
+      // O estouro dentro de um job de Promise some na rejeição: o relógio é quem sabe que passou do tempo.
+      if (timedOut && !error) fail({ message: 'interrupted' })
     }
 
     // Coleta o que o script fez (mesmo depois de um erro), com um prazo curto próprio.

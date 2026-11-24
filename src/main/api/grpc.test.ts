@@ -21,7 +21,8 @@ import { API_LIMITS } from '@shared/api/limits'
 import { MASK, type ApiGrpcEvent, type ApiGrpcStartInput } from '@shared/api/protocol'
 import { authorizeRoot } from '../ipc/access'
 import { cancelGrpc, closeOwned, endGrpc, loadGrpc, networkCodeOf, sendGrpc, startGrpc } from './grpc'
-import { reflectionDefinition, type ReflectionVersion } from './grpcProto'
+import { reflectionDefinition, resolveProtoPath, type ReflectionVersion } from './grpcProto'
+import { EventThrottle } from './grpcThrottle'
 
 const PROTO = `
 syntax = "proto3";
@@ -37,6 +38,7 @@ service Eco {
   rpc Falha(Pedido) returns (Resposta);
   rpc Lento(Pedido) returns (Resposta);
   rpc Cabecalhos(Pedido) returns (Resposta);
+  rpc Rajada(Pedido) returns (stream Resposta);
 }
 `
 
@@ -92,6 +94,19 @@ function addEco(srv: grpc.Server): void {
     Bidi: (call: grpc.ServerDuplexStream<{ texto: string }, unknown>) => {
       call.on('data', (m: { texto: string }) => call.write({ texto: `volta ${m.texto}` }))
       call.on('end', () => call.end())
+    },
+    Rajada: (call: grpc.ServerWritableStream<{ numero: string }, unknown>) => {
+      const total = Number(call.request.numero) || 5000
+      let i = 0
+      // Escreve respeitando o fluxo do canal (o servidor espera quando o cliente pausa).
+      const pump = (): void => {
+        while (i < total) {
+          i++
+          if (!call.write({ texto: `m${i}`, contagem: String(i) })) return void call.once('drain', pump)
+        }
+        call.end()
+      }
+      pump()
     },
     Falha: (_call: unknown, cb: grpc.sendUnaryData<unknown>) => cb({ code: grpc.status.NOT_FOUND, details: 'não achei' }),
     Lento: (call: grpc.ServerUnaryCall<unknown, unknown>) => {
@@ -204,7 +219,7 @@ describe('gRPC: carregar serviços', () => {
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.services.map((s) => s.name)).toEqual(['teste.exemplo.Eco'])
-    expect(r.services[0].methods.map((m) => m.name).sort()).toEqual(['Bidi', 'Cabecalhos', 'Cliente', 'Falha', 'Lento', 'Servidor', 'Unario'])
+    expect(r.services[0].methods.map((m) => m.name).sort()).toEqual(['Bidi', 'Cabecalhos', 'Cliente', 'Falha', 'Lento', 'Rajada', 'Servidor', 'Unario'])
   })
 
   it('servidor sem reflexão devolve reflectionUnavailable', async () => {
@@ -384,5 +399,95 @@ describe('gRPC: chamadas', () => {
     expect(await result).toEqual({ ok: true })
     await wait(hasStatus(o, callId))
     expect(JSON.parse(o.events.find((e) => e.type === 'message' && e.direction === 'in')!.data).texto).toBe('eco r')
+  })
+})
+
+
+describe('gRPC: limite de eventos por segundo no streaming', () => {
+  it('servidor que manda 5.000 mensagens rápidas: o Renderer recebe no máximo o limite por segundo e o resto é contado', async () => {
+    const owner = new FakeOwner()
+    const t0 = Date.now()
+    const { callId, result } = start(owner, { method: 'Rajada', message: '{"numero":"5000"}' })
+    expect(await result).toEqual({ ok: true })
+    await wait(hasStatus(owner, callId), 30_000)
+    const elapsedSec = Math.max(1, Math.ceil((Date.now() - t0) / 1000))
+    const shown = owner.events.filter((e) => e.callId === callId && e.type === 'message' && e.direction === 'in' && e.dropped === undefined).length
+    const dropped = owner.events.filter((e) => e.callId === callId && e.dropped !== undefined).reduce((n, e) => n + (e.dropped ?? 0), 0)
+    expect(statusOf(owner, callId)).toMatchObject({ code: 0 })
+    // Nada se perde sem aviso: exibidas + descartadas = enviadas.
+    expect(shown + dropped).toBe(5000)
+    expect(dropped).toBeGreaterThan(0)
+    // Janelas de 1 s: o limite vale em cada uma (mais a fila curta, entregue na janela seguinte).
+    expect(shown).toBeLessThanOrEqual((API_LIMITS.grpcEventsPerSecond + API_LIMITS.grpcEventQueue) * (elapsedSec + 1))
+    // O resumo vem como message com dropped, antes do status.
+    const summaryIdx = owner.events.findIndex((e) => e.callId === callId && e.dropped !== undefined)
+    expect(summaryIdx).toBeGreaterThan(-1)
+    expect(summaryIdx).toBeLessThan(owner.events.indexOf(statusOf(owner, callId)!))
+  }, 40_000)
+})
+
+describe('EventThrottle', () => {
+  it('envia até o limite, enfileira o resto da janela, descarta e conta, pausa e retoma', () => {
+    vi.useFakeTimers()
+    try {
+      let clock = 0
+      const sent: number[] = []
+      const summaries: number[] = []
+      const flags = { paused: 0, resumed: 0 }
+      const t = new EventThrottle<number>({
+        perSecond: 10,
+        queueMax: 5,
+        pauseAfterDropped: 20,
+        send: (n) => sent.push(n),
+        summary: (n) => summaries.push(n),
+        pause: () => flags.paused++,
+        resume: () => flags.resumed++,
+        now: () => clock
+      })
+      for (let i = 1; i <= 50; i++) t.push(i)
+      expect(sent).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) // limite da janela
+      expect(flags.paused).toBe(1) // 35 descartes passaram do limite de 20
+      clock = 1000
+      vi.advanceTimersByTime(1000)
+      expect(sent.slice(10)).toEqual([11, 12, 13, 14, 15]) // fila entregue na janela seguinte
+      expect(summaries).toEqual([35])
+      expect(flags.resumed).toBe(1)
+      t.dispose()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('flush entrega a fila e o resumo antes de terminar', () => {
+    const sent: number[] = []
+    const summaries: number[] = []
+    const t = new EventThrottle<number>({ perSecond: 2, queueMax: 2, pauseAfterDropped: 99, send: (n) => sent.push(n), summary: (n) => summaries.push(n), pause: () => undefined, resume: () => undefined })
+    for (let i = 1; i <= 7; i++) t.push(i)
+    t.flush()
+    expect(sent).toEqual([1, 2, 3, 4])
+    expect(summaries).toEqual([3])
+  })
+})
+
+describe('gRPC: caminhos dos .proto relativos ao .apigrpc', () => {
+  it('resolve relativos contra a pasta base, mantém absolutos e recusa ".." que sai dela', () => {
+    const base = join(h.dir, 'colecao')
+    expect(resolveProtoPath(base, 'protos/a.proto')).toBe(join(base, 'protos', 'a.proto'))
+    expect(resolveProtoPath(base, '../colecao/protos/a.proto')).toBe(join(base, 'protos', 'a.proto'))
+    expect(resolveProtoPath(base, protoPath)).toBe(protoPath)
+    expect(() => resolveProtoPath(base, '../fora.proto')).toThrow()
+    expect(() => resolveProtoPath(base, 'a/../../fora.proto')).toThrow()
+    expect(() => resolveProtoPath(undefined, 'a.proto')).toThrow()
+  })
+
+  it('carrega com baseDir; ".." vira protoInvalid e arquivo não autorizado vira protoNotAuthorized', async () => {
+    const owner = asOwner(new FakeOwner())
+    const ok = await loadGrpc(owner, { source: { type: 'proto', files: ['protos/eco.proto'], baseDir: h.dir }, address })
+    expect(ok.ok).toBe(true)
+    expect(await loadGrpc(owner, { source: { type: 'proto', files: ['../x.proto'], baseDir: join(h.dir, 'protos') }, address })).toEqual({ ok: false, code: 'protoInvalid' })
+    const fora = mkdtempSync(join(tmpdir(), 'apigrpc-fora2-'))
+    writeFileSync(join(fora, 'x.proto'), PROTO)
+    expect(await loadGrpc(owner, { source: { type: 'proto', files: ['x.proto'], baseDir: fora }, address })).toEqual({ ok: false, code: 'protoNotAuthorized' })
+    expect(await loadGrpc(owner, { source: { type: 'proto', files: [join(fora, 'x.proto')] }, address })).toEqual({ ok: false, code: 'protoNotAuthorized' })
   })
 })

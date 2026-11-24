@@ -1,6 +1,6 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, Pencil, Play, Plus, Trash2, TriangleAlert } from 'lucide-react'
+import { ArrowLeft, Cloud, Pencil, Play, Plus, Trash2, TriangleAlert } from 'lucide-react'
 import { API_LIMITS } from '@shared/api/limits'
 import type { ApiMonitorRun, ApiMonitorState } from '@shared/api/protocol'
 import type { MessageKey } from '@shared/i18n'
@@ -75,6 +75,7 @@ interface Draft {
   id: string
   name: string
   collectionDir: string
+  location: 'disk' | 'cloud'
   environment: string
   requests: string[]
   chooseRequests: boolean
@@ -87,6 +88,7 @@ const newDraft = (dir: string): Draft => ({
   id: crypto.randomUUID(),
   name: baseName(dir.replace(/[\\/]+$/, '')),
   collectionDir: dir,
+  location: dir && isCloudDir(dir) ? 'cloud' : 'disk',
   environment: '',
   requests: [],
   chooseRequests: false,
@@ -114,10 +116,7 @@ function MonitorForm({ draft, isNew, onSaved, onCancel }: { draft: Draft; isNew:
     let alive = true
     setTree(null)
     setLoadFailed(false)
-    if (!d.collectionDir || isCloudDir(d.collectionDir)) {
-      setLoadFailed(!!d.collectionDir)
-      return
-    }
+    if (!d.collectionDir) return
     readCollection(d.collectionDir).then(
       (loaded) => alive && setTree(loaded),
       () => alive && setLoadFailed(true)
@@ -136,7 +135,7 @@ function MonitorForm({ draft, isNew, onSaved, onCancel }: { draft: Draft; isNew:
 
   const pickFolder = async (): Promise<void> => {
     const folder = await window.api.openFolder()
-    if (folder?.path) setD((x) => ({ ...x, collectionDir: folder.path, name: x.name || baseName(folder.path), requests: [], environment: '' }))
+    if (folder?.path) setD((x) => ({ ...x, collectionDir: folder.path, location: 'disk', name: x.name || baseName(folder.path), requests: [], environment: '' }))
   }
 
   const toggle = (rel: string, on: boolean): void =>
@@ -153,6 +152,7 @@ function MonitorForm({ draft, isNew, onSaved, onCancel }: { draft: Draft; isNew:
         id: d.id,
         name: d.name.trim() || baseName(d.collectionDir),
         collectionDir: d.collectionDir,
+        location: d.location,
         requests: d.chooseRequests ? d.requests : [],
         ...(d.environment ? { environment: d.environment } : {}),
         intervalMin: Math.max(1, Math.round(d.intervalMin) || 1),
@@ -160,7 +160,7 @@ function MonitorForm({ draft, isNew, onSaved, onCancel }: { draft: Draft; isNew:
         notifyOnFailure: d.notifyOnFailure
       })
       if (res.ok) return onSaved()
-      setError(res.code === 'notAuthorized' ? 'apiClient.monitor.error.notAuthorized' : res.code === 'tooManyMonitors' ? 'apiClient.monitor.error.tooManyMonitors' : 'apiClient.monitor.error.invalid')
+      setError(res.code === 'notSignedIn' ? 'apiClient.monitor.error.notSignedIn' : res.code === 'cloudNotFound' ? 'apiClient.monitor.error.cloudNotFound' : res.code === 'notAuthorized' ? 'apiClient.monitor.error.notAuthorized' : res.code === 'tooManyMonitors' ? 'apiClient.monitor.error.tooManyMonitors' : 'apiClient.monitor.error.invalid')
     } catch {
       setError('apiClient.monitor.error.generic')
     }
@@ -276,7 +276,7 @@ export function MonitorDialog({ onClose, dir }: { onClose: () => void; dir?: str
   const edit = (m: ApiMonitorState): void =>
     setEditing({
       isNew: false,
-      draft: { id: m.id, name: m.name, collectionDir: m.collectionDir, environment: m.environment ?? '', requests: m.requests, chooseRequests: m.requests.length > 0, intervalMin: m.intervalMin, notifyOnFailure: m.notifyOnFailure, enabled: m.enabled }
+      draft: { id: m.id, name: m.name, collectionDir: m.collectionDir, location: m.location, environment: m.environment ?? '', requests: m.requests, chooseRequests: m.requests.length > 0, intervalMin: m.intervalMin, notifyOnFailure: m.notifyOnFailure, enabled: m.enabled }
     })
   const toggle = async (m: ApiMonitorState, enabled: boolean): Promise<void> => {
     await window.api.apiMonitorSave({ ...m, enabled })
@@ -350,7 +350,8 @@ export function MonitorDialog({ onClose, dir }: { onClose: () => void; dir?: str
                         </button>
                       </div>
                       <div className="flex flex-wrap gap-x-4 text-xs text-zinc-500">
-                        <span className="truncate" title={m.collectionDir}>
+                        <span className="flex items-center gap-1 truncate" title={m.collectionDir}>
+                          {m.location === 'cloud' && <Cloud size={12} className="shrink-0 text-sky-600" aria-label={t('apiClient.monitor.cloud')} />}
                           {baseName(m.collectionDir.replace(/[\\/]+$/, ''))}
                         </span>
                         <span>{t('apiClient.monitor.every', { n: m.intervalMin })}</span>

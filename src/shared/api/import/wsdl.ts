@@ -6,6 +6,7 @@
 import { parseXmlSafe } from '../xmlSafe'
 import { API_LIMITS as L } from '../limits'
 import { ImportError, Warnings, clip, makeRequest, type ParsedImport } from './common'
+import { WSDL_FILE_LIMITS, isRemoteOrAbsolute, listWsdlReferences, resolveWsdlLocation, type WsdlFilesOption } from './wsdlFiles'
 
 // Os tipos DOM vêm do próprio xmldom (o tsconfig do Main não inclui a lib DOM).
 type El = ReturnType<typeof parseXmlSafe>['documentElement']
@@ -40,10 +41,9 @@ interface TreeNode { name: string; ns: string; children: TreeNode[]; text: boole
 class SchemaIndex {
   elements = new Map<string, Indexed>()
   types = new Map<string, Indexed>()
-  constructor(types: El | undefined) {
-    if (!types) return
-    for (const schema of kids(types, 'schema')) {
-      const info = { tns: attr(schema, 'targetNamespace'), qualified: attr(schema, 'elementFormDefault') === 'qualified' }
+  constructor(schemas: { el: El; tns: string }[]) {
+    for (const { el: schema, tns } of schemas) {
+      const info = { tns, qualified: attr(schema, 'elementFormDefault') === 'qualified' }
       for (const e of kids(schema, 'element')) this.elements.set(`${info.tns}|${attr(e, 'name')}`, { el: e, schema: info })
       for (const t of [...kids(schema, 'complexType'), ...kids(schema, 'simpleType')]) this.types.set(`${info.tns}|${attr(t, 'name')}`, { el: t, schema: info })
     }
@@ -128,7 +128,7 @@ interface BindingOp { name: string; action: string; style: string; inputNs: stri
 
 const isSoapNs = (ns: string | null): boolean => ns === NS_SOAP11 || ns === NS_SOAP12
 
-export function parseWsdl(text: string): ParsedImport {
+export function parseWsdl(text: string, opts?: WsdlFilesOption): ParsedImport {
   let root: El
   try {
     root = parseXmlSafe(text, L.importChars).documentElement
@@ -137,11 +137,81 @@ export function parseWsdl(text: string): ParsedImport {
   }
   if (root.localName !== 'definitions') throw new ImportError('invalid') // inclui WSDL 2.0 ("description")
   const warnings = new Warnings()
+  for (const w of opts?.warnings ?? []) warnings.add(w)
   const tns = attr(root, 'targetNamespace')
-  const schemas = new SchemaIndex(kids(root, 'types')[0])
-  const messages = new Map(kids(root, 'message').map((m) => [attr(m, 'name'), m]))
-  const portTypes = new Map(kids(root, 'portType').map((p) => [attr(p, 'name'), p]))
-  const bindings = kids(root, 'binding')
+
+  // Documentos (WSDL principal + wsdl:import) e schemas (inline + xsd:import/include), lidos do mapa de arquivos.
+  const defs: El[] = []
+  const schemaList: { el: El; tns: string }[] = []
+  const mainKey = opts?.mainKey ?? ''
+  const visited = new Set<string>([mainKey])
+  const parsed = new Map<string, El | null>()
+  const load = (key: string): El | null => {
+    if (parsed.has(key)) return parsed.get(key) ?? null
+    const src = opts?.files[key]
+    let el: El | null = null
+    if (src !== undefined) {
+      try {
+        el = parseXmlSafe(src, L.importChars).documentElement
+      } catch {
+        el = null
+      }
+    }
+    parsed.set(key, el)
+    return el
+  }
+  /** Segue uma referência: avisa o que não pode ser lido e entrega o documento novo (sem repetir nem ciclar). */
+  const follow = (fromKey: string, location: string, depth: number, use: (doc: El, key: string) => void): void => {
+    if (!opts) {
+      warnings.add('wsdlImportNoBase')
+      return
+    }
+    if (isRemoteOrAbsolute(location.trim())) return void warnings.add('wsdlImportRemote')
+    const key = resolveWsdlLocation(fromKey, location)
+    if (key === null) return void warnings.add('wsdlImportNotFound')
+    if (visited.has(key)) return
+    if (depth > WSDL_FILE_LIMITS.depth) return void warnings.add('wsdlImportLimit')
+    const doc = load(key)
+    if (!doc) return void warnings.add('wsdlImportNotFound')
+    visited.add(key)
+    use(doc, key)
+  }
+  const gatherSchema = (schema: El, key: string, depth: number, inherited: string): void => {
+    // include de schema sem targetNamespace herda o de quem incluiu.
+    const stns = attr(schema, 'targetNamespace') || inherited
+    schemaList.push({ el: schema, tns: stns })
+    for (const tag of ['import', 'include', 'redefine']) {
+      for (const ref of kids(schema, tag)) {
+        const loc = attr(ref, 'schemaLocation')
+        if (loc.trim() === '') continue
+        follow(key, loc, depth + 1, (doc, k) => {
+          if (doc.localName === 'schema') gatherSchema(doc, k, depth + 1, tag === 'import' ? '' : stns)
+          else warnings.add('wsdlImportNotFound')
+        })
+      }
+    }
+  }
+  const gatherDefs = (def: El, key: string, depth: number): void => {
+    defs.push(def)
+    for (const types of kids(def, 'types')) for (const schema of kids(types, 'schema')) gatherSchema(schema, key, depth, '')
+    for (const imp of kids(def, 'import')) {
+      const loc = attr(imp, 'location')
+      if (loc.trim() === '') continue
+      follow(key, loc, depth + 1, (doc, k) => {
+        if (doc.localName === 'definitions') gatherDefs(doc, k, depth + 1)
+        else if (doc.localName === 'schema') gatherSchema(doc, k, depth + 1, '')
+        else warnings.add('wsdlImportNotFound')
+      })
+    }
+  }
+  gatherDefs(root, mainKey, 0)
+  if (!opts && listWsdlReferences(root).length > 0) warnings.add('wsdlImportNoBase')
+
+  const schemas = new SchemaIndex(schemaList)
+  const all = (local: string): El[] => defs.flatMap((d) => kids(d, local))
+  const messages = new Map(all('message').map((m) => [attr(m, 'name'), m]))
+  const portTypes = new Map(all('portType').map((p) => [attr(p, 'name'), p]))
+  const bindings = all('binding')
 
   // Corpo de entrada de uma operação do portType.
   const inputBody = (portType: El | undefined, opName: string, style: string, inputNs: string): TreeNode[] => {
@@ -186,7 +256,7 @@ export function parseWsdl(text: string): ParsedImport {
 
   // Cada porta SOAP (service/port) liga um binding a um endereço.
   const targets: { service: string; binding: string; url: string; version: '1.1' | '1.2' }[] = []
-  for (const s of kids(root, 'service')) {
+  for (const s of all('service')) {
     for (const p of kids(s, 'port')) {
       const addr = allKids(p).find((x) => x.localName === 'address' && isSoapNs(x.namespaceURI))
       const binding = qname(p, attr(p, 'binding')).local

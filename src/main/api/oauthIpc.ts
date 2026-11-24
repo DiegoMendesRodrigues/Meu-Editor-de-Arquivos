@@ -6,7 +6,8 @@ import { oauthInputSchema, type ApiOAuthResult, type ApiOAuthTokenInfo } from '@
 import { VARIABLE_NAME_RE } from '@shared/api/variables'
 import { handle } from '../ipc/secure'
 import { authorizeOAuth2, clearOAuthToken, oauthTokenInfo } from './auth/oauth2'
-import { buildOAuthResolver } from './auth/resolver'
+import { buildResolver } from './resolve'
+import { isHostTrusted, trustHost } from './trust'
 
 /** Mesmo formato de escopo do cofre (ipc.ts): id do ambiente ou da coleção, ou "globals". */
 const scopeSchema = z.string().regex(/^[A-Za-z0-9_.-]{1,64}$/).refine((s) => s !== '__proto__')
@@ -22,7 +23,7 @@ export function registerOAuthHandlers(): void {
   handle(IpcChannels.apiOAuthAuthorize, async (e, raw: unknown): Promise<ApiOAuthResult> => {
     const parsed = oauthInputSchema.safeParse(raw)
     if (!parsed.success || parsed.data.auth.type !== 'oauth2') return { ok: false, code: 'invalidConfig' }
-    const { runId, auth, environment, collection, verifyTls } = parsed.data
+    const { runId, auth, environment, collection, verifyTls, confirmSecretHost } = parsed.data
     if (running.has(runId) || running.size >= MAX_RUNNING) return { ok: false, code: 'invalidConfig' }
 
     const controller = new AbortController()
@@ -35,10 +36,24 @@ export function registerOAuthHandlers(): void {
     e.sender.once('destroyed', onGone)
     e.sender.on('did-start-navigation', onNavigate)
     try {
-      return await authorizeOAuth2(environment?.id ?? 'globals', auth, {
+      // Mesmo resolvedor do motor HTTP (sem temporárias): escopos, dinâmicas e profundidade iguais.
+      const resolver = await buildResolver({ environment, collection, temporary: {} })
+      return await authorizeOAuth2(resolver.scope, auth, {
         verifyTls,
         signal: controller.signal,
-        resolve: await buildOAuthResolver(environment, collection),
+        resolve: resolver.resolve,
+        // Segredo só vai para host confirmado; a confirmação vem com a repetição da chamada.
+        guardHosts: async (hosts, extraScope) => {
+          const scopes = new Set(resolver.secretScopes)
+          if (extraScope) scopes.add(extraScope)
+          if (scopes.size === 0) return undefined
+          for (const host of hosts) {
+            if (await isHostTrusted(scopes, host)) continue
+            if (confirmSecretHost?.trim().toLowerCase() !== host) return host
+            await trustHost(scopes, host)
+          }
+          return undefined
+        },
         openExternal: (url) => {
           if (!/^https?:\/\//i.test(url)) throw new Error('esquema não permitido')
           return shell.openExternal(url)

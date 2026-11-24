@@ -17,7 +17,8 @@ import {
 } from '@shared/api/protocol'
 import { IpcChannels } from '@shared/ipc'
 import { ApiFail, toApiErrorCode } from './errors'
-import { describeServices, loadProtoFiles, loadReflection, ProtoInvalid, ReflectionFail, type GrpcDefinition } from './grpcProto'
+import { EventThrottle } from './grpcThrottle'
+import { describeServices, loadProtoFiles, loadReflection, ProtoInvalid, ProtoNotAuthorized, ReflectionFail, type GrpcDefinition } from './grpcProto'
 import { buildResolver, type Resolver } from './resolve'
 import { isHostTrusted, trustHost } from './trust'
 
@@ -37,6 +38,8 @@ interface Call {
   host: string
   requestType: Type
   done: boolean
+  /** Streaming com limite de eventos: entrega a fila ao terminar e para o temporizador. */
+  throttle: EventThrottle<unknown> | null
 }
 
 const calls = new Map<string, Call>()
@@ -54,6 +57,7 @@ function release(id: string): void {
   if (!c) return
   calls.delete(id)
   c.done = true
+  c.throttle?.dispose()
   try {
     c.client.close()
   } catch {
@@ -172,10 +176,11 @@ async function loadDefinition(source: ApiGrpcSource, target: Target | null): Pro
   return loadReflection(target.client, target.metadata)
 }
 
-type LoadFailure = { ok: false; code: ApiErrorCode | 'protoInvalid' | 'reflectionUnavailable'; host?: string }
+type LoadFailure = { ok: false; code: ApiErrorCode | 'protoInvalid' | 'protoNotAuthorized' | 'reflectionUnavailable'; host?: string }
 
 function failureOf(err: unknown): LoadFailure {
   if (err instanceof ProtoInvalid) return { ok: false, code: 'protoInvalid' }
+  if (err instanceof ProtoNotAuthorized) return { ok: false, code: 'protoNotAuthorized' }
   if (err instanceof ApiFail) return { ok: false, code: err.code }
   if (err instanceof ReflectionFail) {
     if (err.kind === 'unimplemented') return { ok: false, code: 'reflectionUnavailable' }
@@ -272,12 +277,13 @@ export async function startGrpc(owner: WebContents, raw: unknown): Promise<ApiGr
 
     const options: grpc.CallOptions = input.deadlineMs > 0 ? { deadline: Date.now() + input.deadlineMs } : {}
     const callId = input.callId
-    const call: Call = { owner, kind, stream: null, cancel: () => undefined, client: target.client, resolver, host, requestType, done: false }
+    const call: Call = { owner, kind, stream: null, cancel: () => undefined, client: target.client, resolver, host, requestType, done: false, throttle: null }
     calls.set(callId, call)
     registered = true
 
     const status = (code: number, details: string): void => {
       if (call.done) return
+      call.throttle?.flush() // as mensagens da fila saem antes do status
       emit(owner, { callId, type: 'status', direction: 'in', data: '', code, codeName: grpc.status[code] ?? 'UNKNOWN', details: resolver.mask(details) })
       log.info(`gRPC ${host} ${input.service}/${input.method} status ${code}`)
       release(callId)
@@ -285,6 +291,19 @@ export async function startGrpc(owner: WebContents, raw: unknown): Promise<ApiGr
     const incoming = (value: unknown): void => {
       const text = pretty(resolver.mask(JSON.stringify(value)))
       emit(owner, { callId, type: 'message', direction: 'in', ...clip(text) })
+    }
+    /** Streams do servidor: no máximo grpcEventsPerSecond mensagens por segundo vão ao Renderer. */
+    const throttled = (pause: () => void, resume: () => void): ((value: unknown) => void) => {
+      call.throttle = new EventThrottle<unknown>({
+        perSecond: API_LIMITS.grpcEventsPerSecond,
+        queueMax: API_LIMITS.grpcEventQueue,
+        pauseAfterDropped: API_LIMITS.grpcPauseDropped,
+        send: incoming,
+        summary: (dropped) => emit(owner, { callId, type: 'message', direction: 'in', data: '', dropped }),
+        pause,
+        resume
+      })
+      return (value) => call.throttle?.push(value)
     }
     const outgoing = (shown: string): void => emit(owner, { callId, type: 'message', direction: 'out', ...clip(shown) })
     const onMetadata = (md: grpc.Metadata): void => emit(owner, { callId, type: 'metadata', direction: 'in', data: metadataJson(md, resolver) })
@@ -309,7 +328,7 @@ export async function startGrpc(owner: WebContents, raw: unknown): Promise<ApiGr
     } else if (kind === 'server') {
       const c = target.client.makeServerStreamRequest(method.path, ser, de, first!.obj, target.metadata, options)
       c.on('metadata', onMetadata)
-      c.on('data', incoming)
+      c.on('data', throttled(() => c.pause(), () => c.resume()))
       c.on('error', () => undefined) // o status chega em 'status'
       c.on('status', onFinalStatus)
       call.cancel = () => c.cancel()
@@ -326,7 +345,7 @@ export async function startGrpc(owner: WebContents, raw: unknown): Promise<ApiGr
     } else {
       const c = target.client.makeBidiStreamRequest(method.path, ser, de, target.metadata, options)
       c.on('metadata', onMetadata)
-      c.on('data', incoming)
+      c.on('data', throttled(() => c.pause(), () => c.resume()))
       c.on('error', () => undefined)
       c.on('status', onFinalStatus)
       call.stream = c
@@ -338,7 +357,7 @@ export async function startGrpc(owner: WebContents, raw: unknown): Promise<ApiGr
     }
     return { ok: true }
   } catch (err) {
-    if (err instanceof ProtoInvalid || err instanceof ApiFail || err instanceof ReflectionFail) return failureOf(err)
+    if (err instanceof ProtoInvalid || err instanceof ProtoNotAuthorized || err instanceof ApiFail || err instanceof ReflectionFail) return failureOf(err)
     // lookupService lança quando o serviço não existe.
     if (err instanceof Error && /no such (service|type)/i.test(err.message)) return { ok: false, code: 'methodNotFound' }
     return failureOf(err)

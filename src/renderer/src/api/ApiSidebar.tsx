@@ -2,7 +2,7 @@
 /** Seções do Cliente de API na barra lateral: ambiente ativo, coleções e histórico. */
 import { useEffect, useMemo, useState } from 'react'
 import * as ContextMenu from '@radix-ui/react-context-menu'
-import { Activity, ChevronRight, Cloud, Cookie, FilePlus, FileText, FolderPlus, Layers, Library, Play, Plus, RefreshCw, Settings, Server, Share, Trash2, X } from 'lucide-react'
+import { Activity, ChevronRight, Cloud, Cookie, FilePlus, FileText, FolderPlus, Layers, Library, Play, Plus, RefreshCw, Settings, Server, Share, Sparkles, Trash2, X } from 'lucide-react'
 import { useT } from '@/i18n'
 import { useCloud, joinPath } from '@/store/cloud'
 import { isDirty, useActiveDocument, useDocuments } from '@/store/documents'
@@ -15,7 +15,7 @@ import { EntryMenu, FileIcon, FolderIcon, itemClass } from '@/components/Sidebar
 import { IconButton, Section } from '@/components/SidebarSection'
 import { METHOD_CLASS } from './ApiRequestView'
 import { COLLECTION_FILE, discoverDiskCollections, isCloudDir, joinDisk, readCollection, type CollectionTree } from './collections'
-import { createFolderIn, createRequestIn, documentCollection, newCollectionFlow, openCollectionFile, openCollectionSettings } from './collectionActions'
+import { createFolderIn, createRequestIn, documentCollection, documentCollectionWithAi, newCollectionFlow, openCollectionFile, openCollectionSettings } from './collectionActions'
 import { EnvironmentSelect } from './EnvironmentSelect'
 import { HistoryList } from './HistoryPanel'
 
@@ -54,6 +54,9 @@ function CollectionActions({ dir, root }: { dir: string; root?: string }) {
           </ContextMenu.Item>
           <ContextMenu.Item onSelect={() => void documentCollection(dir)} className={itemClass}>
             <FileText size={14} /> {t('apiClient.col.document')}
+          </ContextMenu.Item>
+          <ContextMenu.Item onSelect={() => void documentCollectionWithAi(dir)} className={itemClass}>
+            <Sparkles size={14} /> {t('ai.api.document')}
           </ContextMenu.Item>
           <ContextMenu.Item onSelect={() => openDialog({ kind: 'cookies' })} className={itemClass}>
             <Cookie size={14} /> {t('apiClient.col.cookies')}

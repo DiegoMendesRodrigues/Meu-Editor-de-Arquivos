@@ -1,7 +1,7 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { existsSync } from 'node:fs'
 import { readFile, realpath, stat } from 'node:fs/promises'
-import { dirname, resolve } from 'node:path'
+import { dirname, isAbsolute, resolve } from 'node:path'
 import * as grpc from '@grpc/grpc-js'
 import * as protoLoader from '@grpc/proto-loader'
 import { Enum, Namespace, Root, Service, Type, parse, type Field } from 'protobufjs'
@@ -25,6 +25,29 @@ export interface GrpcDefinition {
 }
 
 export class ProtoInvalid extends Error {}
+/** O arquivo não está autorizado neste computador (outro computador, pasta não aberta): o usuário escolhe de novo. */
+export class ProtoNotAuthorized extends Error {}
+
+/**
+ * Caminho absoluto de um item de files/importPaths. Relativos valem contra a pasta do .apigrpc (`baseDir`) e
+ * não podem sair dela com "..". Absolutos continuam como estão (documento ainda não salvo ou arquivo fora da pasta).
+ */
+export function resolveProtoPath(baseDir: string | undefined, path: string): string {
+  if (isAbsolute(path)) return resolve(path)
+  if (!baseDir || !isAbsolute(baseDir)) throw new ProtoInvalid()
+  const abs = resolve(baseDir, path)
+  if (!isInside(baseDir, abs)) throw new ProtoInvalid()
+  return abs
+}
+
+async function authorizedProtoPath(baseDir: string | undefined, path: string): Promise<string> {
+  const abs = resolveProtoPath(baseDir, path)
+  try {
+    return await assertAuthorized(abs)
+  } catch {
+    throw new ProtoNotAuthorized()
+  }
+}
 
 function fromRoot(root: Root): GrpcDefinition {
   try {
@@ -40,9 +63,9 @@ function fromRoot(root: Root): GrpcDefinition {
 
 export async function loadProtoFiles(source: Extract<ApiGrpcSource, { type: 'proto' }>): Promise<GrpcDefinition> {
   const files: string[] = []
-  for (const f of source.files) files.push(await assertAuthorized(f))
+  for (const f of source.files) files.push(await authorizedProtoPath(source.baseDir, f))
   const dirs: string[] = []
-  for (const p of source.importPaths) dirs.push(await assertAuthorized(p))
+  for (const p of source.importPaths) dirs.push(await authorizedProtoPath(source.baseDir, p))
   // As pastas dos arquivos escolhidos também valem para procurar imports.
   for (const f of files) if (!dirs.includes(dirname(f))) dirs.push(dirname(f))
   const realDirs: string[] = []
@@ -59,7 +82,7 @@ export async function loadProtoFiles(source: Extract<ApiGrpcSource, { type: 'pro
     void (async () => {
       const real = await realpath(path)
       const allowed = (await isAuthorized(path)) || realDirs.some((d) => isInside(d, real))
-      if (!allowed) throw new ApiFail('fileNotAuthorized')
+      if (!allowed) throw new ProtoNotAuthorized()
       if ((await stat(real)).size > API_LIMITS.protoFileBytes) throw new ApiFail('tooLarge')
       return readFile(real, 'utf8')
     })().then(
@@ -70,7 +93,7 @@ export async function loadProtoFiles(source: Extract<ApiGrpcSource, { type: 'pro
   try {
     await root.load(files, { keepCase: true })
   } catch (err) {
-    if (err instanceof ApiFail) throw err
+    if (err instanceof ApiFail || err instanceof ProtoNotAuthorized) throw err
     throw new ProtoInvalid()
   }
   return fromRoot(root)

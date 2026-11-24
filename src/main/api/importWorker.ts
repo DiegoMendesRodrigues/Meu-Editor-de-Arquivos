@@ -6,7 +6,8 @@
 import { parentPort } from 'node:worker_threads'
 import type { ApiImportFormat } from '@shared/api/protocol'
 import { parseImport } from '@shared/api/import'
+import type { WsdlFilesOption } from '@shared/api/import/wsdlFiles'
 
-parentPort?.on('message', (req: { text: string; format: ApiImportFormat }) => {
-  parentPort!.postMessage(parseImport(req.text, req.format))
+parentPort?.on('message', (req: { text: string; format: ApiImportFormat; wsdl?: WsdlFilesOption }) => {
+  parentPort!.postMessage(parseImport(req.text, req.format, req.wsdl))
 })

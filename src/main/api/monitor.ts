@@ -23,6 +23,8 @@ export interface MonitorDeps {
   execute(monitor: ApiMonitor, signal: AbortSignal): Promise<Omit<ApiMonitorRun, 'at'>>
   /** O caminho está autorizado na sessão atual (diálogo ou pasta aberta)? */
   isAuthorized(path: string): Promise<boolean>
+  /** Coleção da nuvem: há conta conectada e a pasta (e o ambiente, se houver) existe(m) na nuvem? */
+  checkCloud(dir: string, environment?: string): Promise<'ok' | 'notSignedIn' | 'notFound'>
   /** O arquivo está dentro da pasta? */
   isInsideDir(dir: string, path: string): boolean
   notify(monitor: ApiMonitor, notice: MonitorNotice, run: ApiMonitorRun): void
@@ -169,11 +171,19 @@ export function createMonitorService(deps: MonitorDeps) {
       const existing = entries.get(monitor.id)
       if (!existing && entries.size >= API_LIMITS.monitors) return { ok: false, code: 'tooManyMonitors' }
       // Pasta já conferida ao salvar antes (mesmo monitor, mesma pasta): vale depois de reabrir o app.
-      const sameDir = existing?.monitor.collectionDir === monitor.collectionDir
-      if (!sameDir && !(await deps.isAuthorized(monitor.collectionDir))) return { ok: false, code: 'notAuthorized' }
-      if (monitor.environment && existing?.monitor.environment !== monitor.environment) {
-        if (!/\.apienv$/i.test(monitor.environment)) return { ok: false, code: 'invalid' }
-        if (!deps.isInsideDir(monitor.collectionDir, monitor.environment) && !(await deps.isAuthorized(monitor.environment))) return { ok: false, code: 'notAuthorized' }
+      const sameDir = existing?.monitor.collectionDir === monitor.collectionDir && existing.monitor.location === monitor.location
+      const envChanged = !!monitor.environment && (existing?.monitor.environment !== monitor.environment || !sameDir)
+      if (envChanged && !/\.apienv$/i.test(monitor.environment!)) return { ok: false, code: 'invalid' }
+      if (monitor.location === 'cloud') {
+        // Nuvem: no lugar da autorização de disco, exige conta conectada e a pasta existente. Só relê o que mudou.
+        if (!sameDir || envChanged) {
+          const check = await deps.checkCloud(monitor.collectionDir, envChanged ? monitor.environment : undefined)
+          if (check === 'notSignedIn') return { ok: false, code: 'notSignedIn' }
+          if (check === 'notFound') return { ok: false, code: 'cloudNotFound' }
+        }
+      } else {
+        if (!sameDir && !(await deps.isAuthorized(monitor.collectionDir))) return { ok: false, code: 'notAuthorized' }
+        if (envChanged && !deps.isInsideDir(monitor.collectionDir, monitor.environment!) && !(await deps.isAuthorized(monitor.environment!))) return { ok: false, code: 'notAuthorized' }
       }
       let e = existing
       if (e) e.monitor = monitor

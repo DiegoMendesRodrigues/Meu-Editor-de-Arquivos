@@ -8,11 +8,17 @@ let server: Server
 let base = ''
 let hits = 0
 let lastHeader: string | undefined
+let lastToken: string | undefined
 
 test.beforeAll(async () => {
   server = createServer((req, res) => {
     hits++
     lastHeader = req.headers['x-assinatura'] as string | undefined
+    if (req.url === '/token') {
+      res.setHeader('Content-Type', 'application/json')
+      return res.end(JSON.stringify({ token: 'tk-e2e-42' }))
+    }
+    lastToken = req.headers['x-token'] as string | undefined
     res.setHeader('Content-Type', 'application/json')
     res.end(JSON.stringify({ id: 7, caminho: req.url }))
   })
@@ -95,5 +101,20 @@ test.describe('Cliente de API: scripts em sandbox', () => {
     await response.getByRole('tab', { name: /^Testes/ }).click()
     await expect(response.locator('[data-testid=api-script-test][data-passed=true]')).toContainText('veio 200')
     await expect(response.getByTestId('api-script-console')).toContainText('pre rodou')
+  })
+
+  test('o script "antes" busca um token com pm.sendRequest e o põe no cabeçalho', async ({ page }) => {
+    await page.keyboard.press('Control+Shift+A')
+    const view = page.getByTestId('api-request')
+    await view.getByLabel('URL da requisição').fill(`${base}/protegido`)
+    await view.getByRole('tab', { name: /^Testes/ }).first().click()
+    await page.getByTestId('api-script-pre').locator('.monaco-editor').click()
+    await page.keyboard.type(`pm.sendRequest('${base}/token', function (err, res) { req.headers['X-Token'] = res.json().token })`)
+    await page.waitForTimeout(1200)
+
+    lastToken = undefined
+    await page.getByTestId('api-send').click()
+    await expect(page.getByTestId('api-status')).toContainText('200')
+    expect(lastToken).toBe('tk-e2e-42')
   })
 })

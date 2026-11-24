@@ -11,8 +11,8 @@ export const PRELUDE = String.raw`(function (stateJson) {
   'use strict';
   var g = globalThis;
   var S = JSON.parse(stateJson);
-  var hostHmac = g.__hmac, hostHash = g.__hash, hostUuid = g.__uuid, hostB64e = g.__b64e, hostB64d = g.__b64d;
-  delete g.__hmac; delete g.__hash; delete g.__uuid; delete g.__b64e; delete g.__b64d;
+  var hostHmac = g.__hmac, hostHash = g.__hash, hostUuid = g.__uuid, hostB64e = g.__b64e, hostB64d = g.__b64d, hostSend = g.__send;
+  delete g.__hmac; delete g.__hash; delete g.__uuid; delete g.__b64e; delete g.__b64d; delete g.__send;
   var stringify = JSON.stringify, parse = JSON.parse, hasOwn = Object.prototype.hasOwnProperty;
   var isPre = S.phase === 'pre';
 
@@ -283,6 +283,60 @@ export const PRELUDE = String.raw`(function (stateJson) {
     if (k !== undefined) delete req.headers[k];
     req.headers[String(h.key)] = str(h.value);
   }
+  /* pm.sendRequest: a rede fica no Main; aqui só se monta o pedido e se embrulha a resposta. */
+  function pairs(list) {
+    var out = [];
+    if (Array.isArray(list)) {
+      list.forEach(function (it) {
+        if (it && typeof it === 'object' && it.disabled !== true && it.key !== undefined) out.push([str(it.key), str(it.value)]);
+      });
+    } else if (list && typeof list === 'object') {
+      Object.keys(list).forEach(function (k) { out.push([k, str(list[k])]); });
+    }
+    return out;
+  }
+  function sendSpec(a) {
+    if (typeof a === 'string') return { url: a, method: 'GET', headers: [], body: { mode: 'none' } };
+    if (!a || typeof a !== 'object') throw new Error('invalid');
+    var url = typeof a.url === 'object' && a.url ? (a.url.raw !== undefined ? a.url.raw : '') : a.url;
+    var b = a.body, body = { mode: 'none' };
+    if (typeof b === 'string') body = { mode: 'raw', raw: b };
+    else if (b && typeof b === 'object') {
+      if (b.mode === 'raw') body = { mode: 'raw', raw: str(b.raw) };
+      else if (b.mode === 'urlencoded') body = { mode: 'urlencoded', fields: pairs(b.urlencoded) };
+      else if (b.mode === 'formdata') body = { mode: 'formdata', fields: pairs(b.formdata) };
+    }
+    return { url: str(url), method: String(a.method || 'GET').toUpperCase(), headers: pairs(a.header !== undefined ? a.header : a.headers), body: body };
+  }
+  function sendErr(code) { return { name: 'ApiError', code: String(code), message: String(code) }; }
+  function sendRes(r) {
+    return {
+      code: r.code,
+      status: r.status,
+      headers: headerApi(toObject(r.headers)),
+      responseTime: r.responseTime,
+      text: function () { return r.body; },
+      json: function () { return parse(r.body); }
+    };
+  }
+  function sendRequest(a, cb) {
+    var done = new Promise(function (resolve) {
+      var spec;
+      try { spec = sendSpec(a); } catch (e) { return resolve({ err: sendErr('invalidRequest') }); }
+      spec.read = Object.keys(secretsRead); hostSend(stringify(spec)).then(function (json) {
+        var o;
+        try { o = parse(json); } catch (e) { o = { ok: false, code: 'unknown' }; }
+        resolve(o && o.ok ? { err: null, res: sendRes(o.res) } : { err: sendErr(o && o.code), res: undefined });
+      });
+    });
+    if (typeof cb === 'function') {
+      return done.then(function (r) {
+        try { cb(r.err, r.res); } catch (e) { console.error('pm.sendRequest callback: ' + errText(e)); }
+        return r.res;
+      });
+    }
+    return done.then(function (r) { if (r.err) throw r.err; return r.res; });
+  }
   var pm = {
     environment: env,
     globals: env,
@@ -291,7 +345,7 @@ export const PRELUDE = String.raw`(function (stateJson) {
     test: test,
     expect: expect,
     info: { eventName: isPre ? 'prerequest' : 'test' },
-    sendRequest: function () { throw new Error('pm.sendRequest is not supported'); },
+    sendRequest: sendRequest,
     request: {
       get url() { return req.url; },
       set url(v) { req.url = String(v); },

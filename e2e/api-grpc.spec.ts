@@ -1,8 +1,8 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import { writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import * as grpc from '@grpc/grpc-js'
 import * as protoLoader from '@grpc/proto-loader'
-import { expect, stubOpenDialog, test } from './fixtures'
+import { expect, stubOpenDialog, stubSaveDialog, test } from './fixtures'
 
 const PROTO = `
 syntax = "proto3";
@@ -76,5 +76,39 @@ test.describe('Cliente de API: gRPC', () => {
     // A seleção fica gravada no JSON do documento.
     await page.getByRole('button', { name: 'Editar texto' }).click()
     await expect(page.locator('.monaco-editor').first()).toContainText('teste.exemplo.Eco')
+  })
+  test('o .apigrpc salvo grava o .proto com caminho relativo e reabrir carrega os serviços', async ({ app, page, workspace }) => {
+    writeFileSync(workspace.file('eco.proto'), PROTO)
+    await page.getByRole('button', { name: 'Ferramentas' }).click()
+    await page.getByRole('menuitem', { name: /gRPC \(nova chamada\)/ }).click()
+    await expect(page.getByTestId('api-grpc-view')).toBeVisible()
+    await page.getByTestId('grpc-address').fill(`127.0.0.1:${port}`)
+    await page.getByTestId('grpc-source').selectOption('proto')
+
+    // Primeiro salva o documento; depois escolhe o .proto (que está na mesma pasta).
+    const file = workspace.file('chamada.apigrpc')
+    await stubSaveDialog(app, file)
+    await page.keyboard.press('Control+S')
+    await expect(page.locator('[role=tablist]').first().getByRole('tab', { selected: true })).toContainText('chamada.apigrpc')
+    await stubOpenDialog(app, [workspace.file('eco.proto')])
+    await page.getByTestId('grpc-pick-proto').click()
+    await expect(page.getByTestId('grpc-proto-files')).toContainText('eco.proto')
+    await expect(page.getByTestId('grpc-service')).toHaveValue('teste.exemplo.Eco')
+    await page.keyboard.press('Control+S')
+    await expect(page.locator('[role=tablist]').first().getByRole('tab', { selected: true })).not.toContainText('•')
+
+    const saved = JSON.parse(readFileSync(file, 'utf8')) as { source: { files: string[] } }
+    expect(saved.source.files).toEqual(['eco.proto'])
+
+    // Fecha e reabre: o caminho relativo é resolvido pela pasta do .apigrpc e os serviços voltam.
+    await page.keyboard.press('Control+W')
+    await stubOpenDialog(app, [file])
+    await page.keyboard.press('Control+O')
+    await expect(page.getByTestId('api-grpc-view')).toBeVisible()
+    await expect(page.getByTestId('grpc-proto-files')).toContainText('eco.proto')
+    await expect(page.getByTestId('grpc-service')).toHaveValue('teste.exemplo.Eco')
+    await page.getByTestId('grpc-load').click()
+    await expect(page.getByTestId('grpc-error')).toHaveCount(0)
+    await expect(page.getByTestId('grpc-service')).toHaveValue('teste.exemplo.Eco')
   })
 })

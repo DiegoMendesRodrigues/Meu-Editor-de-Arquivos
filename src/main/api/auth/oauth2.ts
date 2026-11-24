@@ -14,7 +14,7 @@ type FailCode = Extract<ApiOAuthResult, { ok: false }>['code']
 
 /** Falha conhecida do OAuth: só o código chega ao usuário, nunca a mensagem do servidor. */
 export class OAuthError extends Error {
-  constructor(readonly code: FailCode) {
+  constructor(readonly code: FailCode, readonly host?: string) {
     super(code)
   }
 }
@@ -24,6 +24,21 @@ export interface OAuth2Options {
   signal?: AbortSignal
   /** Resolve {{variáveis}} (ambiente, coleção e cofre) num texto. */
   resolve: (text: string) => string
+  /**
+   * Chamado antes de enviar segredos a um host (token ou autorização do dispositivo), já com a
+   * configuração resolvida. Devolve o host que ainda precisa de confirmação, ou undefined se pode seguir.
+   */
+  guardHosts?: (hosts: string[], extraSecretScope?: string) => Promise<string | undefined>
+}
+
+/** Segredo só vai para host confirmado: lança secretHostNotConfirmed com o host que falta. */
+async function guardSecretHosts(cfg: Resolved, flow: OAuth2Auth['flow'], opts: OAuth2Options, refreshScope?: string): Promise<void> {
+  if (!opts.guardHosts) return
+  const hosts = [new URL(cfg.tokenUrl).host.toLowerCase()]
+  // No Device Code o authUrl é um endpoint chamado pelo app (nos outros fluxos é aberto no navegador).
+  if (flow === 'deviceCode' && cfg.authUrl) hosts.push(new URL(cfg.authUrl).host.toLowerCase())
+  const pendingHost = await opts.guardHosts(hosts, refreshScope)
+  if (pendingHost) throw new OAuthError('secretHostNotConfirmed', pendingHost)
 }
 
 export interface AuthorizeOptions extends OAuth2Options {
@@ -362,6 +377,7 @@ export async function authorizeOAuth2(scope: string, auth: OAuth2Auth, opts: Aut
   try {
     if (opts.signal?.aborted) throw new OAuthError('cancelled')
     const cfg = resolveConfig(auth, opts.resolve)
+    await guardSecretHosts(cfg, auth.flow, opts)
     let stored: { expiresAt?: string; hasRefreshToken: boolean }
     switch (auth.flow) {
       case 'authorizationCode':
@@ -379,7 +395,7 @@ export async function authorizeOAuth2(scope: string, auth: OAuth2Auth, opts: Aut
     }
     return { ok: true, tokenVar: auth.tokenVar, ...stored }
   } catch (err) {
-    if (err instanceof OAuthError) return { ok: false, code: err.code }
+    if (err instanceof OAuthError) return { ok: false, code: err.code, ...(err.host ? { host: err.host } : {}) }
     if (err instanceof PendingError) return { ok: false, code: err.kind === 'expired_token' ? 'timeout' : 'invalidResponse' }
     return { ok: false, code: 'unknown' }
   }
@@ -409,6 +425,8 @@ export async function getOAuth2AccessToken(scope: string, auth: OAuth2Auth, opts
     try {
       const cfg = resolveConfig(auth, opts.resolve)
       const refresh = await secretVault.get(scope, refreshName(auth.tokenVar))
+      // O refresh token (segredo do cofre deste escopo) também só vai para host confirmado.
+      await guardSecretHosts(cfg, auth.flow, opts, refresh ? scope : undefined)
       if (refresh) {
         try {
           return await refreshToken(scope, auth, cfg, refresh, opts)

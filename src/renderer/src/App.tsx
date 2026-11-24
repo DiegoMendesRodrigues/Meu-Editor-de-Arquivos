@@ -31,6 +31,8 @@ import { useApplyTheme } from '@/theme'
 import { TerminalPanel } from '@/terminal/TerminalPanel'
 import { useTerminals } from '@/store/terminals'
 import { ApiDialogs } from '@/api/ApiDialogs'
+import { AssistantPanel } from '@/ai/AssistantPanel'
+import { startAiBridge, useAi } from '@/ai/store'
 
 /** Atalhos globais da aplicação (os de edição ficam com o próprio Monaco). */
 function useGlobalShortcuts(): void {
@@ -63,6 +65,7 @@ function useGlobalShortcuts(): void {
       else if (key === 'm' && e.shiftKey) run(cmd.playLastMacro)
       else if (key === 'k' && e.shiftKey) run(cmd.openFolder)
       else if (key === 'a' && e.shiftKey) run(cmd.openApiClient)
+      else if (key === 'i' && e.shiftKey) run(cmd.toggleAssistant)
       else if (key === 'o' && !e.shiftKey) run(cmd.openFile)
       else if (key === 's' && e.shiftKey) run(cmd.saveAs)
       else if (key === 's') run(cmd.save)
@@ -85,6 +88,7 @@ export function App() {
   const bottomPanelVisible = useView((s) => s.bottomPanelVisible)
   const fullScreen = useView((s) => s.fullScreen)
   const hasTerminals = useTerminals((s) => s.tabs.length > 0)
+  const assistantOpen = useAi((s) => s.open)
   const dialog = useDialogs((s) => s.open)
   useGlobalShortcuts()
   useApplyTheme()
@@ -143,6 +147,8 @@ export function App() {
   useEffect(() => void useLibrary.getState().load(), [])
   useEffect(() => void useAccount.getState().load(), [])
   useEffect(() => window.api.onBeforeClose(() => void cmd.requestQuit()), [])
+  // Os pedaços das respostas do assistente de IA chegam mesmo com o painel fechado.
+  useEffect(() => startAiBridge(), [])
 
   const dialogs = (
     <>
@@ -203,6 +209,15 @@ export function App() {
             )}
           </Group>
         </Panel>
+        {/* Assistente de IA local (Ferramentas → Assistente de IA, Ctrl+Shift+I), à direita do documento. */}
+        {assistantOpen && !fullScreen && (
+          <>
+            <Separator className={`w-px ${separatorClass}`} />
+            <Panel id="assistant" defaultSize={360} minSize={260} maxSize="60%">
+              <AssistantPanel />
+            </Panel>
+          </>
+        )}
       </Group>
       {!fullScreen && <StatusBar />}
       {fullScreen && (

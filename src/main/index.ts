@@ -15,6 +15,7 @@ import { registerSessionHandlers } from './ipc/session'
 import { killAllTerminals, registerTerminalHandlers } from './ipc/terminal'
 import { registerFormatHandlers } from './ipc/format'
 import { registerApiHandlers } from './api/ipc'
+import { registerAiHandlers } from './ai/aiIpc'
 
 log.initialize()
 
@@ -108,6 +109,7 @@ app.whenReady().then(async () => {
   registerTerminalHandlers()
   registerFormatHandlers()
   registerApiHandlers()
+  registerAiHandlers()
   createWindow()
 
   app.on('activate', () => {

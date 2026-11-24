@@ -26,7 +26,7 @@ const nameSchema = z.string().regex(VARIABLE_NAME_RE)
 const valueSchema = z.string().max(API_LIMITS.secretChars)
 
 export function registerApiHandlers(): void {
-  handle(IpcChannels.apiSecretsInfo, (): ApiSecretsInfo => ({ persistent: secretVault.persistent }))
+  handle(IpcChannels.apiSecretsInfo, async (): Promise<ApiSecretsInfo> => ({ persistent: await secretVault.isPersistent() }))
 
   handle(IpcChannels.apiSecretSet, async (_e, scope: unknown, name: unknown, value: unknown): Promise<void> => {
     await secretVault.set(scopeSchema.parse(scope), nameSchema.parse(name), valueSchema.parse(value))
