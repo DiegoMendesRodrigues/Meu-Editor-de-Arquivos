@@ -761,6 +761,7 @@ test.describe('Cliente de API (fase 0)', () => {
 
   test('Ferramentas → Cliente de API e Arquivo → Novo criam requisições', async ({ page }) => {
     await page.getByRole('button', { name: 'Ferramentas' }).click()
+    await page.getByRole('menuitem', { name: 'Testar requisições e APIs' }).click()
     await page.getByRole('menuitem', { name: /Cliente de API/ }).click()
     await expect(page.getByTestId('api-request')).toBeVisible()
     await page.getByRole('button', { name: 'Arquivo' }).click()

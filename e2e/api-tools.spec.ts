@@ -85,6 +85,7 @@ test.beforeEach(() => {
 
 async function openImport(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Ferramentas' }).click()
+  await page.getByRole('menuitem', { name: 'Testar requisições e APIs' }).click()
   await page.getByRole('menuitem', { name: /Importar requisições/ }).click()
 }
 

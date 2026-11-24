@@ -170,7 +170,7 @@ O Cliente de API serve para testar serviços na internet (APIs): você monta uma
 
 ### Abrir
 
-- Aperte **Ctrl+Shift+A**, ou use **{{menu.tools}} → {{menu.tools.apiClient}}**.
+- Aperte **Ctrl+Shift+A**, ou use **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiClient}}**.
 - Ou use **{{menu.file}} → Novo arquivo de requisição de API (.apireq)**.
 
 O documento abre no **{{apiClient.builder}}**. Para ver e editar o arquivo como texto (JSON), clique em **{{toolbar.editText}}**.
@@ -210,21 +210,21 @@ Na aba **{{apiClient.tab.tests}}**:
 
 ![Ambiente de API com uma variável comum e uma secreta](img/s24-api-environment.png)
 
-Um ambiente reúne variáveis, como o endereço do servidor de testes e o de produção. Use **{{menu.tools}} → {{menu.tools.apiEnvironments}}** para criar um (arquivo **.apienv**) e escolha o ativo no seletor **{{apiClient.env.select}}**.
+Um ambiente reúne variáveis, como o endereço do servidor de testes e o de produção. Use **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiEnvironments}}** para criar um (arquivo **.apienv**) e escolha o ativo no seletor **{{apiClient.env.select}}**.
 
 - Marque **{{apiClient.env.secret}}** nas variáveis sigilosas. O valor fica cifrado neste computador e **não vai para o arquivo .apienv**.
 - Marque **{{apiClient.env.production}}** num ambiente de produção: o aplicativo pede confirmação antes de enviar POST, PUT, PATCH e DELETE.
-- Os cookies recebidos ficam separados por ambiente; veja ou apague em **{{menu.tools}} → {{menu.tools.apiCookies}}**.
+- Os cookies recebidos ficam separados por ambiente; veja ou apague em **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiCookies}}**.
 
 ### Coleções e histórico
 
 Uma coleção é uma pasta com as requisições e o arquivo **.apicol**, que guarda a autorização e as variáveis comuns. Na barra lateral, a seção **{{apiClient.col.section}}** mostra as coleções das pastas abertas; use o botão direito para criar requisições e pastas, **{{apiClient.col.run}}**, **{{apiClient.col.export}}**, **{{apiClient.col.document}}** (gera a documentação da coleção) e **{{apiClient.col.settings}}**.
 
-O **{{apiClient.history.section}}** (também em **{{menu.tools}} → {{menu.tools.apiHistory}}**) lista as últimas requisições enviadas, e você pode limpá-lo quando quiser.
+O **{{apiClient.history.section}}** (também em **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiHistory}}**) lista as últimas requisições enviadas, e você pode limpá-lo quando quiser.
 
 ### Importar, exportar e gerar código
 
-- **{{menu.tools}} → {{menu.tools.apiImport}}** traz requisições de curl, Postman, OpenAPI/Swagger, Insomnia, HAR e arquivos .http. Clique em **{{apiClient.import.analyze}}** para ver o que será importado e escolha **{{apiClient.import.asCollection}}** ou **{{apiClient.import.openInTabs}}**. Colar um comando curl na URL também oferece a importação.
+- **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiImport}}** traz requisições de curl, Postman, OpenAPI/Swagger, Insomnia, HAR e arquivos .http. Clique em **{{apiClient.import.analyze}}** para ver o que será importado e escolha **{{apiClient.import.asCollection}}** ou **{{apiClient.import.openInTabs}}**. Colar um comando curl na URL também oferece a importação.
 - **{{apiClient.col.export}}** grava a coleção como Postman, OpenAPI, HAR, .http ou curl. Os valores de variáveis secretas nunca são exportados.
 - O botão **{{apiClient.code}}** abre **{{apiClient.codegen.title}}** e mostra a requisição em várias linguagens, pronta para copiar.
 
@@ -240,23 +240,23 @@ Quando a operação escolhida é uma **subscription**, aparece o botão **{{apiC
 
 ### SOAP e WSDL
 
-Em **{{apiClient.body.type}}**, escolha SOAP, a **{{apiClient.soap.version}}** (1.1 ou 1.2) e a SOAPAction; **{{apiClient.soap.template}}** preenche um envelope vazio. Para criar as requisições a partir de um serviço, use **{{menu.tools}} → {{menu.tools.apiImport}}** com o arquivo WSDL: cada operação vira uma requisição, já com o envelope de exemplo. Nos testes e extrações, o alvo XPath lê respostas XML (por exemplo, <code>//*[local-name()='Resultado']</code>).
+Em **{{apiClient.body.type}}**, escolha SOAP, a **{{apiClient.soap.version}}** (1.1 ou 1.2) e a SOAPAction; **{{apiClient.soap.template}}** preenche um envelope vazio. Para criar as requisições a partir de um serviço, use **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiImport}}** com o arquivo WSDL: cada operação vira uma requisição, já com o envelope de exemplo. Nos testes e extrações, o alvo XPath lê respostas XML (por exemplo, <code>//*[local-name()='Resultado']</code>).
 
 ### WebSocket
 
-Use **{{menu.tools}} → {{menu.tools.apiWebSocket}}** para criar uma conexão (arquivo **.apiws**). Digite a **{{apiClient.ws.url}}** (ws:// ou wss://), os cabeçalhos e os subprotocolos e clique em **{{apiClient.ws.connect}}**. Escreva a mensagem (texto, JSON ou binário em base64) e envie com **Ctrl+Enter**. O **{{apiClient.ws.log}}** mostra as mensagens enviadas e recebidas, com hora e tamanho; dá para filtrar, pausar e limpar. Use **{{apiClient.ws.saveMessage}}** para guardar mensagens que você envia sempre.
+Use **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiWebSocket}}** para criar uma conexão (arquivo **.apiws**). Digite a **{{apiClient.ws.url}}** (ws:// ou wss://), os cabeçalhos e os subprotocolos e clique em **{{apiClient.ws.connect}}**. Escreva a mensagem (texto, JSON ou binário em base64) e envie com **Ctrl+Enter**. O **{{apiClient.ws.log}}** mostra as mensagens enviadas e recebidas, com hora e tamanho; dá para filtrar, pausar e limpar. Use **{{apiClient.ws.saveMessage}}** para guardar mensagens que você envia sempre.
 
 ### Servidor mock
 
-Um servidor mock responde no lugar da API real, com respostas que você já conhece. Na resposta de uma requisição salva, clique em **{{apiClient.response.saveExample}}**: o aplicativo guarda o exemplo junto da requisição. Depois, no botão direito da coleção, escolha **{{apiClient.col.mock}}** (ou **{{menu.tools}} → {{menu.tools.apiMock}}**). As rotas vêm dos exemplos salvos ou de um arquivo OpenAPI; ajuste o status e o atraso de cada uma e clique em **{{apiClient.mock.start}}**. O servidor atende só neste computador, a menos que você marque **{{apiClient.mock.lan}}**, e para sozinho depois de 8 horas sem chamadas.
+Um servidor mock responde no lugar da API real, com respostas que você já conhece. Na resposta de uma requisição salva, clique em **{{apiClient.response.saveExample}}**: o aplicativo guarda o exemplo junto da requisição. Depois, no botão direito da coleção, escolha **{{apiClient.col.mock}}** (ou **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiMock}}**). As rotas vêm dos exemplos salvos ou de um arquivo OpenAPI; ajuste o status e o atraso de cada uma e clique em **{{apiClient.mock.start}}**. O servidor atende só neste computador, a menos que você marque **{{apiClient.mock.lan}}**, e para sozinho depois de 8 horas sem chamadas.
 
 ### gRPC
 
-Use **{{menu.tools}} → {{menu.tools.apiGrpc}}** para criar uma chamada (arquivo **.apigrpc**). Informe o **{{apiClient.grpc.address}}**, marque **{{apiClient.grpc.tls}}** se o servidor exigir, e escolha a **{{apiClient.grpc.source}}**: **{{apiClient.grpc.source.reflection}}** ou **{{apiClient.grpc.source.proto}}**. Clique em **{{apiClient.grpc.load}}**, escolha o serviço e o método, e use **{{apiClient.grpc.useTemplate}}** para começar a mensagem em JSON. Chamadas simples e com streaming do servidor usam **{{apiClient.grpc.invoke}}**; com streaming do cliente ou nos dois sentidos, use **{{apiClient.grpc.start}}**, **{{apiClient.grpc.send}}** e **{{apiClient.grpc.end}}**. As mensagens, os metadados e o status aparecem na lista de eventos.
+Use **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiGrpc}}** para criar uma chamada (arquivo **.apigrpc**). Informe o **{{apiClient.grpc.address}}**, marque **{{apiClient.grpc.tls}}** se o servidor exigir, e escolha a **{{apiClient.grpc.source}}**: **{{apiClient.grpc.source.reflection}}** ou **{{apiClient.grpc.source.proto}}**. Clique em **{{apiClient.grpc.load}}**, escolha o serviço e o método, e use **{{apiClient.grpc.useTemplate}}** para começar a mensagem em JSON. Chamadas simples e com streaming do servidor usam **{{apiClient.grpc.invoke}}**; com streaming do cliente ou nos dois sentidos, use **{{apiClient.grpc.start}}**, **{{apiClient.grpc.send}}** e **{{apiClient.grpc.end}}**. As mensagens, os metadados e o status aparecem na lista de eventos.
 
 ### Monitores
 
-Um monitor repete a execução de uma coleção a cada tantos minutos e avisa por notificação do sistema quando algo falha (e de novo quando volta a passar). No botão direito da coleção, escolha **{{apiClient.col.monitor}}** (ou **{{menu.tools}} → {{menu.tools.apiMonitor}}**), defina o intervalo, o ambiente e as requisições, e salve. O gráfico mostra o tempo de cada execução, com as falhas em vermelho; **{{apiClient.monitor.runNow}}** roda na hora. Os monitores só rodam com o aplicativo aberto e voltam sozinhos quando você o abre de novo.
+Um monitor repete a execução de uma coleção a cada tantos minutos e avisa por notificação do sistema quando algo falha (e de novo quando volta a passar). No botão direito da coleção, escolha **{{apiClient.col.monitor}}** (ou **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiMonitor}}**), defina o intervalo, o ambiente e as requisições, e salve. O gráfico mostra o tempo de cada execução, com as falhas em vermelho; **{{apiClient.monitor.runNow}}** roda na hora. Os monitores só rodam com o aplicativo aberto e voltam sozinhos quando você o abre de novo.
 
 ### Scripts
 

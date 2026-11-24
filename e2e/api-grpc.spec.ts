@@ -44,6 +44,7 @@ test.describe('Cliente de API: gRPC', () => {
   test('carrega os serviços pelo .proto e invoca uma chamada unária e outra de streaming', async ({ app, page, workspace }) => {
     writeFileSync(workspace.file('eco.proto'), PROTO)
     await page.getByRole('button', { name: 'Ferramentas' }).click()
+    await page.getByRole('menuitem', { name: 'Testar requisições e APIs' }).click()
     await page.getByRole('menuitem', { name: /gRPC \(nova chamada\)/ }).click()
     await expect(page.getByTestId('api-grpc-view')).toBeVisible()
     await expect(page.getByRole('tab', { selected: true }).first()).toContainText('.apigrpc')
@@ -80,6 +81,7 @@ test.describe('Cliente de API: gRPC', () => {
   test('o .apigrpc salvo grava o .proto com caminho relativo e reabrir carrega os serviços', async ({ app, page, workspace }) => {
     writeFileSync(workspace.file('eco.proto'), PROTO)
     await page.getByRole('button', { name: 'Ferramentas' }).click()
+    await page.getByRole('menuitem', { name: 'Testar requisições e APIs' }).click()
     await page.getByRole('menuitem', { name: /gRPC \(nova chamada\)/ }).click()
     await expect(page.getByTestId('api-grpc-view')).toBeVisible()
     await page.getByTestId('grpc-address').fill(`127.0.0.1:${port}`)

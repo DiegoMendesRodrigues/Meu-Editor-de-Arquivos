@@ -36,6 +36,35 @@ export function moveSection(order: SidebarSectionId[], id: SidebarSectionId, tar
   return rest
 }
 
+/** O que decide quais áreas existem agora (fora o X do usuário). */
+export interface SidebarContext {
+  /** Parte do Cliente de API ligada na barra lateral. */
+  apiOn: boolean
+  /** Armazenamento em nuvem em uso (conta conectada e nuvem preferida). */
+  cloudMode: boolean
+}
+
+/**
+ * Regra única de visibilidade: a área existe no contexto atual e o usuário não a ocultou.
+ * Usada pela barra lateral (para renderizar) e pelo menu Exibir (para marcar).
+ */
+export function isSectionVisible(id: SidebarSectionId, ctx: SidebarContext, hidden: readonly SidebarSectionId[]): boolean {
+  if (hidden.includes(id)) return false
+  switch (id) {
+    case 'openDocs':
+      return true
+    case 'apiEnv':
+    case 'apiCollections':
+    case 'apiHistory':
+      return ctx.apiOn
+    case 'cloud':
+      return ctx.cloudMode
+    case 'explorer':
+    case 'recent':
+      return !ctx.cloudMode
+  }
+}
+
 function load(): StoredLayout {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)

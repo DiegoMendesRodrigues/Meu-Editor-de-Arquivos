@@ -1419,6 +1419,7 @@ export const ptBR = {
   "menu.view.showApiCollections": "Exibir Coleções",
   "menu.view.showApiHistory": "Exibir Histórico",
   "sidebar.removeArea": "Remover a área {name} da barra lateral",
+  "menu.tools.apiSubmenu": "Testar requisições e APIs",
 }
 
 export type Messages = typeof ptBR

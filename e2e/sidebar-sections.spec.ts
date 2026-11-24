@@ -61,4 +61,29 @@ test.describe('barra lateral: áreas recolhíveis e reordenáveis', () => {
     item = await abrirItem()
     await expect(item.locator('svg')).toHaveCount(1)
   })
+
+  test('Exibir → Áreas da barra lateral marca só o que está na tela; marcar liga as áreas de API', async ({ page }) => {
+    const abrir = async (nome: string) => {
+      await page.getByRole('button', { name: 'Exibir', exact: true }).click()
+      await page.getByRole('menuitem', { name: 'Áreas da barra lateral' }).hover()
+      return page.getByRole('menuitem', { name: nome, exact: true })
+    }
+    // Começa sem as áreas de API: os itens de API ficam desmarcados e os demais, marcados.
+    for (const nome of ['Exibir Ambiente (API)', 'Exibir Coleções', 'Exibir Histórico']) {
+      await expect((await abrir(nome)).locator('svg')).toHaveCount(0)
+      await page.keyboard.press('Escape')
+    }
+    await expect((await abrir('Exibir Documentos Abertos')).locator('svg')).toHaveCount(1)
+    await page.keyboard.press('Escape')
+
+    // Marcar "Exibir Coleções" faz a área aparecer de verdade e ficar marcada.
+    await (await abrir('Exibir Coleções')).click()
+    expect(await order(page)).toContain('apiCollections')
+    await expect((await abrir('Exibir Coleções')).locator('svg')).toHaveCount(1)
+    await page.keyboard.press('Escape')
+
+    // Desmarcar oculta de novo.
+    await (await abrir('Exibir Coleções')).click()
+    expect(await order(page)).not.toContain('apiCollections')
+  })
 })

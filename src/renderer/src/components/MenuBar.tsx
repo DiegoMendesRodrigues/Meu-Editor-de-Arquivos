@@ -10,7 +10,8 @@ import { useAccount } from '@/store/account'
 import { useLibrary } from '@/store/library'
 import { useView } from '@/store/view'
 import { useSpelling } from '@/store/spelling'
-import { HIDEABLE_SECTIONS, useSidebarLayout, type SidebarSectionId } from '@/store/sidebarLayout'
+import { HIDEABLE_SECTIONS, type SidebarSectionId } from '@/store/sidebarLayout'
+import { toggleSectionVisible, useCanShowSection, useSectionVisible } from '@/sidebarVisibility'
 import { LOCALES } from '@shared/i18n'
 import { HASH_ALGORITHMS } from '@shared/ipc'
 import { useWorkspace } from '@/store/workspace'
@@ -92,8 +93,8 @@ export function MenuBar() {
   const t = useT()
   const view = useView()
   const spelling = useSpelling()
-  const hiddenSections = useSidebarLayout((s) => s.hidden)
-  const toggleSectionHidden = useSidebarLayout((s) => s.toggleHidden)
+  const sectionVisible = useSectionVisible()
+  const canShowSection = useCanShowSection()
   const folderOpen = useWorkspace((s) => s.folder !== null)
   const doc = useActiveDocument()
   const recording = useLibrary((s) => s.recording)
@@ -190,8 +191,9 @@ export function MenuBar() {
           label: t('menu.view.sidebarAreas'),
           items: HIDEABLE_SECTIONS.map((id) => ({
             label: t(SECTION_MENU_KEYS[id]),
-            checked: !hiddenSections.includes(id),
-            action: () => toggleSectionHidden(id)
+            checked: sectionVisible(id),
+            // Sem conta conectada a Nuvem não tem como aparecer: o item fica desabilitado.
+            action: sectionVisible(id) || canShowSection(id) ? () => toggleSectionVisible(id, sectionVisible(id)) : undefined
           }))
         },
         { label: t('menu.view.bottomPanel'), checked: view.bottomPanelVisible, action: () => view.toggle('bottomPanelVisible') },
@@ -244,15 +246,20 @@ export function MenuBar() {
         { label: t('menu.tools.openTerminal'), action: cmd.openTerminal },
         { label: t('menu.tools.ai'), shortcut: 'Ctrl+Shift+I', action: cmd.toggleAssistant },
         'separator',
-        { label: t('menu.tools.apiClient'), shortcut: 'Ctrl+Shift+A', action: cmd.openApiClient },
-        { label: t('menu.tools.apiWebSocket'), action: cmd.newWebSocketDocument },
-        { label: t('menu.tools.apiGrpc'), action: cmd.newGrpcDocument },
-        { label: t('menu.tools.apiImport'), action: cmd.openApiImport },
-        { label: t('menu.tools.apiEnvironments'), action: cmd.newEnvironmentDocument },
-        { label: t('menu.tools.apiCookies'), action: cmd.openApiCookies },
-        { label: t('menu.tools.apiMock'), action: cmd.openApiMock },
-        { label: t('menu.tools.apiMonitor'), action: cmd.openApiMonitor },
-        { label: t('menu.tools.apiHistory'), action: cmd.showApiHistory },
+        {
+          label: t('menu.tools.apiSubmenu'),
+          items: [
+            { label: t('menu.tools.apiClient'), shortcut: 'Ctrl+Shift+A', action: cmd.openApiClient },
+            { label: t('menu.tools.apiWebSocket'), action: cmd.newWebSocketDocument },
+            { label: t('menu.tools.apiGrpc'), action: cmd.newGrpcDocument },
+            { label: t('menu.tools.apiImport'), action: cmd.openApiImport },
+            { label: t('menu.tools.apiEnvironments'), action: cmd.newEnvironmentDocument },
+            { label: t('menu.tools.apiCookies'), action: cmd.openApiCookies },
+            { label: t('menu.tools.apiMock'), action: cmd.openApiMock },
+            { label: t('menu.tools.apiMonitor'), action: cmd.openApiMonitor },
+            { label: t('menu.tools.apiHistory'), action: cmd.showApiHistory }
+          ]
+        },
         'separator',
         { label: t('menu.tools.spellCheck'), shortcut: 'F7', checked: spelling.enabled, action: spelling.toggle },
         {

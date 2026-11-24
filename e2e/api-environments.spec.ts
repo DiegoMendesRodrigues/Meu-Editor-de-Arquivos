@@ -8,6 +8,7 @@ test.describe('Cliente de API: ambientes', () => {
 
     // Ferramentas → Ambientes abre um ambiente novo no construtor.
     await page.getByRole('button', { name: 'Ferramentas' }).click()
+    await page.getByRole('menuitem', { name: 'Testar requisições e APIs' }).click()
     await page.getByRole('menuitem', { name: /Ambientes de API/ }).click()
     await expect(page.getByTestId('api-environment')).toBeVisible()
     await expect(page.getByRole('tab', { selected: true })).toContainText('.apienv')
@@ -46,6 +47,7 @@ test.describe('Cliente de API: ambientes', () => {
 
   test('ambiente de produção mostra a faixa vermelha', async ({ page }) => {
     await page.getByRole('button', { name: 'Ferramentas' }).click()
+    await page.getByRole('menuitem', { name: 'Testar requisições e APIs' }).click()
     await page.getByRole('menuitem', { name: /Ambientes de API/ }).click()
     await page.getByLabel('Ambiente de produção').check()
     await expect(page.getByTestId('env-production-band')).toBeVisible()
@@ -54,6 +56,7 @@ test.describe('Cliente de API: ambientes', () => {
 
   test('nomes de variável inválidos ou repetidos não vão para o arquivo', async ({ page }) => {
     await page.getByRole('button', { name: 'Ferramentas' }).click()
+    await page.getByRole('menuitem', { name: 'Testar requisições e APIs' }).click()
     await page.getByRole('menuitem', { name: /Ambientes de API/ }).click()
     await page.getByRole('button', { name: 'Adicionar variável' }).click()
     await page.getByLabel('Nome da variável 1').fill('1 invalido')

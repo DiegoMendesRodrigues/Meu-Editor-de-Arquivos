@@ -1420,4 +1420,5 @@ export const ptPT: Messages = {
   "menu.view.showApiCollections": "Mostrar Coleções",
   "menu.view.showApiHistory": "Mostrar Histórico",
   "sidebar.removeArea": "Remover a área {name} da barra lateral",
+  "menu.tools.apiSubmenu": "Testar pedidos e APIs",
 }

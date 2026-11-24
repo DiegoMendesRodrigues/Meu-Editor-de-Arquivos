@@ -73,6 +73,7 @@ test.describe('Cliente de API: SOAP', () => {
 
   test('importa um WSDL e gera a requisição SOAP', async ({ page }) => {
     await page.getByRole('button', { name: 'Ferramentas' }).click()
+    await page.getByRole('menuitem', { name: 'Testar requisições e APIs' }).click()
     await page.getByRole('menuitem', { name: /Importar requisições/ }).click()
     await page.getByLabel(/Cole o texto/).fill(WSDL())
     await page.getByRole('button', { name: 'Analisar' }).click()

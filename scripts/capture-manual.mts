@@ -412,6 +412,7 @@ async function captureLocale(locale: Locale): Promise<void> {
     await page.getByTestId('api-response').getByRole('treeitem').first().waitFor()
     await shot(page, img('s23-api-request'))
     await page.locator('nav button').nth(MENU.tools).click()
+    await page.getByRole('menuitem', { name: t('menu.tools.apiSubmenu') }).click()
     await page.getByRole('menuitem', { name: t('menu.tools.apiEnvironments') }).click()
     await page.getByTestId('api-environment').waitFor()
     await page.getByLabel(t('apiClient.env.name'), { exact: true }).fill(locale.startsWith('pt') ? 'Homologação' : 'Staging')

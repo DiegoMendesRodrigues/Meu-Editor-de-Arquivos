@@ -170,7 +170,7 @@ Mit dem API-Client testen Sie Webdienste (APIs): Sie stellen eine Anfrage zusamm
 
 ### Öffnen
 
-- Drücken Sie **Ctrl+Shift+A** oder wählen Sie **{{menu.tools}} → {{menu.tools.apiClient}}**.
+- Drücken Sie **Ctrl+Shift+A** oder wählen Sie **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiClient}}**.
 - Oder wählen Sie **{{menu.file}} → Neu: API-Anfrage (.apireq)**.
 
 Das Dokument öffnet sich im **{{apiClient.builder}}**. Um die Datei als Text (JSON) anzusehen und zu bearbeiten, klicken Sie auf **{{toolbar.editText}}**.
@@ -210,21 +210,21 @@ Auf der Registerkarte **{{apiClient.tab.tests}}**:
 
 ![API-Umgebung mit einer normalen und einer geheimen Variable](img/s24-api-environment.png)
 
-Eine Umgebung fasst Variablen zusammen, etwa die Adresse des Testservers und die der Produktion. Mit **{{menu.tools}} → {{menu.tools.apiEnvironments}}** legen Sie eine an (**.apienv**-Datei) und wählen die aktive im Auswahlfeld **{{apiClient.env.select}}**.
+Eine Umgebung fasst Variablen zusammen, etwa die Adresse des Testservers und die der Produktion. Mit **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiEnvironments}}** legen Sie eine an (**.apienv**-Datei) und wählen die aktive im Auswahlfeld **{{apiClient.env.select}}**.
 
 - Aktivieren Sie **{{apiClient.env.secret}}** bei vertraulichen Variablen. Der Wert wird auf diesem Computer verschlüsselt gespeichert und **gelangt nicht in die .apienv-Datei**.
 - Aktivieren Sie **{{apiClient.env.production}}** bei einer Produktionsumgebung: Die App fragt nach, bevor sie POST, PUT, PATCH und DELETE sendet.
-- Empfangene Cookies werden je Umgebung getrennt gehalten; Sie sehen oder löschen sie unter **{{menu.tools}} → {{menu.tools.apiCookies}}**.
+- Empfangene Cookies werden je Umgebung getrennt gehalten; Sie sehen oder löschen sie unter **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiCookies}}**.
 
 ### Sammlungen und Verlauf
 
 Eine Sammlung ist ein Ordner mit den Anfragen und der **.apicol**-Datei, die die gemeinsame Autorisierung und die gemeinsamen Variablen enthält. In der Seitenleiste zeigt der Abschnitt **{{apiClient.col.section}}** die Sammlungen Ihrer geöffneten Ordner; mit der rechten Maustaste legen Sie Anfragen und Ordner an und wählen **{{apiClient.col.run}}**, **{{apiClient.col.export}}**, **{{apiClient.col.document}}** (erzeugt die Dokumentation der Sammlung) und **{{apiClient.col.settings}}**.
 
-Der **{{apiClient.history.section}}** (auch unter **{{menu.tools}} → {{menu.tools.apiHistory}}**) listet die zuletzt gesendeten Anfragen auf, und Sie können ihn jederzeit leeren.
+Der **{{apiClient.history.section}}** (auch unter **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiHistory}}**) listet die zuletzt gesendeten Anfragen auf, und Sie können ihn jederzeit leeren.
 
 ### Importieren, exportieren und Code erzeugen
 
-- **{{menu.tools}} → {{menu.tools.apiImport}}** übernimmt Anfragen aus curl, Postman, OpenAPI/Swagger, Insomnia, HAR und .http-Dateien. Klicken Sie auf **{{apiClient.import.analyze}}**, um zu sehen, was importiert wird, und wählen Sie **{{apiClient.import.asCollection}}** oder **{{apiClient.import.openInTabs}}**. Auch das Einfügen eines curl-Befehls in die URL bietet den Import an.
+- **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiImport}}** übernimmt Anfragen aus curl, Postman, OpenAPI/Swagger, Insomnia, HAR und .http-Dateien. Klicken Sie auf **{{apiClient.import.analyze}}**, um zu sehen, was importiert wird, und wählen Sie **{{apiClient.import.asCollection}}** oder **{{apiClient.import.openInTabs}}**. Auch das Einfügen eines curl-Befehls in die URL bietet den Import an.
 - **{{apiClient.col.export}}** speichert die Sammlung als Postman, OpenAPI, HAR, .http oder curl. Werte geheimer Variablen werden nie exportiert.
 - Die Schaltfläche **{{apiClient.code}}** öffnet **{{apiClient.codegen.title}}** und zeigt die Anfrage in mehreren Sprachen, bereit zum Kopieren.
 
@@ -240,23 +240,23 @@ Ist die gewählte Operation eine **subscription**, erscheint die Schaltfläche *
 
 ### SOAP und WSDL
 
-Wählen Sie unter **{{apiClient.body.type}}** SOAP, die **{{apiClient.soap.version}}** (1.1 oder 1.2) und die SOAPAction; **{{apiClient.soap.template}}** fügt einen leeren Umschlag ein. Um Anfragen aus einem Dienst zu erzeugen, verwenden Sie **{{menu.tools}} → {{menu.tools.apiImport}}** mit der WSDL-Datei: Jede Operation wird zu einer Anfrage mit Beispielumschlag. In Tests und Extraktionen liest das Ziel XPath XML-Antworten (zum Beispiel <code>//*[local-name()='Ergebnis']</code>).
+Wählen Sie unter **{{apiClient.body.type}}** SOAP, die **{{apiClient.soap.version}}** (1.1 oder 1.2) und die SOAPAction; **{{apiClient.soap.template}}** fügt einen leeren Umschlag ein. Um Anfragen aus einem Dienst zu erzeugen, verwenden Sie **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiImport}}** mit der WSDL-Datei: Jede Operation wird zu einer Anfrage mit Beispielumschlag. In Tests und Extraktionen liest das Ziel XPath XML-Antworten (zum Beispiel <code>//*[local-name()='Ergebnis']</code>).
 
 ### WebSocket
 
-Mit **{{menu.tools}} → {{menu.tools.apiWebSocket}}** legen Sie eine Verbindung an (Datei **.apiws**). Geben Sie die **{{apiClient.ws.url}}** (ws:// oder wss://), die Header und die Subprotokolle ein und klicken Sie auf **{{apiClient.ws.connect}}**. Schreiben Sie die Nachricht (Text, JSON oder Binär in Base64) und senden Sie sie mit **Strg+Eingabe**. Das **{{apiClient.ws.log}}** zeigt gesendete und empfangene Nachrichten mit Uhrzeit und Größe; es lässt sich filtern, anhalten und leeren. Mit **{{apiClient.ws.saveMessage}}** bewahren Sie häufig gesendete Nachrichten auf.
+Mit **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiWebSocket}}** legen Sie eine Verbindung an (Datei **.apiws**). Geben Sie die **{{apiClient.ws.url}}** (ws:// oder wss://), die Header und die Subprotokolle ein und klicken Sie auf **{{apiClient.ws.connect}}**. Schreiben Sie die Nachricht (Text, JSON oder Binär in Base64) und senden Sie sie mit **Strg+Eingabe**. Das **{{apiClient.ws.log}}** zeigt gesendete und empfangene Nachrichten mit Uhrzeit und Größe; es lässt sich filtern, anhalten und leeren. Mit **{{apiClient.ws.saveMessage}}** bewahren Sie häufig gesendete Nachrichten auf.
 
 ### Mock-Server
 
-Ein Mock-Server antwortet anstelle der echten API mit Antworten, die Sie bereits kennen. Klicken Sie in der Antwort einer gespeicherten Anfrage auf **{{apiClient.response.saveExample}}**: Die App legt das Beispiel neben der Anfrage ab. Wählen Sie dann per Rechtsklick auf die Sammlung **{{apiClient.col.mock}}** (oder **{{menu.tools}} → {{menu.tools.apiMock}}**). Die Routen stammen aus den gespeicherten Beispielen oder aus einer OpenAPI-Datei; passen Sie Status und Verzögerung jeder Route an und klicken Sie auf **{{apiClient.mock.start}}**. Der Server antwortet nur auf diesem Computer, außer Sie aktivieren **{{apiClient.mock.lan}}**, und beendet sich nach 8 Stunden ohne Aufrufe selbst.
+Ein Mock-Server antwortet anstelle der echten API mit Antworten, die Sie bereits kennen. Klicken Sie in der Antwort einer gespeicherten Anfrage auf **{{apiClient.response.saveExample}}**: Die App legt das Beispiel neben der Anfrage ab. Wählen Sie dann per Rechtsklick auf die Sammlung **{{apiClient.col.mock}}** (oder **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiMock}}**). Die Routen stammen aus den gespeicherten Beispielen oder aus einer OpenAPI-Datei; passen Sie Status und Verzögerung jeder Route an und klicken Sie auf **{{apiClient.mock.start}}**. Der Server antwortet nur auf diesem Computer, außer Sie aktivieren **{{apiClient.mock.lan}}**, und beendet sich nach 8 Stunden ohne Aufrufe selbst.
 
 ### gRPC
 
-Mit **{{menu.tools}} → {{menu.tools.apiGrpc}}** legen Sie einen Aufruf an (Datei **.apigrpc**). Geben Sie die **{{apiClient.grpc.address}}** ein, aktivieren Sie **{{apiClient.grpc.tls}}**, falls der Server es verlangt, und wählen Sie die **{{apiClient.grpc.source}}**: **{{apiClient.grpc.source.reflection}}** oder **{{apiClient.grpc.source.proto}}**. Klicken Sie auf **{{apiClient.grpc.load}}**, wählen Sie Dienst und Methode und beginnen Sie die JSON-Nachricht mit **{{apiClient.grpc.useTemplate}}**. Einfache Aufrufe und Server-Streaming verwenden **{{apiClient.grpc.invoke}}**; bei Client- oder bidirektionalem Streaming nutzen Sie **{{apiClient.grpc.start}}**, **{{apiClient.grpc.send}}** und **{{apiClient.grpc.end}}**. Nachrichten, Metadaten und Status erscheinen in der Ereignisliste.
+Mit **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiGrpc}}** legen Sie einen Aufruf an (Datei **.apigrpc**). Geben Sie die **{{apiClient.grpc.address}}** ein, aktivieren Sie **{{apiClient.grpc.tls}}**, falls der Server es verlangt, und wählen Sie die **{{apiClient.grpc.source}}**: **{{apiClient.grpc.source.reflection}}** oder **{{apiClient.grpc.source.proto}}**. Klicken Sie auf **{{apiClient.grpc.load}}**, wählen Sie Dienst und Methode und beginnen Sie die JSON-Nachricht mit **{{apiClient.grpc.useTemplate}}**. Einfache Aufrufe und Server-Streaming verwenden **{{apiClient.grpc.invoke}}**; bei Client- oder bidirektionalem Streaming nutzen Sie **{{apiClient.grpc.start}}**, **{{apiClient.grpc.send}}** und **{{apiClient.grpc.end}}**. Nachrichten, Metadaten und Status erscheinen in der Ereignisliste.
 
 ### Monitore
 
-Ein Monitor wiederholt die Ausführung einer Sammlung alle paar Minuten und meldet per Systembenachrichtigung, wenn etwas fehlschlägt (und erneut, wenn es wieder klappt). Wählen Sie per Rechtsklick auf die Sammlung **{{apiClient.col.monitor}}** (oder **{{menu.tools}} → {{menu.tools.apiMonitor}}**), legen Sie Intervall, Umgebung und Anfragen fest und speichern Sie. Das Diagramm zeigt die Dauer jeder Ausführung, Fehler in Rot; **{{apiClient.monitor.runNow}}** startet sofort. Monitore laufen nur bei geöffneter App und setzen beim nächsten Öffnen von selbst fort.
+Ein Monitor wiederholt die Ausführung einer Sammlung alle paar Minuten und meldet per Systembenachrichtigung, wenn etwas fehlschlägt (und erneut, wenn es wieder klappt). Wählen Sie per Rechtsklick auf die Sammlung **{{apiClient.col.monitor}}** (oder **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiMonitor}}**), legen Sie Intervall, Umgebung und Anfragen fest und speichern Sie. Das Diagramm zeigt die Dauer jeder Ausführung, Fehler in Rot; **{{apiClient.monitor.runNow}}** startet sofort. Monitore laufen nur bei geöffneter App und setzen beim nächsten Öffnen von selbst fort.
 
 ### Skripte
 

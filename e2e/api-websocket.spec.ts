@@ -36,6 +36,7 @@ const port = (s: WebSocketServer): number => (s.address() as AddressInfo).port
 test.describe('Cliente de API: WebSocket', () => {
   test('conecta ao eco, envia, vê a mensagem de volta e salva a mensagem', async ({ page }) => {
     await page.getByRole('button', { name: 'Ferramentas' }).click()
+    await page.getByRole('menuitem', { name: 'Testar requisições e APIs' }).click()
     await page.getByRole('menuitem', { name: /WebSocket \(nova conexão\)/ }).click()
     await expect(page.getByTestId('api-ws-view')).toBeVisible()
     await expect(page.getByRole('tab', { selected: true }).first()).toContainText('.apiws')

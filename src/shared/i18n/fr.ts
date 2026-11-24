@@ -1420,4 +1420,5 @@ export const fr: Messages = {
   "menu.view.showApiCollections": "Afficher les Collections",
   "menu.view.showApiHistory": "Afficher l'Historique",
   "sidebar.removeArea": "Retirer la zone {name} de la barre latérale",
+  "menu.tools.apiSubmenu": "Tester des requêtes et des API",
 }

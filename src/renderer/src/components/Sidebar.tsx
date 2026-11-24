@@ -12,7 +12,8 @@ import { deleteLocalFolder, isLocalFolderEmpty, useSidebarDialog, type SidebarTa
 import { CloudTree, DOC_DRAG_TYPE, NewCloudFolder } from './CloudTree'
 import { EntryMenu, FileIcon, FolderIcon, SidebarDialogs } from './SidebarMenus'
 import { IconButton, Section, VisibleSectionsContext } from './SidebarSection'
-import { ApiCollectionsSection, ApiEnvironmentSection, ApiHistorySection, useApiSidebarVisible } from '@/api/ApiSidebar'
+import { ApiCollectionsSection, ApiEnvironmentSection, ApiHistorySection } from '@/api/ApiSidebar'
+import { useSectionVisible } from '@/sidebarVisibility'
 import { useSidebarLayout, type SidebarSectionId } from '@/store/sidebarLayout'
 
 const fileName = (path: string): string => path.split(/[\\/]/).pop() ?? path
@@ -109,9 +110,8 @@ export function Sidebar() {
   const [newFolder, setNewFolder] = useState(false)
   const mode = useStorageMode()
   const activePath = documents.find((d) => d.id === activeId)?.path ?? null
-  const apiVisible = useApiSidebarVisible()
+  const isVisible = useSectionVisible()
   const order = useSidebarLayout((s) => s.order)
-  const hidden = useSidebarLayout((s) => s.hidden)
 
   // Cada área visível agora; a ordem vem do usuário (arrastar o título), guardada neste computador.
   const sections: Partial<Record<SidebarSectionId, React.ReactNode>> = {
@@ -144,7 +144,9 @@ export function Sidebar() {
           </ul>
         </Section>
     ),
-    ...(apiVisible ? { apiEnv: <ApiEnvironmentSection />, apiCollections: <ApiCollectionsSection />, apiHistory: <ApiHistorySection /> } : {}),
+    apiEnv: <ApiEnvironmentSection />,
+    apiCollections: <ApiCollectionsSection />,
+    apiHistory: <ApiHistorySection />,
     ...(mode === 'cloud'
       ? {
           cloud: (
@@ -221,7 +223,7 @@ export function Sidebar() {
           )
         })
   }
-  const visible = order.filter((id) => sections[id] !== undefined && !hidden.includes(id))
+  const visible = order.filter((id) => sections[id] !== undefined && isVisible(id))
 
   return (
     <aside className="h-full overflow-y-auto bg-chrome pt-2">
