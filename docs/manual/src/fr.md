@@ -203,7 +203,9 @@ Avec un compte, vous conservez des fichiers dans le cloud et les ouvrez sur d'au
 
 Si le fichier a changé dans le cloud depuis la dernière fois, l'application vous prévient et demande si vous voulez l'écraser. Chaque fichier peut peser jusqu'à 10 Mo. Si votre système n'a pas de coffre d'identifiants, l'application vous prévient que vous devrez vous reconnecter à chaque ouverture.
 
-Lorsque vous êtes connecté, la barre d'état affiche, à gauche de l'icône du cloud, l'espace que vous utilisez dans le cloud, en Mo avec deux décimales (par exemple, `1.25 MB`). Le total comprend tous vos fichiers dans le cloud et les textes des documents non encore enregistrés, conservés pour continuer sur un autre ordinateur. La valeur change à chaque enregistrement ou suppression.
+Lorsque vous êtes connecté, la barre d'état affiche, à gauche de l'icône du cloud, l'espace que vous utilisez dans le cloud, en Mo avec deux décimales (par exemple, `1.25 MB`). Le total comprend tous vos fichiers dans le cloud et les textes des documents non encore enregistrés, conservés pour continuer sur un autre ordinateur. La valeur change à chaque enregistrement ou suppression. Un fichier du cloud ouvert sans modifications n'occupe pas d'espace supplémentaire ; seul le texte non enregistré est conservé.
+
+Si le même document est modifié sur deux ordinateurs avant la synchronisation, chaque ordinateur garde son texte, et la version de l'autre s'ouvre dans un nouvel onglet avec « (conflit – autre ordinateur) » dans le nom, pour que rien ne soit perdu.
 
 ## 12. Langues
 

@@ -364,6 +364,8 @@ export const ptPT: Messages = {
   "storage.cloud": "Armazenamento na nuvem (clique para usar o computador)",
   "storage.used": "Espaço usado na nuvem: os seus ficheiros e os textos ainda não guardados",
   "storage.local": "Armazenamento no computador (inicie sessão para usar a nuvem; com sessão iniciada, clique para usar a nuvem)",
+  "sync.conflictName": "{name} (conflito – outro computador)",
+  "sync.conflict": "O mesmo documento foi alterado noutro computador. A versão de lá abriu num separador novo: {names}",
   "sidebar.cloud": "Nuvem",
   "cloud.root": "Nuvem (raiz)",
   "cloud.newFolder": "Nova pasta",

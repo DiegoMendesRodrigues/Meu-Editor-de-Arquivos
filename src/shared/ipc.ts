@@ -38,6 +38,7 @@ export const IpcChannels = {
   accountConfirmReset: 'account:confirm-reset',
   cloudList: 'cloud:list',
   cloudRead: 'cloud:read',
+  cloudReadIfExists: 'cloud:read-if-exists',
   cloudSave: 'cloud:save',
   cloudDelete: 'cloud:delete',
   cloudMove: 'cloud:move',
@@ -339,6 +340,8 @@ export interface EditorApi {
   accountConfirmReset(token: string, newPassword: string): Promise<void>
   cloudList(): Promise<CloudFileMeta[]>
   cloudRead(id: string): Promise<CloudFileContent>
+  /** Como cloudRead, mas devolve null se o arquivo não existe mais na nuvem (outros erros continuam sendo erros). */
+  cloudReadIfExists(id: string): Promise<CloudFileContent | null>
   cloudSave(req: CloudSaveRequest): Promise<CloudSaveResult>
   cloudDelete(id: string): Promise<void>
   /** Muda o caminho do arquivo na nuvem (mover para outra pasta ou renomear). */

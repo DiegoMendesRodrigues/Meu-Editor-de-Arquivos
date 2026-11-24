@@ -203,7 +203,9 @@ Con una cuenta guardas archivos en la nube y los abres en otros equipos. Abre el
 
 Si el archivo ha cambiado en la nube desde la última vez, la aplicación te avisa y pregunta si quieres sobrescribirlo. Cada archivo puede tener hasta 10 MB. Si tu sistema no tiene almacén de credenciales, la aplicación te avisa de que tendrás que iniciar sesión cada vez que la abras.
 
-Con la cuenta conectada, la barra de estado muestra, a la izquierda del icono de la nube, cuánto espacio usa en la nube, en MB con dos decimales (por ejemplo, `1.25 MB`). La cuenta suma todos sus archivos en la nube y los textos de los documentos aún no guardados, que se conservan para continuar en otro equipo. El valor cambia con cada guardado o eliminación.
+Con la cuenta conectada, la barra de estado muestra, a la izquierda del icono de la nube, cuánto espacio usa en la nube, en MB con dos decimales (por ejemplo, `1.25 MB`). La cuenta suma todos sus archivos en la nube y los textos de los documentos aún no guardados, que se conservan para continuar en otro equipo. El valor cambia con cada guardado o eliminación. Un archivo de la nube abierto sin cambios no ocupa espacio adicional; solo se conserva el texto aún no guardado.
+
+Si el mismo documento se modifica en dos equipos antes de sincronizar, cada equipo conserva su texto, y la versión del otro se abre en una pestaña nueva con "(conflicto – otro equipo)" en el nombre, para que nada se pierda.
 
 ## 12. Idiomas
 

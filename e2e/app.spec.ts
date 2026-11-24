@@ -517,6 +517,25 @@ test.describe('espaço usado na nuvem', () => {
       })
       await expect(used).toHaveText('1.25 MB')
 
+      // Abrir o arquivo da nuvem não repete o texto na área de trabalho: o espaço continua o mesmo.
+      // A área de trabalho é enviada (só a referência ao arquivo), e o total é refeito no servidor.
+      await page.getByRole('button', { name: pt('menu.file'), exact: true }).click()
+      await page.getByRole('menuitem', { name: pt('menu.file.openCloud') }).click()
+      await page.getByRole('dialog').getByRole('listitem').filter({ hasText: 'grande.txt' }).getByRole('button', { name: pt('common.open') }).click()
+      await page.getByRole('dialog').waitFor({ state: 'hidden' })
+      await expect(page.getByRole('tab', { name: /grande\.txt/ })).toBeVisible()
+      const workspaceBytes = async (): Promise<number> =>
+        page.evaluate(async () => {
+          const w = window as unknown as { api: { workspaceGet(): Promise<{ data: string | null }> } }
+          return (await w.api.workspaceGet()).data?.length ?? 0
+        })
+      await expect.poll(workspaceBytes, { timeout: 10_000 }).toBeGreaterThan(0)
+      expect(await workspaceBytes()).toBeLessThan(1000)
+      await page.evaluate(async () => {
+        const w = window as unknown as { api: { cloudStorage(): Promise<unknown> } }
+        await w.api.cloudStorage()
+      })
+      await expect(used).toHaveText('1.25 MB')
     } finally {
       await api.close()
     }

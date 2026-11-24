@@ -364,6 +364,8 @@ export const fr: Messages = {
   "storage.cloud": "Stockage dans le cloud (cliquez pour utiliser cet ordinateur)",
   "storage.used": "Espace utilisé dans le cloud : vos fichiers et les textes non enregistrés",
   "storage.local": "Stockage sur l'ordinateur (connectez-vous pour utiliser le cloud ; une fois connecté, cliquez pour utiliser le cloud)",
+  "sync.conflictName": "{name} (conflit – autre ordinateur)",
+  "sync.conflict": "Le même document a été modifié sur un autre ordinateur. Cette version s’est ouverte dans un nouvel onglet : {names}",
   "sidebar.cloud": "Cloud",
   "cloud.root": "Cloud (racine)",
   "cloud.newFolder": "Nouveau dossier",

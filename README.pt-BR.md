@@ -69,6 +69,7 @@ Versão atual: **1.1.0**.
 - Cadastro, perfil e troca de senha
 - Arquivos guardados num servidor, para usar os mesmos arquivos em vários computadores, por uma API com MySQL ou MariaDB
 - Espaço usado na nuvem por usuário (arquivos e textos não salvos), em MB no rodapé
+- Abas não salvas sincronizadas entre computadores; se os dois alterarem o mesmo documento, a outra versão abre numa aba de conflito
 
 **Distribuição**
 - Instalador e versão portátil (sem instalação) para Windows

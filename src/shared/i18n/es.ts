@@ -364,6 +364,8 @@ export const es: Messages = {
   "storage.cloud": "Almacenamiento en la nube (haga clic para usar el equipo)",
   "storage.used": "Espacio usado en la nube: sus archivos y los textos aún no guardados",
   "storage.local": "Almacenamiento en el equipo (inicie sesión para usar la nube; con la sesión iniciada, haga clic para usar la nube)",
+  "sync.conflictName": "{name} (conflicto – otro equipo)",
+  "sync.conflict": "El mismo documento se modificó en otro equipo. Esa versión se abrió en una pestaña nueva: {names}",
   "sidebar.cloud": "Nube",
   "cloud.root": "Nube (raíz)",
   "cloud.newFolder": "Nueva carpeta",

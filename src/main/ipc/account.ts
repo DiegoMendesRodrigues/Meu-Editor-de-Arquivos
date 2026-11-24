@@ -238,11 +238,23 @@ export function registerAccountHandlers(): void {
     return res.files.map(toMeta)
   })
 
-  handle(IpcChannels.cloudRead, async (_e, raw: unknown): Promise<CloudFileContent> => {
+  const readCloudFile = async (raw: unknown): Promise<CloudFileContent> => {
     const id = z.string().min(1).max(64).parse(raw)
     const res = await api<{ file: CloudFileMeta & { content: string; encoding: 'UTF-8' | 'UTF-8 BOM' } }>('GET', `/v1/files/${encodeURIComponent(id)}`, { auth: true })
     const eol = detectEol(res.file.content)
     return { ...toMeta(res.file), content: fromStoredText(res.file.content, eol), encoding: res.file.encoding, eol }
+  }
+
+  handle(IpcChannels.cloudRead, (_e, raw: unknown) => readCloudFile(raw))
+
+  // Para a área de trabalho sincronizada: arquivo excluído em outro computador não é erro.
+  handle(IpcChannels.cloudReadIfExists, async (_e, raw: unknown): Promise<CloudFileContent | null> => {
+    try {
+      return await readCloudFile(raw)
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return null
+      throw err
+    }
   })
 
   handle(IpcChannels.cloudSave, async (_e, raw: unknown): Promise<CloudSaveResult> => {

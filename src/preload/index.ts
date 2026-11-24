@@ -58,6 +58,7 @@ const api: EditorApi = {
   accountConfirmReset: (token, next) => ipcRenderer.invoke(IpcChannels.accountConfirmReset, token, next),
   cloudList: () => ipcRenderer.invoke(IpcChannels.cloudList),
   cloudRead: (id) => ipcRenderer.invoke(IpcChannels.cloudRead, id),
+  cloudReadIfExists: (id) => ipcRenderer.invoke(IpcChannels.cloudReadIfExists, id),
   cloudSave: (req) => ipcRenderer.invoke(IpcChannels.cloudSave, req),
   cloudDelete: (id) => ipcRenderer.invoke(IpcChannels.cloudDelete, id),
   cloudMove: (id, path) => ipcRenderer.invoke(IpcChannels.cloudMove, id, path),

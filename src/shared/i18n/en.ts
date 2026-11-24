@@ -364,6 +364,8 @@ export const en: Messages = {
   "storage.cloud": "Cloud storage (click to use this computer)",
   "storage.used": "Cloud storage used: your files and unsaved text",
   "storage.local": "Computer storage (sign in to use the cloud; when signed in, click to use the cloud)",
+  "sync.conflictName": "{name} (conflict – other computer)",
+  "sync.conflict": "The same document was changed on another computer. That version opened in a new tab: {names}",
   "sidebar.cloud": "Cloud",
   "cloud.root": "Cloud (root)",
   "cloud.newFolder": "New folder",

@@ -203,7 +203,9 @@ Com uma conta, você guarda arquivos na nuvem e os abre em outros computadores. 
 
 Se o arquivo mudou na nuvem desde a última vez, o aplicativo avisa e pergunta se você quer sobrescrever. Cada arquivo pode ter até 10 MB. Se o seu sistema não tem cofre de credenciais, o aplicativo avisa que você precisará entrar a cada abertura.
 
-Com a conta conectada, o rodapé mostra, à esquerda do ícone da nuvem, quanto espaço você usa na nuvem, em MB com duas casas decimais (por exemplo, `1.25 MB`). A conta soma todos os seus arquivos na nuvem e os textos dos documentos ainda não salvos, guardados para você continuar em outro computador. O valor muda a cada gravação ou exclusão.
+Com a conta conectada, o rodapé mostra, à esquerda do ícone da nuvem, quanto espaço você usa na nuvem, em MB com duas casas decimais (por exemplo, `1.25 MB`). A conta soma todos os seus arquivos na nuvem e os textos dos documentos ainda não salvos, guardados para você continuar em outro computador. O valor muda a cada gravação ou exclusão. Um arquivo da nuvem aberto sem alterações não ocupa espaço a mais; só o texto ainda não salvo é guardado.
+
+Se o mesmo documento for alterado em dois computadores antes de sincronizar, cada computador fica com o seu texto, e a versão do outro abre numa aba nova, com "(conflito – outro computador)" no nome, para nada se perder.
 
 ## 12. Idiomas
 

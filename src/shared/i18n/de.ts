@@ -364,6 +364,8 @@ export const de: Messages = {
   "storage.cloud": "Cloud-Speicher (klicken, um diesen Computer zu verwenden)",
   "storage.used": "Belegter Cloud-Speicher: Ihre Dateien und noch nicht gespeicherte Texte",
   "storage.local": "Speicher auf dem Computer (anmelden, um die Cloud zu nutzen; angemeldet: klicken, um die Cloud zu verwenden)",
+  "sync.conflictName": "{name} (Konflikt – anderer Computer)",
+  "sync.conflict": "Dasselbe Dokument wurde auf einem anderen Computer geändert. Diese Version wurde in einem neuen Tab geöffnet: {names}",
   "sidebar.cloud": "Cloud",
   "cloud.root": "Cloud (Stammordner)",
   "cloud.newFolder": "Neuer Ordner",

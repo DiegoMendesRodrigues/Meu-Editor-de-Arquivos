@@ -363,6 +363,8 @@ export const ptBR = {
   "storage.cloud": "Armazenamento na nuvem (clique para usar o computador)",
   "storage.used": "Espaço usado na nuvem: seus arquivos e os textos ainda não salvos",
   "storage.local": "Armazenamento no computador (entre na conta para usar a nuvem; com a conta, clique para usar a nuvem)",
+  "sync.conflictName": "{name} (conflito – outro computador)",
+  "sync.conflict": "O mesmo documento foi alterado em outro computador. A versão de lá abriu numa aba nova: {names}",
   "sidebar.cloud": "Nuvem",
   "cloud.root": "Nuvem (raiz)",
   "cloud.newFolder": "Nova pasta",
