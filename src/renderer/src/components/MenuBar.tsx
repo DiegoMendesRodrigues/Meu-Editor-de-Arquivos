@@ -222,6 +222,7 @@ export function MenuBar() {
         { label: t('menu.tools.macroRunLast'), shortcut: 'Ctrl+Shift+M', action: hasRecording && !recording ? cmd.playLastMacro : undefined },
         { label: t('menu.tools.macros'), action: cmd.openMacros },
         { label: t('menu.tools.openTerminal'), action: cmd.openTerminal },
+        { label: t('menu.tools.apiClient'), shortcut: 'Ctrl+Shift+A', action: cmd.openApiClient },
         'separator',
         { label: t('menu.tools.spellCheck'), shortcut: 'F7', checked: spelling.enabled, action: spelling.toggle },
         {

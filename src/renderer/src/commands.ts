@@ -42,6 +42,11 @@ export function newFile(extension?: string): void {
   docs().newDocument(extension)
 }
 
+/** Ferramentas → Cliente de API (Ctrl+Shift+A): uma nova requisição, aberta no construtor. */
+export function openApiClient(): void {
+  docs().newDocument('apireq')
+}
+
 export async function openFile(): Promise<void> {
   // Com a conta conectada (e a nuvem escolhida no rodapé), abrir usa a nuvem.
   if (storageMode() === 'cloud') return useDialogs.getState().show('cloudOpen')

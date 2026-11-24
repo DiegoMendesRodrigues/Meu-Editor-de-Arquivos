@@ -2,7 +2,7 @@
 /** Ícones de arquivos e pastas da barra lateral, menu do botão direito e as janelas de renomear e de cor. */
 import { useRef, useState } from 'react'
 import * as ContextMenu from '@radix-ui/react-context-menu'
-import { Database, File, FileCode, FileTerminal, FileText, Folder, FolderOpen, Globe, Palette, Pencil, ScrollText, Trash2 } from 'lucide-react'
+import { Database, File, FileCode, FileTerminal, FileText, Folder, FolderOpen, Globe, Palette, Pencil, ScrollText, Send, Trash2 } from 'lucide-react'
 import { checkName } from '@shared/fileName'
 import { FOLDER_COLORS, folderColorHex, type FolderColor } from '@shared/folderColors'
 import { useT } from '@/i18n'
@@ -18,6 +18,7 @@ const KIND_ICON: Record<FileKind, { icon: typeof File; className: string }> = {
   script: { icon: FileTerminal, className: 'text-emerald-600' },
   web: { icon: Globe, className: 'text-orange-600' },
   data: { icon: Database, className: 'text-violet-600' },
+  api: { icon: Send, className: 'text-accent' },
   other: { icon: File, className: 'text-zinc-400' }
 }
 

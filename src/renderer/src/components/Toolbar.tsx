@@ -22,6 +22,7 @@ import {
   Replace,
   Save,
   Search,
+  Send,
   Strikethrough,
   Table,
   Undo2,
@@ -192,6 +193,7 @@ export function Toolbar() {
   const doc = useActiveDocument()
   const hasPreview = canPreview(doc)
   const isMarkdown = doc?.language === 'markdown'
+  const isApi = doc?.language === 'apireq'
   const previewing = hasPreview && doc?.mode === 'preview'
   // A formatação vale para Markdown, tanto no texto quanto na visualização (que também é editável).
   const formatOff = !isMarkdown
@@ -228,7 +230,7 @@ export function Toolbar() {
         </>
       )}
 
-      {doc?.language === 'json' && !previewing && (
+      {(doc?.language === 'json' || isApi) && !previewing && (
         <>
           <Divider />
           <ToolButton icon={Braces} label={`${t('toolbar.formatJson')} (Shift+Alt+F)`} onClick={cmd.formatDocument} />
@@ -244,8 +246,8 @@ export function Toolbar() {
             title={`${t('toolbar.togglePreview')} (Ctrl+Shift+E)`}
             className="flex items-center gap-1.5 rounded border border-border px-2.5 py-1 text-zinc-700 hover:bg-zinc-100"
           >
-            {previewing ? <Pencil size={14} /> : isMarkdown ? <Eye size={14} /> : <ListTree size={14} />}
-            {previewing ? t('toolbar.editText') : isMarkdown ? t('toolbar.preview') : t('toolbar.tree')}
+            {previewing ? <Pencil size={14} /> : isMarkdown ? <Eye size={14} /> : isApi ? <Send size={14} /> : <ListTree size={14} />}
+            {previewing ? t('toolbar.editText') : isMarkdown ? t('toolbar.preview') : isApi ? t('apiClient.builder') : t('toolbar.tree')}
           </button>
         )}
       </div>

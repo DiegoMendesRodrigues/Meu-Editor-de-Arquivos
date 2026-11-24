@@ -61,6 +61,7 @@ function useGlobalShortcuts(): void {
       else if (key === 'r' && e.shiftKey) run(cmd.toggleMacroRecording)
       else if (key === 'm' && e.shiftKey) run(cmd.playLastMacro)
       else if (key === 'k' && e.shiftKey) run(cmd.openFolder)
+      else if (key === 'a' && e.shiftKey) run(cmd.openApiClient)
       else if (key === 'o' && !e.shiftKey) run(cmd.openFile)
       else if (key === 's' && e.shiftKey) run(cmd.saveAs)
       else if (key === 's') run(cmd.save)

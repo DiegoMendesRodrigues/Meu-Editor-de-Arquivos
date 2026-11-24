@@ -73,8 +73,18 @@ export const IpcChannels = {
   terminalResize: 'terminal:resize',
   terminalKill: 'terminal:kill',
   terminalData: 'terminal:data',
-  terminalExit: 'terminal:exit'
+  terminalExit: 'terminal:exit',
+  apiSecretsInfo: 'api:secrets-info',
+  apiSecretSet: 'api:secret-set',
+  apiSecretHas: 'api:secret-has',
+  apiSecretNames: 'api:secret-names',
+  apiSecretDelete: 'api:secret-delete'
 } as const
+
+/** Cofre de segredos do Cliente de API: persistent = false quando o sistema não oferece cifra (só memória). */
+export interface ApiSecretsInfo {
+  persistent: boolean
+}
 
 /** Algoritmos de resumo (hash) do menu Ferramentas. */
 export const HASH_ALGORITHMS = ['MD5', 'SHA-1', 'SHA-256', 'SHA-512'] as const
@@ -408,6 +418,15 @@ export interface EditorApi {
   copyText(text: string): Promise<void>
   /** Formata o código no padrão da linguagem (id do Monaco); a extensão distingue casos como .tsx. */
   formatCode(language: string, extension: string, text: string): Promise<FormatResult>
+  /**
+   * Cofre de segredos do Cliente de API, por escopo (id do ambiente, da coleção ou "globals").
+   * Não há como ler o valor de volta: só o Main usa os segredos, ao enviar as requisições.
+   */
+  apiSecretsInfo(): Promise<ApiSecretsInfo>
+  apiSecretSet(scope: string, name: string, value: string): Promise<void>
+  apiSecretHas(scope: string, name: string): Promise<boolean>
+  apiSecretNames(scope: string): Promise<string[]>
+  apiSecretDelete(scope: string, name: string): Promise<void>
   /** O Main avisa que o usuário quer fechar a janela; o Renderer decide e chama closeWindow(). */
   onBeforeClose(listener: () => void): () => void
   closeWindow(): Promise<void>

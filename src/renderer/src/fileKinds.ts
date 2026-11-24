@@ -2,9 +2,11 @@
 /** Tipo do arquivo pela extensão, para o ícone da barra lateral (as seções seguem as do botão "+"). */
 import { NEW_TYPE_GROUPS } from './newTypes'
 
-export type FileKind = 'document' | 'log' | 'code' | 'script' | 'web' | 'data' | 'other'
+export type FileKind = 'document' | 'log' | 'code' | 'script' | 'web' | 'data' | 'api' | 'other'
 
 const DOCUMENT = new Set(['md', 'markdown', 'txt', 'tex'])
+/** Arquivos do Cliente de API (requisição, ambiente, coleção, resposta e relatório). */
+const API_EXTENSIONS = new Set(['apireq', 'apienv', 'apicol', 'apiresp', 'apirun', 'apiws', 'apigrpc'])
 const GROUP_KIND: Record<string, FileKind> = {
   'newGroup.code': 'code',
   'newGroup.scripts': 'script',
@@ -21,5 +23,6 @@ export function fileKind(name: string): FileKind {
   const ext = name.slice(dot + 1).toLowerCase()
   if (DOCUMENT.has(ext)) return 'document'
   if (ext === 'log') return 'log'
+  if (API_EXTENSIONS.has(ext)) return 'api'
   return BY_EXTENSION.get(ext) ?? 'other'
 }

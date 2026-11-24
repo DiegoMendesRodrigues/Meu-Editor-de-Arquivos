@@ -5,6 +5,8 @@ import type { editor, IDisposable } from 'monaco-editor'
 import { monaco } from '@/editor/monacoSetup'
 import { consumeReveal, requestReveal, setActiveEditor } from '@/editor/editorRef'
 import { JsonViewer } from '@/json/JsonViewer'
+import { ApiRequestView } from '@/api/ApiRequestView'
+import { monacoLanguage } from '@/editor/languages'
 import { attachRecorder } from '@/editor/macros'
 import { registerMarkdownKeybindings } from '@/markdown/editorFormatting'
 import { MarkdownWysiwyg } from '@/markdown/MarkdownWysiwyg'
@@ -115,7 +117,7 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
     <Editor
       path={modelPath(doc)}
       defaultValue={doc.content}
-      language={doc.language}
+      language={monacoLanguage(doc.language)}
       theme={theme === 'dark' ? 'meu-escuro' : 'meu-claro'}
       // Mantém o modelo (e o histórico de desfazer) ao alternar para a visualização.
       keepCurrentModel
@@ -181,6 +183,8 @@ export function EditorPane() {
   }
 
   if (canPreview(doc) && doc.mode === 'preview') {
+    // key: cada requisição tem o seu construtor (aba e painel abertos).
+    if (doc.language === 'apireq') return <ApiRequestView key={doc.id} doc={doc} />
     if (doc.language === 'json') {
       const edit = (line?: number, column?: number) => {
         if (line !== undefined) requestReveal(line, column ?? 1)

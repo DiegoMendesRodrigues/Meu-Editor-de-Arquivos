@@ -55,6 +55,8 @@
   --color-blue-50: #172338;
   --color-blue-100: #1d3254;
   --color-blue-700: #93c5fd;
+  /* Método PATCH no Cliente de API e valores null/booleanos no visualizador de JSON. */
+  --color-violet-600: #a78bfa;
 }
 
 html,

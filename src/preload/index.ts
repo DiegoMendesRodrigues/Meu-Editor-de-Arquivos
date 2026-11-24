@@ -106,6 +106,11 @@ const api: EditorApi = {
   hashText: (algorithm, text) => ipcRenderer.invoke(IpcChannels.hashText, algorithm, text),
   formatCode: (language, extension, text) => ipcRenderer.invoke(IpcChannels.formatCode, language, extension, text),
   copyText: (text) => ipcRenderer.invoke(IpcChannels.copyText, text),
+  apiSecretsInfo: () => ipcRenderer.invoke(IpcChannels.apiSecretsInfo),
+  apiSecretSet: (scope, name, value) => ipcRenderer.invoke(IpcChannels.apiSecretSet, scope, name, value),
+  apiSecretHas: (scope, name) => ipcRenderer.invoke(IpcChannels.apiSecretHas, scope, name),
+  apiSecretNames: (scope) => ipcRenderer.invoke(IpcChannels.apiSecretNames, scope),
+  apiSecretDelete: (scope, name) => ipcRenderer.invoke(IpcChannels.apiSecretDelete, scope, name),
   onBeforeClose: (listener) => {
     const handler = () => listener()
     ipcRenderer.on(IpcChannels.beforeClose, handler)

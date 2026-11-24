@@ -9,7 +9,7 @@ import type { Editor } from '@tiptap/react'
 import { getActiveEditor } from '@/editor/editorRef'
 import { getActiveWysiwyg } from '@/markdown/wysiwygRef'
 import { collapseDoubleSpaces, convertCaseText, sentenceCaser, toggleUrlEncoding, trimLine, type CaseMode, type TrimMode } from '@/editor/textOps'
-import { languageLabel } from '@/editor/languages'
+import { languageLabel, monacoLanguage } from '@/editor/languages'
 import { t } from '@/i18n'
 import { useDocuments } from '@/store/documents'
 import { useNotice } from '@/store/notice'
@@ -205,8 +205,9 @@ export async function autoFormat(): Promise<void> {
     notice = t('format.tooLarge')
   } else {
     try {
-      const extension = doc.name.includes('.') ? doc.name.split('.').pop()!.toLowerCase() : ''
-      const result = await window.api.formatCode(doc.language, /^[a-z0-9]{0,10}$/.test(extension) ? extension : '', collapsed)
+      // A requisição de API (.apireq) é formatada como o JSON que ela é.
+      const extension = doc.language === 'apireq' ? 'json' : doc.name.includes('.') ? doc.name.split('.').pop()!.toLowerCase() : ''
+      const result = await window.api.formatCode(monacoLanguage(doc.language), /^[a-z0-9]{0,10}$/.test(extension) ? extension : '', collapsed)
       if (result.status === 'ok') {
         formatted = result.text
         if (result.guessedIndent) notice = t('format.guessedIndent', { language })

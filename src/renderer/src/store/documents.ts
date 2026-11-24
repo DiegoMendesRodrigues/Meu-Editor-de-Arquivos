@@ -5,6 +5,7 @@ import { untitledNumber } from '@shared/i18n'
 import { languageFromName } from '@/editor/languages'
 import { t } from '@/i18n'
 import { applyEol } from '@shared/eol'
+import { newApiRequest, serializeApiRequest } from '@shared/api/schema'
 
 export interface EditorDocument {
   id: string
@@ -111,16 +112,20 @@ export const useDocuments = create<DocumentsState>((set) => ({
     set((s) => {
       const n = s.untitledCounter + 1
       const name = `${t('doc.untitled', { n })}.${extension}`
+      const language = languageFromName(name)
+      // A requisição de API nasce pronta (GET sem URL) e abre no construtor; os demais tipos, vazios e em texto.
+      const isApi = language === 'apireq'
+      const content = isApi ? applyEol(serializeApiRequest(newApiRequest()), defaultEol) : ''
       const doc: EditorDocument = {
         id: nextId(),
         path: null,
         name,
-        content: '',
-        savedContent: '',
-        language: languageFromName(name),
+        content,
+        savedContent: content,
+        language,
         encoding: 'UTF-8',
         eol: defaultEol,
-        mode: 'edit',
+        mode: isApi ? 'preview' : 'edit',
         syncId: newSyncId()
       }
       return { documents: [...s.documents, doc], activeId: doc.id, untitledCounter: n }
@@ -289,8 +294,8 @@ export const useDocuments = create<DocumentsState>((set) => ({
     }))
 }))
 
-/** Linguagens com visualização própria: Markdown formatado e JSON em árvore. */
-export const canPreviewLanguage = (language: string): boolean => language === 'markdown' || language === 'json'
+/** Linguagens com visualização própria: Markdown formatado, JSON em árvore e o construtor de requisições de API. */
+export const canPreviewLanguage = (language: string): boolean => language === 'markdown' || language === 'json' || language === 'apireq'
 export const canPreview = (d: EditorDocument | undefined): boolean => !!d && canPreviewLanguage(d.language)
 
 export const useActiveDocument = (): EditorDocument | undefined =>

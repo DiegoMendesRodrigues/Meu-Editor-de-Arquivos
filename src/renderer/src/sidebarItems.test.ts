@@ -25,6 +25,7 @@ describe('ícone pelo tipo do arquivo', () => {
   it('segue as seções do botão "+"', () => {
     expect(['leia.md', 'a.markdown', 'notas.txt', 'artigo.tex'].map(fileKind)).toEqual(['document', 'document', 'document', 'document'])
     expect(fileKind('app.log')).toBe('log')
+    expect(['Listar produtos.apireq', 'Homologação.apienv', 'x.APIRESP'].map(fileKind)).toEqual(['api', 'api', 'api'])
     expect(['main.py', 'x.C', 'App.tsx', 'lib.rs'].map(fileKind)).toEqual(['code', 'code', 'code', 'code'])
     expect(['run.ps1', 'build.sh', 'go.bat', 'init.lua'].map(fileKind)).toEqual(['script', 'script', 'script', 'script'])
     expect(['index.html', 'site.css', 'dados.json', 'pom.xml'].map(fileKind)).toEqual(['web', 'web', 'web', 'web'])

@@ -77,6 +77,10 @@ export function shortcutGroups(t: Translate): ShortcutGroup[] {
         { keys: 'Ctrl+Shift+R', action: t('sc.macroRecord') },
         { keys: 'Ctrl+Shift+M', action: t('menu.tools.macroRunLast') }
       ]
+    },
+    {
+      title: t('menu.tools.apiClient'),
+      items: [{ keys: 'Ctrl+Shift+A', action: t('sc.apiClient') }]
     }
   ]
 }

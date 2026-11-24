@@ -678,3 +678,90 @@ test.describe('barra lateral: botão direito e ícones', () => {
     }
   })
 })
+
+/** Aba do documento ativo (as subabas do construtor também são "tab"). */
+const docTab = (page: import('@playwright/test').Page) => page.locator('[role=tablist]').first().getByRole('tab', { selected: true })
+
+test.describe('Cliente de API (fase 0)', () => {
+  test('Ctrl+Shift+A abre o construtor; as edições viram o JSON do .apireq e são salvas', async ({ app, page, workspace }) => {
+    await page.keyboard.press('Control+Shift+A')
+    await expect(docTab(page)).toContainText('Sem título 2.apireq')
+    await expect(page.getByTestId('api-request')).toBeVisible()
+    await expect(page.getByRole('contentinfo')).toContainText('Requisição de API')
+    // Requisição nova não tem alterações pendentes.
+    await expect(docTab(page)).not.toContainText('●')
+
+    await page.getByLabel('Método').selectOption('POST')
+    await page.getByLabel('URL da requisição').fill('{{baseUrl}}/produtos')
+    await page.getByLabel('Chave 1').fill('pagina')
+    await page.getByLabel('Valor 1').fill('2')
+    await expect(page.getByRole('tab', { name: /Params/ })).toContainText('1')
+    await page.getByRole('tab', { name: 'Configurações' }).click()
+    await page.getByLabel('Verificar o certificado TLS').uncheck()
+    await expect(page.getByRole('alert').filter({ hasText: 'interceptada' })).toBeVisible()
+    await expect(docTab(page)).toContainText('●')
+
+    // "Editar texto" mostra o JSON; "Construtor" volta.
+    await page.getByRole('button', { name: 'Editar texto' }).click()
+    await expect(page.locator('.view-lines')).toContainText('"method": "POST"')
+    await page.getByRole('button', { name: 'Construtor' }).click()
+    await expect(page.getByLabel('URL da requisição')).toHaveValue('{{baseUrl}}/produtos')
+
+    await stubSaveDialog(app, workspace.file('Criar produto.apireq'))
+    await page.keyboard.press('Control+S')
+    await expect(docTab(page)).toContainText('Criar produto.apireq')
+    const saved = JSON.parse(readFileSync(workspace.file('Criar produto.apireq'), 'utf8'))
+    expect(saved).toMatchObject({
+      $schema: 'meu-editor/api-request@1',
+      method: 'POST',
+      url: '{{baseUrl}}/produtos',
+      params: [{ key: 'pagina', value: '2', enabled: true }],
+      settings: { verifyTls: false }
+    })
+  })
+
+  test('Ferramentas → Cliente de API e Arquivo → Novo criam requisições', async ({ page }) => {
+    await page.getByRole('button', { name: 'Ferramentas' }).click()
+    await page.getByRole('menuitem', { name: /Cliente de API/ }).click()
+    await expect(page.getByTestId('api-request')).toBeVisible()
+    await page.getByRole('button', { name: 'Arquivo' }).click()
+    await page.getByRole('menuitem', { name: 'Novo arquivo de requisição de API (.apireq)' }).click()
+    await expect(docTab(page)).toContainText('Sem título 3.apireq')
+  })
+
+  test('.apireq inválido mostra o problema e o botão para editar o texto', async ({ app, page, workspace }) => {
+    writeFileSync(workspace.file('ruim.apireq'), JSON.stringify({ $schema: 'meu-editor/api-request@1', id: 'x', settings: { timeoutMs: 5 } }))
+    await stubOpenDialog(app, [workspace.file('ruim.apireq')])
+    await page.keyboard.press('Control+O')
+    await expect(page.getByTestId('api-invalid')).toContainText('Campo inválido: settings.timeoutMs')
+    await page.getByTestId('api-invalid').getByRole('button', { name: 'Editar texto' }).click()
+    await expect(page.locator('.view-lines')).toContainText('timeoutMs')
+  })
+
+  test('Ctrl+Shift+A dentro do terminal vai para o shell', async ({ page }) => {
+    await page.getByRole('button', { name: 'Ferramentas' }).click()
+    await page.getByRole('menuitem', { name: 'Abrir o terminal' }).click()
+    await page.locator('[data-terminal] .xterm').first().click()
+    await page.keyboard.press('Control+Shift+A')
+    await expect(page.getByTestId('api-request')).toHaveCount(0)
+  })
+
+  test('o cofre guarda segredos cifrados e o Renderer não consegue lê-los', async ({ app, page }) => {
+    const result = await page.evaluate(async () => {
+      const api = (window as unknown as { api: Record<string, (...a: unknown[]) => Promise<unknown>> }).api
+      await api.apiSecretSet('hml', 'token', 'valor-super-secreto')
+      const bad = await api.apiSecretSet('../x', 'token', 'v').then(() => 'aceito', () => 'recusado')
+      return {
+        has: await api.apiSecretHas('hml', 'token'),
+        names: await api.apiSecretNames('hml'),
+        bad,
+        keys: Object.keys(api).filter((k) => k.startsWith('apiSecret'))
+      }
+    })
+    expect(result).toEqual({ has: true, names: ['token'], bad: 'recusado', keys: expect.arrayContaining(['apiSecretSet', 'apiSecretHas', 'apiSecretNames', 'apiSecretDelete']) })
+    expect(result.keys.some((k) => /get/i.test(k))).toBe(false)
+    const userData = await app.evaluate(({ app: a }) => a.getPath('userData'))
+    const persistent = await page.evaluate(() => (window as unknown as { api: { apiSecretsInfo(): Promise<{ persistent: boolean }> } }).api.apiSecretsInfo())
+    if (persistent.persistent) expect(readFileSync(join(userData, 'api-secrets.json'), 'utf8')).not.toContain('valor-super-secreto')
+  })
+})

@@ -24,7 +24,8 @@ const filters = (): Electron.FileFilter[] => [
   { name: tm('dlg.filter.all'), extensions: ['*'] },
   { name: 'Markdown', extensions: ['md', 'markdown'] },
   { name: tm('lang.plaintext'), extensions: ['txt', 'log'] },
-  { name: tm('dlg.filter.data'), extensions: ['json', 'csv', 'yaml', 'yml', 'toml', 'ini', 'xml', 'sql'] }
+  { name: tm('dlg.filter.data'), extensions: ['json', 'csv', 'yaml', 'yml', 'toml', 'ini', 'xml', 'sql'] },
+  { name: tm('menu.tools.apiClient'), extensions: ['apireq', 'apienv', 'apicol', 'apiresp'] }
 ]
 
 const ownerWindow = (e: IpcMainInvokeEvent): BrowserWindow | undefined =>
