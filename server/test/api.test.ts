@@ -219,6 +219,36 @@ describe('pastas na nuvem', () => {
     expect((await ctx.call('PATCH', `/v1/files/${a.id}`, { token, body: { path: '../fora.md' } })).status).toBe(400)
   })
 
+  it('renomeia a pasta com os arquivos e as subpastas', async () => {
+    await ctx.call('POST', '/v1/folders', { token, body: { path: 'docs/vazia' } })
+    const a = (await put('docs/nota.md')).body.file
+    await put('docs/sub/b.md')
+    await put('documentos.md') // começa igual, mas não está na pasta
+    const res = await ctx.call('PATCH', '/v1/folders', { token, body: { from: 'docs', to: 'textos' } })
+    expect(res.status).toBe(200)
+    expect((await ctx.call('GET', '/v1/folders', { token })).body.folders).toEqual(['textos', 'textos/vazia'])
+    const paths = (await ctx.call('GET', '/v1/files', { token })).body.files.map((f: { path: string }) => f.path).sort()
+    expect(paths).toEqual(['documentos.md', 'textos/nota.md', 'textos/sub/b.md'])
+    const moved = (await ctx.call('GET', `/v1/files/${a.id}`, { token })).body.file
+    expect(moved.version).toBe(2)
+    // Só maiúsculas/minúsculas: permitido.
+    expect((await ctx.call('PATCH', '/v1/folders', { token, body: { from: 'textos', to: 'Textos' } })).status).toBe(200)
+  })
+
+  it('renomear pasta: destino ocupado, pasta inexistente e caminhos inválidos', async () => {
+    await put('a/x.md')
+    await put('b/y.md')
+    await put('c.md')
+    const rename = (from: string, to: string) => ctx.call('PATCH', '/v1/folders', { token, body: { from, to } })
+    expect((await rename('a', 'b')).status).toBe(409)
+    expect((await rename('a', 'c.md')).status).toBe(409)
+    expect((await rename('nada', 'z')).status).toBe(404)
+    expect((await rename('a', 'a/dentro')).status).toBe(400)
+    expect((await rename('a', '../fora')).status).toBe(400)
+    const other = await ctx.register('bia@exemplo.com', 'Bia')
+    expect((await ctx.call('PATCH', '/v1/folders', { token: other, body: { from: 'a', to: 'z' } })).status).toBe(404)
+  })
+
   it('pastas e arquivos de um usuário não aparecem para outro', async () => {
     await ctx.call('POST', '/v1/folders', { token, body: { path: 'privada' } })
     const a = (await put('privada/x.md')).body.file

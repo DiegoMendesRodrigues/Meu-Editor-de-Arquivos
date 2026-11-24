@@ -41,6 +41,18 @@ Si un autre programme modifie un fichier que vous avez ouvert, l'application le 
 
 ![Menu Fichier](img/s07-menu-file.png)
 
+### Organiser depuis la barre latérale
+
+Faites un clic droit sur un dossier ou un fichier de la barre latérale, sur l'ordinateur ou dans le cloud :
+
+- **{{sidebar.rename}}** (dossiers et fichiers) : ouvre la fenêtre **{{rename.folderTitle}}** ou **{{rename.fileTitle}}** avec le nom actuel. Saisissez le nouveau nom et cliquez sur **{{rename.submit}}**. Le nom ne peut pas être vide ni contenir `\ / : * ? " < > |`. Les onglets ouverts de ce fichier, ou des fichiers du dossier, prennent le nouveau nom.
+- **{{sidebar.folderColor}}** (dossiers) : ouvre la fenêtre **{{folderColor.title}}** avec douze couleurs, la couleur actuelle étant cochée. Choisissez-en une autre et cliquez sur **{{folderColor.submit}}**. Les couleurs sont conservées sur cet ordinateur.
+- **{{common.delete}}** (dossiers) : disponible uniquement lorsque le dossier est vide.
+
+Le dossier ouvert dans l'explorateur ne peut être ni renommé ni supprimé d'ici.
+
+Chaque fichier a une icône selon son type : documents (.md, .txt, .tex), journaux, programmation, scripts, web, données et configuration (les mêmes sections que le bouton **+**) et une icône générique pour les autres.
+
 ## 4. Enregistrer et documents temporaires
 
 - **{{menu.file.save}}** (**Ctrl+S**) écrit le document dans son fichier. Pour un nouveau document, l'application demande le nom et l'emplacement.

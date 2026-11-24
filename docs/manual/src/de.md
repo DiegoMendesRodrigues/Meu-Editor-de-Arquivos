@@ -41,6 +41,18 @@ Wenn ein anderes Programm eine geöffnete Datei ändert, lädt die Anwendung sie
 
 ![Menü Datei](img/s07-menu-file.png)
 
+### Über die Seitenleiste organisieren
+
+Klicken Sie mit der rechten Maustaste auf einen Ordner oder eine Datei in der Seitenleiste, auf dem Computer oder in der Cloud:
+
+- **{{sidebar.rename}}** (Ordner und Dateien): öffnet das Fenster **{{rename.folderTitle}}** bzw. **{{rename.fileTitle}}** mit dem aktuellen Namen. Geben Sie den neuen Namen ein und klicken Sie auf **{{rename.submit}}**. Der Name darf nicht leer sein und kein `\ / : * ? " < > |` enthalten. Geöffnete Tabs dieser Datei oder der Dateien im Ordner übernehmen den neuen Namen.
+- **{{sidebar.folderColor}}** (Ordner): öffnet das Fenster **{{folderColor.title}}** mit zwölf Farben; die aktuelle ist markiert. Wählen Sie eine andere und klicken Sie auf **{{folderColor.submit}}**. Die Farben werden auf diesem Computer gespeichert.
+- **{{common.delete}}** (Ordner): nur verfügbar, wenn der Ordner leer ist.
+
+Der im Explorer geöffnete Ordner kann hier weder umbenannt noch gelöscht werden.
+
+Jede Datei hat ein Symbol nach ihrem Typ: Dokumente (.md, .txt, .tex), Logs, Programmierung, Skripte, Web, Daten und Konfiguration (dieselben Bereiche wie die Schaltfläche **+**) und ein allgemeines Symbol für alle anderen.
+
 ## 4. Speichern und temporäre Dokumente
 
 - **{{menu.file.save}}** (**Ctrl+S**) schreibt das Dokument in seine Datei. Bei einem neuen Dokument fragt die Anwendung nach Name und Speicherort.

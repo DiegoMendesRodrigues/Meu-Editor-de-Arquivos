@@ -50,7 +50,7 @@ A camada MySQL (`src/db/mysql.ts`) ainda **não foi testada contra um servidor r
 ## Rotas (v1)
 
 `POST /v1/auth/register`, `/login`, `/logout`, `/password-reset/request`, `/password-reset/confirm`;
-`GET|PATCH /v1/me`, `POST /v1/me/password`, `GET /v1/me/storage` (espaço usado na nuvem, em bytes: arquivos + textos não salvos; também vem em `storageBytes` nas respostas de `PUT /v1/files`, `DELETE /v1/files/:id` e `PUT /v1/workspace`); `GET /v1/files`, `GET /v1/files/:id`, `PUT /v1/files`, `DELETE /v1/files/:id`.
+`PATCH /v1/folders` (renomear pasta: `{from, to}`; leva arquivos e subpastas; 409 `folder_in_use` se o destino existe), `GET|PATCH /v1/me`, `POST /v1/me/password`, `GET /v1/me/storage` (espaço usado na nuvem, em bytes: arquivos + textos não salvos; também vem em `storageBytes` nas respostas de `PUT /v1/files`, `DELETE /v1/files/:id` e `PUT /v1/workspace`); `GET /v1/files`, `GET /v1/files/:id`, `PUT /v1/files`, `DELETE /v1/files/:id`.
 
 ## Pacote de instalação
 

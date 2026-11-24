@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { app } from 'electron'
 import log from 'electron-log/main'
 import { z } from 'zod'
+import { FOLDER_COLOR_IDS, MAX_FOLDER_COLORS } from '@shared/folderColors'
 import { LOCALES, type Locale } from '@shared/i18n'
 import { IpcChannels, SESSION_MAX_UNSAVED_CHARS, type SessionData } from '@shared/ipc'
 import { authorizeFile, authorizeRoot, isAuthorized, isAuthorizedRoot } from './access'
@@ -50,6 +51,10 @@ export const sessionSchema = z.object({
       locale: z.enum(LOCALES.map((l) => l.code) as [Locale, ...Locale[]]).optional(),
       words: z.array(z.string().min(1).max(100)).max(5000)
     })
+    .optional(),
+  folderColors: z
+    .record(z.string().min(1).max(4200), z.enum(FOLDER_COLOR_IDS))
+    .refine((colors) => Object.keys(colors).length <= MAX_FOLDER_COLORS)
     .optional()
 })
 

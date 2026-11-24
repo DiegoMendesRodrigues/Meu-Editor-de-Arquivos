@@ -328,6 +328,17 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return reply.status(201).send({ path: body.path })
   })
 
+  // Renomear (ou mover) uma pasta, com os arquivos e as subpastas.
+  app.patch('/v1/folders', auth, async (req) => {
+    const { from, to } = z.object({ from: cloudPathSchema, to: cloudPathSchema }).parse(req.body)
+    if (to.startsWith(`${from}/`)) throw new HttpError(400, 'invalid_request', 'A pasta não pode ir para dentro dela mesma.')
+    const result = await store.renameFolder(req.user!.id, from, to)
+    if (result === 'not_found') throw new HttpError(404, 'not_found', 'Pasta não encontrada.')
+    if (result === 'exists') throw new HttpError(409, 'folder_in_use', 'Já existe uma pasta ou arquivo com este nome.')
+    if (result === 'too_long') throw new HttpError(400, 'invalid_request', 'O caminho ficaria longo demais.')
+    return { path: to }
+  })
+
   app.delete('/v1/folders', auth, async (req, reply) => {
     const { path } = z.object({ path: cloudPathSchema }).parse(req.query)
     const result = await store.deleteFolder(req.user!.id, path)

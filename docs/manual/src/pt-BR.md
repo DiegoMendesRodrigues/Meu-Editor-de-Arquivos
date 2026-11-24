@@ -41,6 +41,18 @@ Se outro programa alterar um arquivo que você tem aberto, o aplicativo o recarr
 
 ![Menu Arquivo](img/s07-menu-file.png)
 
+### Organizar pela barra lateral
+
+Clique com o botão direito em uma pasta ou arquivo da barra lateral, do computador ou da nuvem:
+
+- **{{sidebar.rename}}** (pastas e arquivos): abre a janela **{{rename.folderTitle}}** ou **{{rename.fileTitle}}** com o nome atual. Digite o novo nome e clique em **{{rename.submit}}**. O nome não pode ficar vazio nem ter `\ / : * ? " < > |`. As abas abertas desse arquivo, ou dos arquivos dentro da pasta, passam a usar o novo nome.
+- **{{sidebar.folderColor}}** (pastas): abre a janela **{{folderColor.title}}** com doze cores, com a atual marcada. Escolha outra e clique em **{{folderColor.submit}}**. As cores ficam guardadas neste computador.
+- **{{common.delete}}** (pastas): só fica disponível quando a pasta está vazia.
+
+A pasta aberta no explorador não pode ser renomeada nem excluída por aqui.
+
+Cada arquivo tem um ícone conforme o tipo: documentos (.md, .txt, .tex), logs, programação, scripts, web, dados e configuração (as mesmas seções do botão **+**) e um ícone genérico para os demais.
+
 ## 4. Salvar e documentos temporários
 
 - **{{menu.file.save}}** (**Ctrl+S**) grava o documento no arquivo. Em um documento novo, o aplicativo pede o nome e o local.

@@ -1,7 +1,7 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { randomUUID } from 'node:crypto'
 import mysql, { type Pool, type PoolConnection, type ResultSetHeader, type RowDataPacket } from 'mysql2/promise'
-import type { DeleteFolderResult, FileMeta, MoveResult, PutWorkspaceResult, RemoteFile, Store, UpsertResult, User, Workspace } from './store.js'
+import type { DeleteFolderResult, FileMeta, MoveResult, PutWorkspaceResult, RemoteFile, RenameFolderResult, Store, UpsertResult, User, Workspace } from './store.js'
 
 /**
  * Espaço usado por um usuário: tamanho dos arquivos (bytes UTF-8, coluna size) + área de trabalho
@@ -175,6 +175,42 @@ export function createMysqlStore(uri: string): Store {
       if (Number(inside[0]?.n) > 0) return 'not_empty'
       const [res] = await pool.execute<ResultSetHeader>('DELETE FROM folders WHERE user_id = ? AND path = ?', [userId, path])
       return res.affectedRows === 1 ? 'ok' : 'not_found'
+    },
+    async renameFolder(userId, from, to): Promise<RenameFolderResult> {
+      if (from === to) return 'ok'
+      const under = (p: string): string => `${p.replace(/[\\%_]/g, (c) => `\\${c}`)}/%`
+      return withTransaction(async (conn) => {
+        const [found] = await conn.execute<RowDataPacket[]>(
+          'SELECT (SELECT COUNT(*) FROM folders WHERE user_id = ? AND (path = ? OR path LIKE ?)) + (SELECT COUNT(*) FROM files WHERE user_id = ? AND path LIKE ?) AS n',
+          [userId, from, under(from), userId, under(from)]
+        )
+        if (Number(found[0]?.n) === 0) return 'not_found'
+        // Algo já ocupa o destino (fora da própria pasta: mudar só maiúsculas/minúsculas é permitido).
+        const [clash] = await conn.execute<RowDataPacket[]>(
+          `SELECT (SELECT COUNT(*) FROM folders WHERE user_id = ? AND (path = ? OR path LIKE ?) AND NOT (path = ? OR path LIKE ?))
+                + (SELECT COUNT(*) FROM files WHERE user_id = ? AND (path = ? OR path LIKE ?) AND NOT (path LIKE ?)) AS n`,
+          [userId, to, under(to), from, under(from), userId, to, under(to), under(from)]
+        )
+        if (Number(clash[0]?.n) > 0) return 'exists'
+        const [long] = await conn.execute<RowDataPacket[]>(
+          `SELECT (SELECT COUNT(*) FROM files WHERE user_id = ? AND path LIKE ? AND CHAR_LENGTH(path) - CHAR_LENGTH(?) + CHAR_LENGTH(?) > 512)
+                + (SELECT COUNT(*) FROM folders WHERE user_id = ? AND (path = ? OR path LIKE ?) AND CHAR_LENGTH(path) - CHAR_LENGTH(?) + CHAR_LENGTH(?) > 512) AS n`,
+          [userId, under(from), from, to, userId, from, under(from), from, to]
+        )
+        if (Number(long[0]?.n) > 0) return 'too_long'
+        await conn.execute(
+          'UPDATE files SET path = CONCAT(?, SUBSTRING(path, CHAR_LENGTH(?) + 1)), version = version + 1, updated_at = ? WHERE user_id = ? AND path LIKE ?',
+          [to, from, new Date(), userId, under(from)]
+        )
+        await conn.execute('UPDATE folders SET path = CONCAT(?, SUBSTRING(path, CHAR_LENGTH(?) + 1)) WHERE user_id = ? AND (path = ? OR path LIKE ?)', [
+          to,
+          from,
+          userId,
+          from,
+          under(from)
+        ])
+        return 'ok'
+      })
     },
     async getWorkspace(userId): Promise<Workspace | null> {
       const [rows] = await pool.execute<RowDataPacket[]>('SELECT data, version, updated_at FROM workspaces WHERE user_id = ?', [userId])

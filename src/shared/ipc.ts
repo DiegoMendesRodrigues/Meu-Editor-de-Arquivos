@@ -1,4 +1,5 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
+import type { FolderColor } from './folderColors'
 import type { Locale } from './i18n'
 import type { SearchMatch, SearchOptions } from './search'
 export type { SearchMatch, SearchOptions } from './search'
@@ -19,6 +20,8 @@ export const IpcChannels = {
   fileChanged: 'file:changed',
   openFolder: 'folder:open',
   listFolder: 'folder:list',
+  renameEntry: 'folder:rename-entry',
+  deleteEmptyFolder: 'folder:delete-empty',
   searchFolder: 'search:folder',
   replaceInFiles: 'search:replace',
   recentList: 'recent:list',
@@ -47,6 +50,7 @@ export const IpcChannels = {
   cloudFolders: 'cloud:folders',
   cloudCreateFolder: 'cloud:create-folder',
   cloudDeleteFolder: 'cloud:delete-folder',
+  cloudRenameFolder: 'cloud:rename-folder',
   cloudStorage: 'cloud:storage',
   cloudStorageChanged: 'cloud:storage-changed',
   libraryLoad: 'library:load',
@@ -218,6 +222,8 @@ export interface SessionData {
     locale?: Locale
     words: string[]
   }
+  /** Cores escolhidas para as pastas da barra lateral ("local:<caminho>" ou "cloud:<caminho>"). */
+  folderColors?: Record<string, FolderColor>
 }
 
 /** Trecho de texto reutilizável, na sintaxe de snippets do Monaco ($1, ${2:padrão}, $0). */
@@ -307,6 +313,10 @@ export interface EditorApi {
 
   openFolder(): Promise<FolderInfo | null>
   listFolder(path: string): Promise<FolderEntry[]>
+  /** Renomeia um arquivo ou pasta da pasta aberta; devolve o novo caminho. */
+  renameEntry(path: string, newName: string): Promise<string>
+  /** Exclui uma pasta vazia da pasta aberta. */
+  deleteEmptyFolder(path: string): Promise<void>
   searchFolder(req: SearchRequest): Promise<SearchResponse>
   replaceInFiles(req: ReplaceRequest): Promise<ReplaceResponse>
 
@@ -355,6 +365,8 @@ export interface EditorApi {
   cloudCreateFolder(path: string): Promise<void>
   /** Exclui a pasta da nuvem; só funciona com a pasta vazia. */
   cloudDeleteFolder(path: string): Promise<void>
+  /** Renomeia uma pasta da nuvem (e tudo o que há dentro dela). */
+  cloudRenameFolder(from: string, to: string): Promise<void>
   /** Espaço usado na nuvem, em bytes (arquivos + textos não salvos da área de trabalho). */
   cloudStorage(): Promise<number>
   /** O Main avisa quando o servidor informa um novo espaço usado (depois de salvar, excluir ou sincronizar). */

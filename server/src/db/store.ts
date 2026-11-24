@@ -34,6 +34,7 @@ export interface UpsertFileInput {
 export type MoveResult = { ok: true; file: FileMeta } | { ok: false; reason: 'not_found' | 'exists' }
 
 export type DeleteFolderResult = 'ok' | 'not_found' | 'not_empty'
+export type RenameFolderResult = 'ok' | 'not_found' | 'exists' | 'too_long'
 
 /** Área de trabalho sincronizada (abas e textos não salvos), em JSON, com versão. */
 export interface Workspace {
@@ -80,6 +81,11 @@ export interface Store {
   createFolder(userId: string, path: string): Promise<void>
   /** Remove a pasta, só se estiver vazia (sem arquivos nem subpastas). */
   deleteFolder(userId: string, path: string): Promise<DeleteFolderResult>
+  /**
+   * Renomeia (ou move) a pasta `from` para `to`, levando os arquivos e as subpastas.
+   * Falha se a pasta não existir, se já houver algo em `to` ou se algum caminho passar de 512 caracteres.
+   */
+  renameFolder(userId: string, from: string, to: string): Promise<RenameFolderResult>
 
   /** Espaço usado na nuvem (bytes), como está gravado para o usuário. */
   getStorageBytes(userId: string): Promise<number>

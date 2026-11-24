@@ -41,6 +41,18 @@ If another program changes a file you have open, the application reloads it by i
 
 ![File menu](img/s07-menu-file.png)
 
+### Organizing from the sidebar
+
+Right-click a folder or file in the sidebar, on the computer or in the cloud:
+
+- **{{sidebar.rename}}** (folders and files): opens the **{{rename.folderTitle}}** or **{{rename.fileTitle}}** window with the current name. Type the new name and click **{{rename.submit}}**. The name cannot be empty or contain `\ / : * ? " < > |`. Open tabs of that file, or of the files inside the folder, switch to the new name.
+- **{{sidebar.folderColor}}** (folders): opens the **{{folderColor.title}}** window with twelve colors, with the current one selected. Pick another and click **{{folderColor.submit}}**. Colors are kept on this computer.
+- **{{common.delete}}** (folders): only available when the folder is empty.
+
+The folder open in the explorer cannot be renamed or deleted from here.
+
+Each file has an icon for its type: documents (.md, .txt, .tex), logs, programming, scripts, web, data and configuration (the same sections as the **+** button) and a generic icon for the rest.
+
 ## 4. Saving and temporary documents
 
 - **{{menu.file.save}}** (**Ctrl+S**) writes the document to its file. For a new document, the application asks for a name and a location.

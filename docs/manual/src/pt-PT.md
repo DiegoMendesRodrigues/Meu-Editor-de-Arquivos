@@ -41,6 +41,18 @@ Se outro programa alterar um ficheiro que tem aberto, a aplicação recarrega-o 
 
 ![Menu Ficheiro](img/s07-menu-file.png)
 
+### Organizar pela barra lateral
+
+Clique com o botão direito numa pasta ou ficheiro da barra lateral, do computador ou da nuvem:
+
+- **{{sidebar.rename}}** (pastas e ficheiros): abre a janela **{{rename.folderTitle}}** ou **{{rename.fileTitle}}** com o nome atual. Escreva o novo nome e clique em **{{rename.submit}}**. O nome não pode ficar vazio nem ter `\ / : * ? " < > |`. Os separadores abertos desse ficheiro, ou dos ficheiros dentro da pasta, passam a usar o novo nome.
+- **{{sidebar.folderColor}}** (pastas): abre a janela **{{folderColor.title}}** com doze cores, com a atual marcada. Escolha outra e clique em **{{folderColor.submit}}**. As cores ficam guardadas neste computador.
+- **{{common.delete}}** (pastas): só fica disponível quando a pasta está vazia.
+
+A pasta aberta no explorador não pode ser mudada de nome nem eliminada por aqui.
+
+Cada ficheiro tem um ícone conforme o tipo: documentos (.md, .txt, .tex), logs, programação, scripts, web, dados e configuração (as mesmas secções do botão **+**) e um ícone genérico para os restantes.
+
 ## 4. Guardar e documentos temporários
 
 - **{{menu.file.save}}** (**Ctrl+S**) grava o documento no ficheiro. Num documento novo, a aplicação pede o nome e a localização.

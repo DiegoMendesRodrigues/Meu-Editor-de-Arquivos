@@ -69,6 +69,7 @@ Current version: **1.1.0**.
 - Sign-up, profile and password change
 - Saving files to a server to use the same files on several computers, through an API backed by MySQL or MariaDB
 - Cloud storage used by each user (files plus unsaved text), shown in MB in the status bar
+- Right-click in the sidebar to rename folders and files (local or cloud), color folders and delete empty folders; file icons by type
 - Unsaved tabs synced between computers; when both change the same document, the other version opens in a conflict tab
 
 **Distribution**

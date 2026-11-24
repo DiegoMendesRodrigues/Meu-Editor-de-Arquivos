@@ -30,6 +30,8 @@ const api: EditorApi = {
 
   openFolder: () => ipcRenderer.invoke(IpcChannels.openFolder),
   listFolder: (path) => ipcRenderer.invoke(IpcChannels.listFolder, path),
+  renameEntry: (path, newName) => ipcRenderer.invoke(IpcChannels.renameEntry, path, newName),
+  deleteEmptyFolder: (path) => ipcRenderer.invoke(IpcChannels.deleteEmptyFolder, path),
   searchFolder: (req) => ipcRenderer.invoke(IpcChannels.searchFolder, req),
   replaceInFiles: (req) => ipcRenderer.invoke(IpcChannels.replaceInFiles, req),
 
@@ -67,6 +69,7 @@ const api: EditorApi = {
   cloudFolders: () => ipcRenderer.invoke(IpcChannels.cloudFolders),
   cloudCreateFolder: (path) => ipcRenderer.invoke(IpcChannels.cloudCreateFolder, path),
   cloudDeleteFolder: (path) => ipcRenderer.invoke(IpcChannels.cloudDeleteFolder, path),
+  cloudRenameFolder: (from, to) => ipcRenderer.invoke(IpcChannels.cloudRenameFolder, from, to),
   cloudStorage: () => ipcRenderer.invoke(IpcChannels.cloudStorage),
   onCloudStorageChanged: (listener) => {
     const handler = (_e: unknown, bytes: number) => listener(bytes)

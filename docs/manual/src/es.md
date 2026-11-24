@@ -41,6 +41,18 @@ Si otro programa modifica un archivo que tienes abierto, la aplicación lo vuelv
 
 ![Menú Archivo](img/s07-menu-file.png)
 
+### Organizar desde la barra lateral
+
+Haga clic con el botón derecho en una carpeta o archivo de la barra lateral, del equipo o de la nube:
+
+- **{{sidebar.rename}}** (carpetas y archivos): abre la ventana **{{rename.folderTitle}}** o **{{rename.fileTitle}}** con el nombre actual. Escriba el nuevo nombre y haga clic en **{{rename.submit}}**. El nombre no puede quedar vacío ni contener `\ / : * ? " < > |`. Las pestañas abiertas de ese archivo, o de los archivos dentro de la carpeta, pasan a usar el nuevo nombre.
+- **{{sidebar.folderColor}}** (carpetas): abre la ventana **{{folderColor.title}}** con doce colores, con el actual marcado. Elija otro y haga clic en **{{folderColor.submit}}**. Los colores se guardan en este equipo.
+- **{{common.delete}}** (carpetas): solo está disponible cuando la carpeta está vacía.
+
+La carpeta abierta en el explorador no se puede renombrar ni eliminar desde aquí.
+
+Cada archivo tiene un icono según su tipo: documentos (.md, .txt, .tex), logs, programación, scripts, web, datos y configuración (las mismas secciones del botón **+**) y un icono genérico para los demás.
+
 ## 4. Guardar y documentos temporales
 
 - **{{menu.file.save}}** (**Ctrl+S**) escribe el documento en su archivo. En un documento nuevo, la aplicación pide el nombre y la ubicación.

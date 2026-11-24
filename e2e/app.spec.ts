@@ -483,27 +483,32 @@ test.describe('menu Codificação', () => {
   })
 })
 
+const pt = (key: Parameters<typeof translate>[1]): string => translate('pt-BR', key)
+
+/** Sobe a API de teste em memória (a mesma do servidor do projeto) numa porta livre e cria uma conta nela. */
+async function signInToTestApi(page: import('@playwright/test').Page): Promise<{ close(): Promise<void> }> {
+  const { buildApp } = await import('../server/src/app')
+  const { createMemoryStore } = await import('../server/src/db/memory')
+  const api = buildApp({ store: createMemoryStore(), mailer: { async sendPasswordReset() {} } })
+  const address = await api.listen({ port: 0, host: '127.0.0.1' })
+  await page.getByRole('button', { name: pt('menu.account'), exact: true }).click()
+  await page.getByRole('menuitem', { name: pt('menu.account.signIn') }).click()
+  await page.getByLabel(pt('account.serverUrl'), { exact: true }).fill(address.replace('127.0.0.1', 'localhost'))
+  await page.getByRole('dialog').getByRole('button', { name: pt('account.submit.server') }).click()
+  await page.getByRole('button', { name: pt('account.link.register') }).click()
+  await page.getByLabel(pt('account.email'), { exact: true }).fill('ana@exemplo.com')
+  await page.getByLabel(pt('account.name'), { exact: true }).fill('Ana')
+  await page.getByLabel(pt('account.newPassword'), { exact: true }).fill('uma-senha-forte-123')
+  await page.getByLabel(pt('account.repeat'), { exact: true }).fill('uma-senha-forte-123')
+  await page.getByRole('dialog').getByRole('button', { name: pt('account.submit.register') }).click()
+  await page.getByRole('dialog').waitFor({ state: 'hidden' })
+  return { close: () => api.close() }
+}
+
 test.describe('espaço usado na nuvem', () => {
   test('aparece no rodapé, ao lado do ícone da nuvem, e acompanha as gravações', async ({ page }) => {
-    // API de teste em memória (a mesma do servidor do projeto), numa porta livre.
-    const { buildApp } = await import('../server/src/app')
-    const { createMemoryStore } = await import('../server/src/db/memory')
-    const api = buildApp({ store: createMemoryStore(), mailer: { async sendPasswordReset() {} } })
-    const address = await api.listen({ port: 0, host: '127.0.0.1' })
-    const pt = (key: Parameters<typeof translate>[1]): string => translate('pt-BR', key)
+    const api = await signInToTestApi(page)
     try {
-      await page.getByRole('button', { name: pt('menu.account'), exact: true }).click()
-      await page.getByRole('menuitem', { name: pt('menu.account.signIn') }).click()
-      await page.getByLabel(pt('account.serverUrl'), { exact: true }).fill(address.replace('127.0.0.1', 'localhost'))
-      await page.getByRole('dialog').getByRole('button', { name: pt('account.submit.server') }).click()
-      await page.getByRole('button', { name: pt('account.link.register') }).click()
-      await page.getByLabel(pt('account.email'), { exact: true }).fill('ana@exemplo.com')
-      await page.getByLabel(pt('account.name'), { exact: true }).fill('Ana')
-      await page.getByLabel(pt('account.newPassword'), { exact: true }).fill('uma-senha-forte-123')
-      await page.getByLabel(pt('account.repeat'), { exact: true }).fill('uma-senha-forte-123')
-      await page.getByRole('dialog').getByRole('button', { name: pt('account.submit.register') }).click()
-      await page.getByRole('dialog').waitFor({ state: 'hidden' })
-
       const used = page.getByTestId('cloud-storage')
       await expect(used).toHaveText('0.00 MB')
       await expect(used).toHaveAttribute('title', pt('storage.used'))
@@ -536,6 +541,138 @@ test.describe('espaço usado na nuvem', () => {
         await w.api.cloudStorage()
       })
       await expect(used).toHaveText('1.25 MB')
+    } finally {
+      await api.close()
+    }
+  })
+})
+
+test.describe('barra lateral: botão direito e ícones', () => {
+  type Page = import('@playwright/test').Page
+  /** Abre a pasta de exemplo no explorador. */
+  async function openWorkspace(app: import('@playwright/test').ElectronApplication, page: Page, dir: string) {
+    await stubOpenDialog(app, [dir])
+    await page.getByRole('button', { name: pt('sidebar.openFolder') }).click()
+    await expect(page.getByRole('tree').getByRole('button', { name: 'notas.txt' })).toBeVisible()
+  }
+  const row = (page: Page, name: string) => page.getByRole('tree').getByRole('button', { name, exact: true })
+
+  test('renomeia um arquivo do disco e a aba aberta acompanha', async ({ app, page, workspace }) => {
+    await openWorkspace(app, page, workspace.dir)
+    await row(page, 'notas.txt').click()
+    await expect(page.getByRole('tab', { selected: true })).toContainText('notas.txt')
+
+    await row(page, 'notas.txt').click({ button: 'right' })
+    await page.getByRole('menuitem', { name: pt('sidebar.rename') }).click()
+    const dialog = page.getByRole('dialog', { name: pt('rename.fileTitle') })
+    const field = dialog.getByLabel(pt('rename.newName'))
+    await expect(field).toHaveValue('notas.txt')
+    await field.fill('  ')
+    await expect(dialog.getByRole('button', { name: pt('rename.submit') })).toBeDisabled()
+    await field.fill('a:b.txt')
+    await expect(dialog.getByRole('alert')).toHaveText(pt('rename.invalid'))
+    await field.fill('lista.txt')
+    await dialog.getByRole('button', { name: pt('rename.submit') }).click()
+    await expect(dialog).toBeHidden()
+
+    await expect(row(page, 'lista.txt')).toBeVisible()
+    await expect(row(page, 'notas.txt')).toHaveCount(0)
+    expect(readFileSync(workspace.file('lista.txt'), 'utf8')).toContain('primeira laranja')
+    await expect(page.getByRole('tab', { selected: true })).toContainText('lista.txt')
+  })
+
+  test('pasta: renomear, mudar a cor e excluir só quando vazia', async ({ app, page, workspace }) => {
+    const { mkdirSync, existsSync } = await import('node:fs')
+    mkdirSync(workspace.file('vazia'))
+    await openWorkspace(app, page, workspace.dir)
+
+    // Pasta com arquivo: "Excluir" desabilitado.
+    await row(page, 'src').click({ button: 'right' })
+    await expect(page.getByRole('menuitem', { name: pt('common.delete') })).toHaveAttribute('data-disabled', '')
+    await page.getByRole('menuitem', { name: pt('sidebar.rename') }).click()
+    const rename = page.getByRole('dialog', { name: pt('rename.folderTitle') })
+    await rename.getByLabel(pt('rename.newName')).fill('codigo')
+    await rename.getByRole('button', { name: pt('rename.submit') }).click()
+    await expect(row(page, 'codigo')).toBeVisible()
+    expect(existsSync(workspace.file('codigo/a.ts'))).toBe(true)
+
+    // Cor: doze opções, a atual marcada.
+    await row(page, 'codigo').click({ button: 'right' })
+    await page.getByRole('menuitem', { name: pt('sidebar.folderColor') }).click()
+    const colors = page.getByRole('dialog', { name: pt('folderColor.title') })
+    await expect(colors.getByRole('radio')).toHaveCount(12)
+    await expect(colors.getByRole('radio', { checked: true })).toHaveAccessibleName(pt('folderColor.amber'))
+    await colors.getByRole('radio', { name: pt('folderColor.blue'), exact: true }).click()
+    await colors.getByRole('button', { name: pt('folderColor.submit') }).click()
+    await expect(row(page, 'codigo').locator('svg[data-color]')).toHaveAttribute('data-color', 'blue')
+
+    // Pasta vazia: excluir (com confirmação).
+    page.once('dialog', (d) => void d.accept())
+    await row(page, 'vazia').click({ button: 'right' })
+    const del = page.getByRole('menuitem', { name: pt('common.delete') })
+    await expect(del).not.toHaveAttribute('data-disabled', '')
+    await del.click()
+    await expect(row(page, 'vazia')).toHaveCount(0)
+    expect(existsSync(workspace.file('vazia'))).toBe(false)
+
+    // A pasta aberta no explorador não é renomeada nem excluída.
+    await page.getByRole('tree').getByRole('treeitem').first().getByRole('button').first().click({ button: 'right' })
+    await expect(page.getByRole('menuitem', { name: pt('sidebar.rename') })).toHaveAttribute('data-disabled', '')
+    await page.keyboard.press('Escape')
+  })
+
+  test('ícones por tipo de arquivo', async ({ app, page, workspace }) => {
+    writeFileSync(workspace.file('build.sh'), 'echo oi\n')
+    writeFileSync(workspace.file('app.log'), 'ok\n')
+    writeFileSync(workspace.file('foto.png'), '')
+    writeFileSync(workspace.file('tabela.csv'), 'a,b\n')
+    await openWorkspace(app, page, workspace.dir)
+    await row(page, 'src').click()
+    const kind = (name: string) => row(page, name).locator('svg[data-kind]')
+    await expect(kind('leia-me.md')).toHaveAttribute('data-kind', 'document')
+    await expect(kind('app.log')).toHaveAttribute('data-kind', 'log')
+    await expect(kind('a.ts')).toHaveAttribute('data-kind', 'code')
+    await expect(kind('build.sh')).toHaveAttribute('data-kind', 'script')
+    await expect(kind('dados.json')).toHaveAttribute('data-kind', 'web')
+    await expect(kind('tabela.csv')).toHaveAttribute('data-kind', 'data')
+    await expect(kind('foto.png')).toHaveAttribute('data-kind', 'other')
+  })
+
+  test('nuvem: renomeia arquivo e pasta pelo botão direito', async ({ page }) => {
+    const api = await signInToTestApi(page)
+    try {
+      await page.evaluate(async () => {
+        const w = window as unknown as { api: { cloudSave(r: object): Promise<unknown> } }
+        await w.api.cloudSave({ path: 'docs/nota.md', content: '# nota', encoding: 'UTF-8', baseVersion: null, force: false })
+        await w.api.cloudSave({ path: 'docs/sub/b.md', content: 'b', encoding: 'UTF-8', baseVersion: null, force: false })
+      })
+      await page.getByRole('button', { name: pt('sidebar.refresh') }).click()
+      const tree = page.getByRole('tree', { name: pt('sidebar.cloud') })
+      const item = (name: string) => tree.getByRole('button', { name, exact: true })
+      await expect(item('nota.md')).toBeVisible()
+
+      // Arquivo
+      await item('nota.md').click({ button: 'right' })
+      await page.getByRole('menuitem', { name: pt('sidebar.rename') }).click()
+      let dialog = page.getByRole('dialog', { name: pt('rename.fileTitle') })
+      await dialog.getByLabel(pt('rename.newName')).fill('ideias.md')
+      await dialog.getByRole('button', { name: pt('rename.submit') }).click()
+      await expect(item('ideias.md')).toBeVisible()
+
+      // Pasta com arquivos e subpasta: "Excluir" desabilitado; renomear leva tudo.
+      await item('docs').click({ button: 'right' })
+      await expect(page.getByRole('menuitem', { name: pt('common.delete') })).toHaveAttribute('data-disabled', '')
+      await page.getByRole('menuitem', { name: pt('sidebar.rename') }).click()
+      dialog = page.getByRole('dialog', { name: pt('rename.folderTitle') })
+      await dialog.getByLabel(pt('rename.newName')).fill('textos')
+      await dialog.getByRole('button', { name: pt('rename.submit') }).click()
+      await expect(item('textos')).toBeVisible()
+      await expect(item('docs')).toHaveCount(0)
+      const paths = await page.evaluate(async () => {
+        const w = window as unknown as { api: { cloudList(): Promise<{ path: string }[]> } }
+        return (await w.api.cloudList()).map((f) => f.path).sort()
+      })
+      expect(paths).toEqual(['textos/ideias.md', 'textos/sub/b.md'])
     } finally {
       await api.close()
     }

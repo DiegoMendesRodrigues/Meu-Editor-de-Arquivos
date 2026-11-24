@@ -69,6 +69,7 @@ Versão atual: **1.1.0**.
 - Cadastro, perfil e troca de senha
 - Arquivos guardados num servidor, para usar os mesmos arquivos em vários computadores, por uma API com MySQL ou MariaDB
 - Espaço usado na nuvem por usuário (arquivos e textos não salvos), em MB no rodapé
+- Botão direito na barra lateral para renomear pastas e arquivos (locais ou da nuvem), colorir pastas e excluir pastas vazias; ícones por tipo de arquivo
 - Abas não salvas sincronizadas entre computadores; se os dois alterarem o mesmo documento, a outra versão abre numa aba de conflito
 
 **Distribuição**

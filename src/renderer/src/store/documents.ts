@@ -71,6 +71,8 @@ interface DocumentsState {
   markCloudSaved(id: string, cloud: CloudRef, content: string): void
   /** Atualiza as abas de um arquivo da nuvem que foi movido (novo caminho e versão). */
   updateCloudPath(cloudId: string, path: string, version: number): void
+  /** Arquivo ou pasta do disco renomeado: as abas desse arquivo (ou de dentro da pasta) seguem o novo caminho. */
+  renameLocalPath(oldPath: string, newPath: string): void
   setEncoding(id: string, encoding: Encoding): void
   /** Converte as quebras de linha do texto (e do documento) para o formato escolhido. */
   setEol(id: string, eol: Eol): void
@@ -94,6 +96,10 @@ export const isDirty = (d: EditorDocument): boolean =>
 
 /** Identificador estável do modelo no Monaco (um modelo por documento). */
 export const modelPath = (d: EditorDocument): string => `inmemory://doc/${d.id}/${d.name}`
+
+/** O caminho é o próprio `root` ou fica dentro dele (separador "\" ou "/"). */
+export const isInsidePath = (root: string, path: string): boolean =>
+  path === root || path.startsWith(`${root}\\`) || path.startsWith(`${root}/`)
 
 export const useDocuments = create<DocumentsState>((set) => ({
   documents: [],
@@ -250,6 +256,19 @@ export const useDocuments = create<DocumentsState>((set) => ({
       documents: s.documents.map((d) =>
         d.cloud?.id === cloudId ? { ...d, name: path.split('/').pop() ?? path, cloud: { ...d.cloud, path, version } } : d
       )
+    })),
+
+  renameLocalPath: (oldPath, newPath) =>
+    set((s) => ({
+      documents: s.documents.map((d) => {
+        if (!d.path || !isInsidePath(oldPath, d.path)) return d
+        const path = newPath + d.path.slice(oldPath.length)
+        if (d.path !== oldPath) return { ...d, path } // dentro da pasta renomeada: o nome não muda
+        const name = path.split(/[\\/]/).pop() ?? path
+        // A linguagem segue a nova extensão, a menos que tenha sido escolhida manualmente.
+        const language = d.language === languageFromName(d.name) ? languageFromName(name) : d.language
+        return { ...d, path, name, language, mode: canPreviewLanguage(language) ? d.mode : 'edit' }
+      })
     })),
 
   setLanguage: (id, language) =>

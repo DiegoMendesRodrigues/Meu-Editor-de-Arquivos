@@ -124,6 +124,30 @@ export function createMemoryStore(): Store {
       if (hasFiles || hasSub) return 'not_empty'
       return set.delete(path) ? 'ok' : 'not_found'
     },
+    async renameFolder(userId, from, to) {
+      if (from === to) return 'ok'
+      const set = userFolders(userId)
+      const inside = (root: string, p: string): boolean => p === root || p.startsWith(`${root}/`)
+      const mine = [...files.values()].filter((f) => f.userId === userId)
+      if (!set.has(from) && ![...set].some((p) => inside(from, p)) && !mine.some((f) => inside(from, f.path))) return 'not_found'
+      const lower = (p: string): string => p.toLowerCase() // como no MySQL (comparação sem maiúsculas)
+      const clash = (p: string): boolean => inside(lower(to), lower(p)) && !inside(lower(from), lower(p))
+      if ([...set].some(clash) || mine.some((f) => clash(f.path))) return 'exists'
+      const moved = (p: string): string => to + p.slice(from.length)
+      if ([...set].some((p) => inside(from, p) && moved(p).length > 512) || mine.some((f) => inside(from, f.path) && moved(f.path).length > 512)) return 'too_long'
+      for (const f of mine) {
+        if (!f.path.startsWith(`${from}/`)) continue
+        f.path = moved(f.path)
+        f.version += 1
+        f.updatedAt = new Date()
+      }
+      for (const p of [...set]) {
+        if (!inside(from, p)) continue
+        set.delete(p)
+        set.add(moved(p))
+      }
+      return 'ok'
+    },
     async getWorkspace(userId) {
       const w = workspaces.get(userId)
       return w ? { ...w } : null

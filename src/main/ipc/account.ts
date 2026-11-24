@@ -96,7 +96,7 @@ function check<T>(schema: z.ZodType<T>, value: unknown): T {
 }
 
 /** Códigos de erro da API que têm mensagem traduzida. */
-const API_CODES = new Set(['invalid_request', 'email_in_use', 'invalid_credentials', 'too_many_attempts', 'wrong_password', 'invalid_token', 'not_found', 'too_large', 'internal', 'path_in_use', 'folder_not_empty'])
+const API_CODES = new Set(['invalid_request', 'email_in_use', 'invalid_credentials', 'too_many_attempts', 'wrong_password', 'invalid_token', 'not_found', 'too_large', 'internal', 'path_in_use', 'folder_not_empty', 'folder_in_use'])
 const passwordSchema = z.string().min(1).max(200)
 /** Caminho na nuvem: relativo, com "/", sem "..", "." nem segmentos vazios. */
 const cloudPathSchema = z
@@ -311,5 +311,10 @@ export function registerAccountHandlers(): void {
 
   handle(IpcChannels.cloudDeleteFolder, async (_e, raw: unknown) => {
     await api('DELETE', `/v1/folders?path=${encodeURIComponent(cloudPathSchema.parse(raw))}`, { auth: true })
+  })
+
+  handle(IpcChannels.cloudRenameFolder, async (_e, rawFrom: unknown, rawTo: unknown) => {
+    const body = { from: cloudPathSchema.parse(rawFrom), to: cloudPathSchema.parse(rawTo) }
+    await api('PATCH', '/v1/folders', { auth: true, body })
   })
 }
