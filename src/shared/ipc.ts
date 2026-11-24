@@ -2,6 +2,22 @@
 import type { FolderColor } from './folderColors'
 import type { Locale } from './i18n'
 import type { SearchMatch, SearchOptions } from './search'
+import type {
+  ApiCookieJarEntry,
+  ApiHistoryEntry,
+  ApiImportFormat,
+  ApiImportResponse,
+  ApiOAuthInput,
+  ApiOAuthProgress,
+  ApiOAuthResult,
+  ApiOAuthTokenInfo,
+  ApiPickPurpose,
+  ApiRunInput,
+  ApiRunProgress,
+  ApiSendInput,
+  ApiSendResult,
+  ApiWriteFilesInput
+} from './api/protocol'
 export type { SearchMatch, SearchOptions } from './search'
 
 /**
@@ -78,7 +94,24 @@ export const IpcChannels = {
   apiSecretSet: 'api:secret-set',
   apiSecretHas: 'api:secret-has',
   apiSecretNames: 'api:secret-names',
-  apiSecretDelete: 'api:secret-delete'
+  apiSecretDelete: 'api:secret-delete',
+  apiSend: 'api:send',
+  apiCancel: 'api:cancel',
+  apiHistoryList: 'api:history-list',
+  apiHistoryClear: 'api:history-clear',
+  apiCookiesList: 'api:cookies-list',
+  apiCookiesClear: 'api:cookies-clear',
+  apiPickFiles: 'api:pick-files',
+  apiImportParse: 'api:import-parse',
+  apiWriteFiles: 'api:write-files',
+  apiRunStart: 'api:run-start',
+  apiRunCancel: 'api:run-cancel',
+  apiRunProgress: 'api:run-progress',
+  apiOAuthAuthorize: 'api:oauth-authorize',
+  apiOAuthCancel: 'api:oauth-cancel',
+  apiOAuthProgress: 'api:oauth-progress',
+  apiOAuthTokenInfo: 'api:oauth-token-info',
+  apiOAuthClear: 'api:oauth-clear'
 } as const
 
 /** Cofre de segredos do Cliente de API: persistent = false quando o sistema não oferece cifra (só memória). */
@@ -427,6 +460,32 @@ export interface EditorApi {
   apiSecretHas(scope: string, name: string): Promise<boolean>
   apiSecretNames(scope: string): Promise<string[]>
   apiSecretDelete(scope: string, name: string): Promise<void>
+  /** Envia uma requisição (a rede fica no Main; variáveis e segredos são resolvidos lá). */
+  apiSend(input: ApiSendInput): Promise<ApiSendResult>
+  /** Cancela um envio (ou uma execução do executor) aberto por esta janela. */
+  apiCancel(runId: string): Promise<void>
+  apiHistoryList(): Promise<ApiHistoryEntry[]>
+  apiHistoryClear(): Promise<void>
+  /** Cookies guardados para o ambiente (id) ou "default". */
+  apiCookiesList(jar: string): Promise<ApiCookieJarEntry[]>
+  /** Apaga os cookies do ambiente; com domain, só os desse domínio; com name, só esse cookie. */
+  apiCookiesClear(jar: string, domain?: string, name?: string): Promise<void>
+  /** Diálogo nativo para escolher arquivos (corpo, certificados, dados, importar); o Main autoriza os escolhidos. */
+  apiPickFiles(purpose: ApiPickPurpose, multiple?: boolean): Promise<string[]>
+  /** Lê um arquivo para importar (Postman, OpenAPI, HAR, curl...), numa thread com tempo limite. */
+  apiImportParse(input: { text?: string; path?: string; format: ApiImportFormat }): Promise<ApiImportResponse>
+  /** Grava arquivos de coleção dentro de uma pasta autorizada (não sobrescreve: acrescenta " (2)"). Devolve os caminhos. */
+  apiWriteFiles(input: ApiWriteFilesInput): Promise<string[]>
+  /** Executa uma coleção; o andamento chega por onApiRunProgress. */
+  apiRunStart(input: ApiRunInput): Promise<void>
+  apiRunCancel(runId: string): Promise<void>
+  onApiRunProgress(listener: (progress: ApiRunProgress) => void): () => void
+  /** Obtém um token OAuth 2.0 (navegador do sistema, loopback, Device Code...) e guarda no cofre. */
+  apiOAuthAuthorize(input: ApiOAuthInput): Promise<ApiOAuthResult>
+  apiOAuthCancel(runId: string): Promise<void>
+  onApiOAuthProgress(listener: (progress: ApiOAuthProgress) => void): () => void
+  apiOAuthTokenInfo(scope: string, tokenVar: string): Promise<ApiOAuthTokenInfo>
+  apiOAuthClear(scope: string, tokenVar: string): Promise<void>
   /** O Main avisa que o usuário quer fechar a janela; o Renderer decide e chama closeWindow(). */
   onBeforeClose(listener: () => void): () => void
   closeWindow(): Promise<void>

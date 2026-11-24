@@ -151,7 +151,88 @@ Para editar, haz clic en **{{toolbar.editText}}**. En modo de edición, el botó
 
 Si el archivo tiene un error, la aplicación explica el problema e indica la línea y la columna. El botón **{{json.editGoToError}}** abre el editor justo en el punto del error.
 
-## 8. Búsqueda en archivos
+## 8. Cliente de API
+
+![Cliente de API con una solicitud enviada y la respuesta en árbol](img/s23-api-request.png)
+
+El Cliente de API sirve para probar servicios en internet (APIs): montas una solicitud, la envías y compruebas la respuesta sin salir del editor. Cada solicitud es un archivo **.apireq**, que puedes guardar, copiar y versionar como cualquier otro.
+
+### Abrir
+
+- Pulsa **Ctrl+Shift+A**, o usa **{{menu.tools}} → {{menu.tools.apiClient}}**.
+- O usa **{{menu.file}} → Nuevo archivo de solicitud de API (.apireq)**.
+
+El documento se abre en el **{{apiClient.builder}}**. Para ver y editar el archivo como texto (JSON), haz clic en **{{toolbar.editText}}**.
+
+### Montar la solicitud
+
+Elige el **{{apiClient.method}}** (GET, POST…) y escribe la dirección en **{{apiClient.url}}**. Los datos están en pestañas:
+
+- **{{apiClient.tab.params}}**: los parámetros de la query. Lo que escribes en la URL aparece aquí, y al revés.
+- **{{apiClient.tab.auth}}**: cómo identificarte ante el servicio (ver más abajo).
+- **{{apiClient.tab.headers}}**: las cabeceras de la solicitud.
+- **{{apiClient.tab.body}}**: el contenido que se envía. En **{{apiClient.body.type}}** eliges entre JSON, XML, texto, HTML, formulario, formulario con archivos, archivo binario, GraphQL, SOAP o ningún cuerpo.
+- **{{apiClient.tab.settings}}**: tiempo límite, redirecciones, proxy, certificados y **{{apiClient.settings.verifyTls}}**. Desactiva la verificación solo en entornos de prueba.
+
+En cualquier campo, usa <code>&#123;&#123;nombre&#125;&#125;</code> para insertar una variable del entorno activo.
+
+### Enviar y ver la respuesta
+
+Haz clic en **{{apiClient.send}}** o pulsa **Ctrl+Enter**. Mientras la solicitud está en curso, **Esc** cancela el envío. El botón de flecha de al lado ofrece **{{apiClient.sendDownload}}**, que guarda el cuerpo directamente en un archivo (útil para respuestas grandes o binarias).
+
+La respuesta muestra el estado, el tiempo y el tamaño, y tiene las pestañas **{{apiClient.response.tab.body}}**, **{{apiClient.response.tab.headers}}**, **{{apiClient.response.tab.cookies}}**, **{{apiClient.response.tab.tests}}** y **{{apiClient.response.tab.timings}}**. El cuerpo se puede ver como **{{apiClient.response.view.tree}}** (para abrir y cerrar partes del JSON), **{{apiClient.response.view.pretty}}** o **{{apiClient.response.view.raw}}**. Usa **{{apiClient.response.saveResponse}}** para guardar la respuesta en un archivo .apiresp, y **{{apiClient.response.openBody}}** para editarla como un documento normal.
+
+### Autorización
+
+En la pestaña **{{apiClient.tab.auth}}**, elige en **{{apiClient.auth.type}}**: API Key, Basic Auth, Bearer Token, OAuth 1.0 u OAuth 2.0. En OAuth 2.0 hay los flujos **{{apiClient.oauth.flow.authorizationCode}}**, **{{apiClient.oauth.flow.clientCredentials}}**, **{{apiClient.oauth.flow.deviceCode}}** y **{{apiClient.oauth.flow.password}}**; haz clic en **{{apiClient.oauth.getToken}}** y, si hace falta, se abre el navegador del sistema para que autorices el acceso. Con **{{apiClient.auth.inherit}}**, la solicitud usa la autorización definida en la colección.
+
+Para contraseñas y tokens, usa una variable secreta (ver "Entornos y secretos"): así el valor nunca se guarda en el archivo de la solicitud.
+
+### Pruebas y extracciones
+
+En la pestaña **{{apiClient.tab.tests}}**:
+
+- **{{apiClient.tests.assertions}}**: reglas que se comprueban en cada envío, como "el estado es igual a 200", "el cuerpo contiene un texto" o "el JSONPath existe". El resultado aparece en la pestaña **{{apiClient.response.tab.tests}}** de la respuesta.
+- **{{apiClient.tests.extractions}}**: guardan un valor de la respuesta (por ejemplo, un token) en una variable del entorno, para usarlo en las siguientes solicitudes.
+
+### Entornos y secretos
+
+![Entorno de API con una variable común y una secreta](img/s24-api-environment.png)
+
+Un entorno reúne variables, como la dirección del servidor de pruebas y la de producción. Usa **{{menu.tools}} → {{menu.tools.apiEnvironments}}** para crear uno (archivo **.apienv**) y elige el activo en el selector **{{apiClient.env.select}}**.
+
+- Marca **{{apiClient.env.secret}}** en las variables confidenciales. El valor se guarda cifrado en este equipo y **no va al archivo .apienv**.
+- Marca **{{apiClient.env.production}}** en un entorno de producción: la aplicación pide confirmación antes de enviar POST, PUT, PATCH y DELETE.
+- Las cookies recibidas se guardan separadas por entorno; consúltalas o bórralas en **{{menu.tools}} → {{menu.tools.apiCookies}}**.
+
+### Colecciones e historial
+
+Una colección es una carpeta con las solicitudes y el archivo **.apicol**, que guarda la autorización y las variables comunes. En la barra lateral, la sección **{{apiClient.col.section}}** muestra las colecciones de las carpetas abiertas; con el botón derecho puedes crear solicitudes y carpetas, **{{apiClient.col.run}}**, **{{apiClient.col.export}}**, **{{apiClient.col.document}}** (genera la documentación de la colección) y **{{apiClient.col.settings}}**.
+
+El **{{apiClient.history.section}}** (también en **{{menu.tools}} → {{menu.tools.apiHistory}}**) lista las últimas solicitudes enviadas, y puedes borrarlo cuando quieras.
+
+### Importar, exportar y generar código
+
+- **{{menu.tools}} → {{menu.tools.apiImport}}** trae solicitudes de curl, Postman, OpenAPI/Swagger, Insomnia, HAR y archivos .http. Haz clic en **{{apiClient.import.analyze}}** para ver qué se importará y elige **{{apiClient.import.asCollection}}** o **{{apiClient.import.openInTabs}}**. Pegar un comando curl en la URL también ofrece la importación.
+- **{{apiClient.col.export}}** guarda la colección como Postman, OpenAPI, HAR, .http o curl. Los valores de las variables secretas nunca se exportan.
+- El botón **{{apiClient.code}}** abre **{{apiClient.codegen.title}}** y muestra la solicitud en varios lenguajes, lista para copiar.
+
+### Ejecutar una colección
+
+En **{{apiClient.col.run}}**, elige las solicitudes, el entorno, el número de iteraciones y el retraso entre ellas. Un archivo de datos (CSV o JSON) repite la ejecución con los valores de cada fila, y **{{apiClient.runner.stopOnFailure}}** se detiene en el primer error. Haz clic en **{{apiClient.runner.start}}**: el resultado se abre como informe (**.apirun**), con totales, tiempos y las pruebas de cada solicitud. Con **{{apiClient.report.export}}** el informe se guarda en JUnit XML, HTML o Markdown.
+
+### GraphQL
+
+En **{{apiClient.body.type}}**, elige GraphQL para escribir la **{{apiClient.graphql.query}}** y las **{{apiClient.graphql.variables}}**. Con **{{apiClient.graphql.loadSchema}}**, la aplicación lee el schema del servidor, muestra la documentación de los tipos y ofrece autocompletado.
+
+### Seguridad
+
+- Todas las solicitudes salen de tu propio equipo, a través de la aplicación; nada pasa por servidores nuestros.
+- Las contraseñas, los tokens y los valores secretos se guardan en el almacén seguro del sistema operativo (cifrados). Si el sistema no tiene almacén, solo quedan en la memoria y se pierden al cerrar la aplicación.
+- Estos valores **nunca** van a los archivos (.apireq, .apienv, .apicol), ni a las exportaciones, la generación de código, los registros o la nube. El historial y las cookies también quedan solo en este equipo.
+- Solo las respuestas guardadas y los informes de una colección pueden sincronizarse con la nube, y solo si activas **{{apiClient.col.syncResponses}}**.
+
+## 9. Búsqueda en archivos
 
 ![Panel de búsqueda con los resultados agrupados por archivo](img/s06-search.png)
 
@@ -166,7 +247,7 @@ Para sustituir el texto, escribe el nuevo en el campo de reemplazo y haz clic en
 
 La búsqueda no entra en carpetas como `node_modules` y `.git`, ni en archivos binarios o de más de 5 MB. Muestra como máximo 5.000 coincidencias cada vez.
 
-## 9. Lenguaje, codificación y fines de línea
+## 10. Lenguaje, codificación y fines de línea
 
 ![Menú Codificación](img/s09-menu-encoding.png)
 
@@ -181,7 +262,7 @@ La búsqueda no entra en carpetas como `node_modules` y `.git`, ni en archivos b
 
 La codificación y el fin de línea actuales aparecen en la barra de estado.
 
-## 10. Snippets y macros
+## 11. Snippets y macros
 
 ![Ventana de snippets](img/s12-snippets.png)
 
@@ -191,7 +272,7 @@ Los **snippets** son fragmentos de texto ya preparados. Abre **{{menu.tools}} �
 
 Las **macros** repiten una secuencia que hiciste. Pulsa **Ctrl+Shift+R** para empezar a grabar, escribe o edita lo que quieras y pulsa **Ctrl+Shift+R** otra vez para detener. Después, **Ctrl+Shift+M** ejecuta la última grabación. En **{{menu.tools.macros}}** eliges cuántas veces repetirla y puedes guardar la macro con un nombre. Se graba el texto escrito, el texto pegado, las teclas de flecha, Inicio, Fin, Retroceso, Supr, Tab, Intro y los comandos de los menús. No se graban los clics del ratón ni Ctrl+Z.
 
-## 11. Cuenta y archivos en la nube
+## 12. Cuenta y archivos en la nube
 
 ![Primer acceso: dirección del servidor](img/s16a-account-server.png)
 
@@ -219,13 +300,13 @@ Con la cuenta conectada, la barra de estado muestra, a la izquierda del icono de
 
 Si el mismo documento se modifica en dos equipos antes de sincronizar, cada equipo conserva su texto, y la versión del otro se abre en una pestaña nueva con "(conflicto – otro equipo)" en el nombre, para que nada se pierda.
 
-## 12. Idiomas
+## 13. Idiomas
 
 ![Banderas de los idiomas junto al botón de vista previa](img/s08-flags.png)
 
 La aplicación está disponible en **alemán, español, francés, inglés, portugués (Brasil) y portugués (Portugal)**. Se abre en el idioma de tu sistema; si no hay traducción, se abre en inglés. Para cambiar, haz clic en la bandera del idioma, a la izquierda del botón de vista previa. El cambio es inmediato y se guarda para la próxima vez. Este manual se abre en el idioma que estés usando.
 
-## 13. Atajos de teclado
+## 14. Atajos de teclado
 
 ![Ventana de atajos de teclado](img/s14-shortcuts.png)
 
@@ -233,7 +314,7 @@ Para ver la lista dentro de la aplicación, abre **{{menu.help}} → {{menu.help
 
 {{shortcuts}}
 
-## 14. Preguntas frecuentes
+## 15. Preguntas frecuentes
 
 **Cerré la aplicación sin guardar. ¿He perdido mi texto?**
 No. El texto sin guardar se conserva automáticamente y vuelve cuando abres la aplicación de nuevo.
@@ -253,7 +334,7 @@ Comprueba la dirección del servidor y la conexión a internet. Si el mensaje di
 **¿Cómo veo la versión de la aplicación?**
 En **{{menu.help}} → {{menu.help.about}}**.
 
-## 15. Acerca de y soporte
+## 16. Acerca de y soporte
 
 ![Ventana Acerca de](img/s15-about.png)
 

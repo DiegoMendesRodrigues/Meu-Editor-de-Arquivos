@@ -17,7 +17,8 @@ export const NEW_TYPES: NewType[] = [
   { ext: 'txt', name: 'text', nameKey: 'newType.txt', inMenu: true },
   { ext: 'log', name: 'log', nameKey: 'newType.log' },
   { ext: 'tex', name: 'LaTeX' },
-  { ext: 'apireq', name: 'API', nameKey: 'newType.apireq', inMenu: true }
+  { ext: 'apireq', name: 'API', nameKey: 'newType.apireq', inMenu: true },
+  { ext: 'apienv', name: 'API environment', nameKey: 'newType.apienv', inMenu: true }
 ]
 
 export const NEW_TYPE_GROUPS: { titleKey: MessageKey; types: NewType[] }[] = [

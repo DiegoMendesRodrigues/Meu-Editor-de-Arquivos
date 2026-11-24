@@ -2,10 +2,11 @@
 import { create } from 'zustand'
 import type { CloudFileContent, Encoding, Eol, OpenedFile, SavedFile } from '@shared/ipc'
 import { untitledNumber } from '@shared/i18n'
-import { languageFromName } from '@/editor/languages'
+import { isApiLanguage, languageFromName } from '@/editor/languages'
 import { t } from '@/i18n'
 import { applyEol } from '@shared/eol'
 import { newApiRequest, serializeApiRequest } from '@shared/api/schema'
+import { newCollection, newEnvironment, serializeCollection, serializeEnvironment } from '@/api/environment'
 
 export interface EditorDocument {
   id: string
@@ -55,6 +56,10 @@ interface DocumentsState {
 
   /** Cria um documento sem título; a extensão define a linguagem (padrão: Markdown). */
   newDocument(extension?: string): void
+  /** Abre um documento novo (sem caminho) com o nome e o conteúdo dados, como o relatório do executor; devolve o id. */
+  newDocumentWithContent(name: string, content: string): string
+  /** Abre um documento novo, sem caminho, com o texto pronto (ex.: resposta de API para salvar como .apiresp). */
+  newDocumentFrom(name: string, content: string): void
   addOpenedFiles(files: OpenedFile[]): void
   setActive(id: string): void
   updateContent(id: string, content: string): void
@@ -113,9 +118,17 @@ export const useDocuments = create<DocumentsState>((set) => ({
       const n = s.untitledCounter + 1
       const name = `${t('doc.untitled', { n })}.${extension}`
       const language = languageFromName(name)
-      // A requisição de API nasce pronta (GET sem URL) e abre no construtor; os demais tipos, vazios e em texto.
-      const isApi = language === 'apireq'
-      const content = isApi ? applyEol(serializeApiRequest(newApiRequest()), defaultEol) : ''
+      // Requisição, ambiente e coleção de API nascem prontos e abrem no construtor; os demais tipos, vazios e em texto.
+      const apiText =
+        language === 'apireq'
+          ? serializeApiRequest(newApiRequest())
+          : language === 'apienv'
+            ? serializeEnvironment(newEnvironment(t('apiClient.env.newName')))
+            : language === 'apicol'
+              ? serializeCollection(newCollection(t('apiClient.col.newName')))
+              : null
+      const isApi = apiText !== null
+      const content = isApi ? applyEol(apiText, defaultEol) : ''
       const doc: EditorDocument = {
         id: nextId(),
         path: null,
@@ -130,6 +143,45 @@ export const useDocuments = create<DocumentsState>((set) => ({
       }
       return { documents: [...s.documents, doc], activeId: doc.id, untitledCounter: n }
     }),
+
+  newDocumentFrom: (name, content) =>
+    set((s) => {
+      const language = languageFromName(name)
+      const doc: EditorDocument = {
+        id: nextId(),
+        path: null,
+        name,
+        content,
+        savedContent: '',
+        language,
+        encoding: 'UTF-8',
+        eol: defaultEol,
+        mode: canPreviewLanguage(language) ? 'preview' : 'edit',
+        syncId: newSyncId()
+      }
+      return { documents: [...s.documents, doc], activeId: doc.id }
+    }),
+
+  newDocumentWithContent: (name, content) => {
+    const id = nextId()
+    set((s) => {
+      const language = languageFromName(name)
+      const doc: EditorDocument = {
+        id,
+        path: null,
+        name,
+        content,
+        savedContent: '',
+        language,
+        encoding: 'UTF-8',
+        eol: defaultEol,
+        mode: canPreviewLanguage(language) ? 'preview' : 'edit',
+        syncId: newSyncId()
+      }
+      return { documents: [...s.documents, doc], activeId: id }
+    })
+    return id
+  },
 
   addOpenedFiles: (files) =>
     set((s) => {
@@ -295,7 +347,7 @@ export const useDocuments = create<DocumentsState>((set) => ({
 }))
 
 /** Linguagens com visualização própria: Markdown formatado, JSON em árvore e o construtor de requisições de API. */
-export const canPreviewLanguage = (language: string): boolean => language === 'markdown' || language === 'json' || language === 'apireq'
+export const canPreviewLanguage = (language: string): boolean => language === 'markdown' || language === 'json' || isApiLanguage(language)
 export const canPreview = (d: EditorDocument | undefined): boolean => !!d && canPreviewLanguage(d.language)
 
 export const useActiveDocument = (): EditorDocument | undefined =>

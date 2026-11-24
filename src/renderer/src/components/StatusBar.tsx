@@ -3,7 +3,8 @@ import { useEffect, useMemo } from 'react'
 import { Cloud, HardDrive } from 'lucide-react'
 import { useAccount } from '@/store/account'
 import { formatStorage, useCloud, useStorageMode } from '@/store/cloud'
-import { languageLabel } from '@/editor/languages'
+import { isApiLanguage, languageLabel } from '@/editor/languages'
+import { useApiStore } from '@/store/api'
 import { useT } from '@/i18n'
 import { useActiveDocument, useDocuments } from '@/store/documents'
 import { useLibrary } from '@/store/library'
@@ -26,6 +27,8 @@ export function StatusBar() {
   const user = useAccount((s) => s.status.user)
   const size = useMemo(() => (content === undefined ? 0 : encoder.encode(content).length), [content])
   const storageBytes = useCloud((s) => s.storageBytes)
+  const apiEnv = useApiStore((s) => s.envInfo)
+  const apiEnvKey = useApiStore((s) => s.activeEnvironment)
 
   // Ao entrar (ou trocar de conta), busca o espaço usado na nuvem; ao sair, ele some do rodapé.
   useEffect(() => {
@@ -48,6 +51,15 @@ export function StatusBar() {
           {notice && (
             <span role="status" className="font-medium text-emerald-700">
               {notice}
+            </span>
+          )}
+          {isApiLanguage(doc.language) && (
+            <span
+              data-testid="status-api-env"
+              title={t('apiClient.env.select')}
+              className={apiEnv?.production && apiEnv.key === apiEnvKey ? 'rounded bg-red-600 px-1.5 font-semibold text-white' : ''}
+            >
+              {apiEnv && apiEnv.key === apiEnvKey ? t('apiClient.env.status', { name: apiEnv.name }) : t('apiClient.env.statusNone')}
             </span>
           )}
           <span className="ml-auto">{formatSize(size)}</span>

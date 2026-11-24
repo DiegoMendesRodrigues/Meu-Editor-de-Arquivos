@@ -80,7 +80,11 @@ export function shortcutGroups(t: Translate): ShortcutGroup[] {
     },
     {
       title: t('menu.tools.apiClient'),
-      items: [{ keys: 'Ctrl+Shift+A', action: t('sc.apiClient') }]
+      items: [
+        { keys: 'Ctrl+Shift+A', action: t('sc.apiClient') },
+        { keys: 'Ctrl+Enter', action: t('sc.apiSend') },
+        { keys: 'Esc', action: t('sc.apiCancel') }
+      ]
     }
   ]
 }

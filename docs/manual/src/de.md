@@ -151,7 +151,88 @@ Zum Bearbeiten klicken Sie auf **{{toolbar.editText}}**. Im Bearbeitungsmodus or
 
 Enthält die Datei einen Fehler, erklärt die Anwendung das Problem und nennt Zeile und Spalte. Die Schaltfläche **{{json.editGoToError}}** öffnet den Editor direkt an der Fehlerstelle.
 
-## 8. In Dateien suchen
+## 8. API-Client
+
+![API-Client mit gesendeter Anfrage und der Antwort als Baum](img/s23-api-request.png)
+
+Mit dem API-Client testen Sie Webdienste (APIs): Sie stellen eine Anfrage zusammen, senden sie und prüfen die Antwort, ohne den Editor zu verlassen. Jede Anfrage ist eine **.apireq**-Datei, die Sie wie jede andere Datei speichern, kopieren und versionieren können.
+
+### Öffnen
+
+- Drücken Sie **Ctrl+Shift+A** oder wählen Sie **{{menu.tools}} → {{menu.tools.apiClient}}**.
+- Oder wählen Sie **{{menu.file}} → Neu: API-Anfrage (.apireq)**.
+
+Das Dokument öffnet sich im **{{apiClient.builder}}**. Um die Datei als Text (JSON) anzusehen und zu bearbeiten, klicken Sie auf **{{toolbar.editText}}**.
+
+### Die Anfrage zusammenstellen
+
+Wählen Sie die **{{apiClient.method}}** (GET, POST …) und geben Sie die Adresse bei **{{apiClient.url}}** ein. Die Angaben verteilen sich auf Registerkarten:
+
+- **{{apiClient.tab.params}}**: die Query-Parameter. Was Sie in die URL schreiben, erscheint hier, und umgekehrt.
+- **{{apiClient.tab.auth}}**: wie Sie sich beim Dienst ausweisen (siehe unten).
+- **{{apiClient.tab.headers}}**: die Header der Anfrage.
+- **{{apiClient.tab.body}}**: der gesendete Inhalt. Unter **{{apiClient.body.type}}** wählen Sie JSON, XML, Text, HTML, Formular, Formular mit Dateien, Binärdatei, GraphQL, SOAP oder keinen Body.
+- **{{apiClient.tab.settings}}**: Zeitlimit, Weiterleitungen, Proxy, Zertifikate und **{{apiClient.settings.verifyTls}}**. Schalten Sie die Prüfung nur in Testumgebungen aus.
+
+In jedem Feld fügen Sie mit <code>&#123;&#123;name&#125;&#125;</code> eine Variable der aktiven Umgebung ein.
+
+### Senden und die Antwort ansehen
+
+Klicken Sie auf **{{apiClient.send}}** oder drücken Sie **Ctrl+Enter**. Solange die Anfrage läuft, bricht **Esc** das Senden ab. Die Pfeilschaltfläche daneben bietet **{{apiClient.sendDownload}}**, die den Body direkt in eine Datei schreibt (praktisch bei großen oder binären Antworten).
+
+Die Antwort zeigt Status, Dauer und Größe und hat die Registerkarten **{{apiClient.response.tab.body}}**, **{{apiClient.response.tab.headers}}**, **{{apiClient.response.tab.cookies}}**, **{{apiClient.response.tab.tests}}** und **{{apiClient.response.tab.timings}}**. Der Body lässt sich als **{{apiClient.response.view.tree}}** (zum Auf- und Zuklappen der JSON-Teile), **{{apiClient.response.view.pretty}}** oder **{{apiClient.response.view.raw}}** anzeigen. Mit **{{apiClient.response.saveResponse}}** behalten Sie die Antwort in einer .apiresp-Datei, mit **{{apiClient.response.openBody}}** bearbeiten Sie sie wie ein gewöhnliches Dokument.
+
+### Autorisierung
+
+Wählen Sie auf der Registerkarte **{{apiClient.tab.auth}}** unter **{{apiClient.auth.type}}**: API Key, Basic Auth, Bearer Token, OAuth 1.0 oder OAuth 2.0. Bei OAuth 2.0 gibt es die Abläufe **{{apiClient.oauth.flow.authorizationCode}}**, **{{apiClient.oauth.flow.clientCredentials}}**, **{{apiClient.oauth.flow.deviceCode}}** und **{{apiClient.oauth.flow.password}}**; klicken Sie auf **{{apiClient.oauth.getToken}}**, und bei Bedarf öffnet sich der Systembrowser, damit Sie den Zugriff erlauben. Mit **{{apiClient.auth.inherit}}** verwendet die Anfrage die in der Sammlung festgelegte Autorisierung.
+
+Verwenden Sie für Passwörter und Tokens eine geheime Variable (siehe „Umgebungen und Geheimnisse"): So wird der Wert nie in die Anfragedatei geschrieben.
+
+### Tests und Extraktionen
+
+Auf der Registerkarte **{{apiClient.tab.tests}}**:
+
+- **{{apiClient.tests.assertions}}**: Regeln, die bei jedem Senden geprüft werden, etwa „Status ist gleich 200", „der Body enthält einen Text" oder „der JSONPath existiert". Das Ergebnis erscheint auf der Registerkarte **{{apiClient.response.tab.tests}}** der Antwort.
+- **{{apiClient.tests.extractions}}**: speichern einen Wert aus der Antwort (zum Beispiel ein Token) in einer Variable der Umgebung, damit Sie ihn in den nächsten Anfragen verwenden können.
+
+### Umgebungen und Geheimnisse
+
+![API-Umgebung mit einer normalen und einer geheimen Variable](img/s24-api-environment.png)
+
+Eine Umgebung fasst Variablen zusammen, etwa die Adresse des Testservers und die der Produktion. Mit **{{menu.tools}} → {{menu.tools.apiEnvironments}}** legen Sie eine an (**.apienv**-Datei) und wählen die aktive im Auswahlfeld **{{apiClient.env.select}}**.
+
+- Aktivieren Sie **{{apiClient.env.secret}}** bei vertraulichen Variablen. Der Wert wird auf diesem Computer verschlüsselt gespeichert und **gelangt nicht in die .apienv-Datei**.
+- Aktivieren Sie **{{apiClient.env.production}}** bei einer Produktionsumgebung: Die App fragt nach, bevor sie POST, PUT, PATCH und DELETE sendet.
+- Empfangene Cookies werden je Umgebung getrennt gehalten; Sie sehen oder löschen sie unter **{{menu.tools}} → {{menu.tools.apiCookies}}**.
+
+### Sammlungen und Verlauf
+
+Eine Sammlung ist ein Ordner mit den Anfragen und der **.apicol**-Datei, die die gemeinsame Autorisierung und die gemeinsamen Variablen enthält. In der Seitenleiste zeigt der Abschnitt **{{apiClient.col.section}}** die Sammlungen Ihrer geöffneten Ordner; mit der rechten Maustaste legen Sie Anfragen und Ordner an und wählen **{{apiClient.col.run}}**, **{{apiClient.col.export}}**, **{{apiClient.col.document}}** (erzeugt die Dokumentation der Sammlung) und **{{apiClient.col.settings}}**.
+
+Der **{{apiClient.history.section}}** (auch unter **{{menu.tools}} → {{menu.tools.apiHistory}}**) listet die zuletzt gesendeten Anfragen auf, und Sie können ihn jederzeit leeren.
+
+### Importieren, exportieren und Code erzeugen
+
+- **{{menu.tools}} → {{menu.tools.apiImport}}** übernimmt Anfragen aus curl, Postman, OpenAPI/Swagger, Insomnia, HAR und .http-Dateien. Klicken Sie auf **{{apiClient.import.analyze}}**, um zu sehen, was importiert wird, und wählen Sie **{{apiClient.import.asCollection}}** oder **{{apiClient.import.openInTabs}}**. Auch das Einfügen eines curl-Befehls in die URL bietet den Import an.
+- **{{apiClient.col.export}}** speichert die Sammlung als Postman, OpenAPI, HAR, .http oder curl. Werte geheimer Variablen werden nie exportiert.
+- Die Schaltfläche **{{apiClient.code}}** öffnet **{{apiClient.codegen.title}}** und zeigt die Anfrage in mehreren Sprachen, bereit zum Kopieren.
+
+### Eine Sammlung ausführen
+
+Wählen Sie bei **{{apiClient.col.run}}** die Anfragen, die Umgebung, die Anzahl der Durchläufe und die Pause dazwischen. Eine Datendatei (CSV oder JSON) wiederholt die Ausführung mit den Werten jeder Zeile, und **{{apiClient.runner.stopOnFailure}}** hält beim ersten Fehler an. Klicken Sie auf **{{apiClient.runner.start}}**: Das Ergebnis öffnet sich als Bericht (**.apirun**) mit Summen, Zeiten und den Tests jeder Anfrage. Mit **{{apiClient.report.export}}** speichern Sie den Bericht als JUnit XML, HTML oder Markdown.
+
+### GraphQL
+
+Wählen Sie unter **{{apiClient.body.type}}** GraphQL, um die **{{apiClient.graphql.query}}** und die **{{apiClient.graphql.variables}}** zu schreiben. Mit **{{apiClient.graphql.loadSchema}}** liest die App das Schema des Servers, zeigt die Dokumentation der Typen und bietet die Autovervollständigung an.
+
+### Sicherheit
+
+- Alle Anfragen gehen von Ihrem eigenen Computer aus, über die App; nichts läuft über unsere Server.
+- Passwörter, Tokens und geheime Werte liegen im Tresor des Betriebssystems (verschlüsselt). Hat das System keinen Tresor, bleiben sie nur im Arbeitsspeicher und gehen beim Schließen der App verloren.
+- Diese Werte gelangen **nie** in Dateien (.apireq, .apienv, .apicol), Exporte, erzeugten Code, Protokolle oder die Cloud. Auch Verlauf und Cookies bleiben nur auf diesem Computer.
+- Nur gespeicherte Antworten und Berichte einer Sammlung können mit der Cloud synchronisiert werden, und nur wenn Sie **{{apiClient.col.syncResponses}}** einschalten.
+
+## 9. In Dateien suchen
 
 ![Suchbereich mit nach Dateien gruppierten Ergebnissen](img/s06-search.png)
 
@@ -166,7 +247,7 @@ Zum Ersetzen geben Sie den neuen Text im Ersetzungsfeld ein und klicken auf **{{
 
 Die Suche durchsucht keine Ordner wie `node_modules` und `.git` und auch keine Binärdateien oder Dateien über 5 MB. Sie zeigt höchstens 5.000 Treffer auf einmal.
 
-## 9. Sprache, Kodierung und Zeilenenden
+## 10. Sprache, Kodierung und Zeilenenden
 
 ![Menü Kodierung](img/s09-menu-encoding.png)
 
@@ -181,7 +262,7 @@ Die Suche durchsucht keine Ordner wie `node_modules` und `.git` und auch keine B
 
 Kodierung und Zeilenenden werden in der Statusleiste angezeigt.
 
-## 10. Snippets und Makros
+## 11. Snippets und Makros
 
 ![Fenster „Snippets“](img/s12-snippets.png)
 
@@ -191,7 +272,7 @@ Kodierung und Zeilenenden werden in der Statusleiste angezeigt.
 
 **Makros** wiederholen eine Abfolge, die Sie ausgeführt haben. Mit **Ctrl+Shift+R** starten Sie die Aufzeichnung, schreiben oder bearbeiten, was Sie möchten, und beenden sie mit **Ctrl+Shift+R**. Danach führt **Ctrl+Shift+M** die letzte Aufzeichnung aus. Unter **{{menu.tools.macros}}** legen Sie fest, wie oft sie wiederholt wird, und können das Makro unter einem Namen speichern. Aufgezeichnet werden eingegebener Text, eingefügter Text, die Pfeiltasten, Pos1, Ende, Rücktaste, Entf, Tab, die Eingabetaste und Menübefehle. Mausklicks und Ctrl+Z werden nicht aufgezeichnet.
 
-## 11. Konto und Cloud-Dateien
+## 12. Konto und Cloud-Dateien
 
 ![Erster Zugriff: Serveradresse](img/s16a-account-server.png)
 
@@ -219,13 +300,13 @@ Solange Sie angemeldet sind, zeigt die Statusleiste links neben dem Cloud-Symbol
 
 Wird dasselbe Dokument vor der Synchronisierung an zwei Computern geändert, behält jeder Computer seinen Text, und die andere Version öffnet sich in einem neuen Tab mit „(Konflikt – anderer Computer)“ im Namen, damit nichts verloren geht.
 
-## 12. Sprachen
+## 13. Sprachen
 
 ![Sprachflaggen neben der Schaltfläche für die Vorschau](img/s08-flags.png)
 
 Die Anwendung gibt es auf **Deutsch, Spanisch, Französisch, Englisch, Portugiesisch (Brasilien) und Portugiesisch (Portugal)**. Sie startet in der Sprache Ihres Systems; gibt es dafür keine Übersetzung, startet sie auf Englisch. Zum Wechseln klicken Sie auf die Flagge der gewünschten Sprache links neben der Schaltfläche für die Vorschau. Der Wechsel wirkt sofort und wird für das nächste Mal gespeichert. Dieses Handbuch öffnet sich in der gerade verwendeten Sprache.
 
-## 13. Tastenkürzel
+## 14. Tastenkürzel
 
 ![Fenster „Tastenkürzel“](img/s14-shortcuts.png)
 
@@ -233,7 +314,7 @@ Die Liste sehen Sie auch in der Anwendung unter **{{menu.help}} → {{menu.help.
 
 {{shortcuts}}
 
-## 14. Häufige Fragen
+## 15. Häufige Fragen
 
 **Ich habe die Anwendung ohne Speichern geschlossen. Ist mein Text weg?**
 Nein. Nicht gespeicherter Text wird automatisch gesichert und kommt zurück, wenn Sie die Anwendung wieder öffnen.
@@ -253,7 +334,7 @@ Prüfen Sie die Serveradresse und Ihre Internetverbindung. Wenn die Meldung besa
 **Wie sehe ich die Version der Anwendung?**
 Unter **{{menu.help}} → {{menu.help.about}}**.
 
-## 15. Über das Programm und Support
+## 16. Über das Programm und Support
 
 ![Fenster „Über“](img/s15-about.png)
 

@@ -341,10 +341,10 @@ test.describe('manual do usuário', () => {
 
       await expect(manual.locator('html')).toHaveAttribute('lang', locale)
       expect(await manual.title()).toContain(translate(locale, 'menu.help.manual').replace('...', ''))
-      await expect(manual.locator('main h2')).toHaveCount(15)
+      await expect(manual.locator('main h2')).toHaveCount(16)
       // todas as telas do manual carregam (e estão no idioma do manual: cada idioma tem a sua pasta de imagens)
       const images = await manual.evaluate(() => [...document.images].map((i) => ({ src: i.getAttribute('src'), ok: i.complete && i.naturalWidth > 0 })))
-      expect(images.length).toBe(24)
+      expect(images.length).toBe(26)
       expect(images.filter((i) => !i.ok), `imagens quebradas em ${locale}`).toEqual([])
       // os rótulos do aplicativo citados no texto são os desta tela
       await expect(manual.locator('.ui').first()).toHaveText(translate(locale, 'menu.file'))
@@ -705,7 +705,7 @@ test.describe('Cliente de API (fase 0)', () => {
     await page.getByRole('button', { name: 'Editar texto' }).click()
     await expect(page.locator('.view-lines')).toContainText('"method": "POST"')
     await page.getByRole('button', { name: 'Construtor' }).click()
-    await expect(page.getByLabel('URL da requisição')).toHaveValue('{{baseUrl}}/produtos')
+    await expect(page.getByLabel('URL da requisição')).toHaveValue('{{baseUrl}}/produtos?pagina=2')
 
     await stubSaveDialog(app, workspace.file('Criar produto.apireq'))
     await page.keyboard.press('Control+S')
@@ -714,7 +714,7 @@ test.describe('Cliente de API (fase 0)', () => {
     expect(saved).toMatchObject({
       $schema: 'meu-editor/api-request@1',
       method: 'POST',
-      url: '{{baseUrl}}/produtos',
+      url: '{{baseUrl}}/produtos?pagina=2',
       params: [{ key: 'pagina', value: '2', enabled: true }],
       settings: { verifyTls: false }
     })

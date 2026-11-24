@@ -1,11 +1,15 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useEffect, useState } from 'react'
-import { ShieldAlert } from 'lucide-react'
-import type { Auth, Body, RequestSettings } from '@shared/api/schema'
+import { FileUp, Plus, ShieldAlert, Trash2, X } from 'lucide-react'
+import { authSchema, type Auth, type Body, type RequestSettings } from '@shared/api/schema'
 import { API_LIMITS } from '@shared/api/limits'
 import type { MessageKey } from '@shared/i18n'
 import { useT } from '@/i18n'
+import type { EditorDocument } from '@/store/documents'
+import { BodyMonaco } from './BodyMonaco'
+import { GraphqlEditor } from './GraphqlEditor'
 import { KeyValueTable } from './KeyValueTable'
+import { OAuth1Editor, OAuth2Editor } from './OAuthEditors'
 
 const fieldClass = 'w-full rounded border border-border bg-surface px-2 py-1 font-mono text-[12.5px] outline-none focus:border-accent'
 const selectClass = 'rounded border border-border bg-surface px-2 py-1 text-[12.5px] outline-none focus:border-accent'
@@ -25,13 +29,14 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 /* ------------------------------------------------------------------ autorização */
 
-/** Tipos editáveis nesta fase; OAuth 1.0 e 2.0 chegam na fase 3 (o arquivo já os aceita). */
 const AUTH_TYPES: { type: Auth['type']; label: MessageKey | string }[] = [
   { type: 'inherit', label: 'apiClient.auth.inherit' },
   { type: 'none', label: 'apiClient.auth.none' },
   { type: 'apiKey', label: 'API Key' },
   { type: 'basic', label: 'Basic Auth' },
-  { type: 'bearer', label: 'Bearer Token' }
+  { type: 'bearer', label: 'Bearer Token' },
+  { type: 'oauth1', label: 'OAuth 1.0' },
+  { type: 'oauth2', label: 'OAuth 2.0' }
 ]
 
 const defaultAuth = (type: Auth['type']): Auth => {
@@ -44,15 +49,17 @@ const defaultAuth = (type: Auth['type']): Auth => {
       return { type, token: '{{token}}', prefix: 'Bearer' }
     case 'none':
       return { type }
+    case 'oauth1':
+    case 'oauth2':
+      return authSchema.parse({ type })
     default:
       return { type: 'inherit' }
   }
 }
 
-export function AuthEditor({ auth, onChange }: { auth: Auth; onChange: (auth: Auth) => void }) {
+export function AuthEditor({ auth, onChange, docId }: { auth: Auth; onChange: (auth: Auth) => void; docId: string }) {
   const t = useT()
   const label = (l: string): string => (l.startsWith('apiClient.') ? t(l as MessageKey) : l)
-  const known = AUTH_TYPES.some((a) => a.type === auth.type)
   const value = (v: string): string => v.slice(0, API_LIMITS.valueChars)
 
   return (
@@ -64,12 +71,10 @@ export function AuthEditor({ auth, onChange }: { auth: Auth; onChange: (auth: Au
               {label(a.label)}
             </option>
           ))}
-          {!known && <option value={auth.type}>{auth.type === 'oauth1' ? 'OAuth 1.0' : 'OAuth 2.0'}</option>}
         </select>
       </Row>
 
       {auth.type === 'inherit' && <p className="col-start-2 text-[12.5px] text-zinc-500">{t('apiClient.auth.inheritHint')}</p>}
-      {!known && <p className="col-start-2 text-[12.5px] text-zinc-500">{t('apiClient.soon')}</p>}
 
       {auth.type === 'apiKey' && (
         <>
@@ -108,6 +113,17 @@ export function AuthEditor({ auth, onChange }: { auth: Auth; onChange: (auth: Au
             <input value={auth.prefix} onChange={(e) => onChange({ ...auth, prefix: e.target.value.slice(0, 50) })} spellCheck={false} className={`${fieldClass} max-w-40`} />
           </Row>
         </>
+      )}
+
+      {auth.type === 'oauth1' && (
+        <div className="col-span-2">
+          <OAuth1Editor auth={auth} onChange={onChange} />
+        </div>
+      )}
+      {auth.type === 'oauth2' && (
+        <div className="col-span-2">
+          <OAuth2Editor auth={auth} onChange={onChange} docId={docId} />
+        </div>
       )}
 
       {(auth.type === 'apiKey' || auth.type === 'basic' || auth.type === 'bearer') && (
@@ -159,7 +175,101 @@ function bodyFor(choice: BodyChoice, current: Body): Body {
   }
 }
 
-export function BodyEditor({ body, onChange }: { body: Body; onChange: (body: Body) => void }) {
+/** Escolhe um arquivo pelo diálogo nativo (o Main autoriza o caminho escolhido). */
+const pickFile = async (purpose: Parameters<typeof window.api.apiPickFiles>[0]): Promise<string | null> => (await window.api.apiPickFiles(purpose, false))[0] ?? null
+const baseName = (p: string): string => p.split(/[\\/]/).pop() ?? p
+
+function FileRow({ path, onPick, onClear, label }: { path: string; onPick: () => void; onClear?: () => void; label: string }) {
+  const t = useT()
+  return (
+    <span className="flex min-w-0 items-center gap-1">
+      <button type="button" onClick={onPick} aria-label={label} className="flex shrink-0 items-center gap-1 rounded border border-border px-2 py-0.5 text-[12.5px] hover:bg-zinc-100">
+        <FileUp size={13} /> {t('apiClient.file.choose')}
+      </button>
+      <span className="min-w-0 truncate font-mono text-[12px] text-zinc-600" title={path}>
+        {path ? baseName(path) : t('apiClient.file.none')}
+      </span>
+      {path && onClear && (
+        <button type="button" onClick={onClear} aria-label={t('apiClient.file.clear')} className="rounded p-0.5 text-zinc-400 hover:bg-zinc-200">
+          <X size={12} />
+        </button>
+      )}
+    </span>
+  )
+}
+
+type Part = Extract<Body, { type: 'multipart' }>['parts'][number]
+
+function MultipartEditor({ parts, onChange }: { parts: Part[]; onChange: (parts: Part[]) => void }) {
+  const t = useT()
+  const set = (i: number, part: Part): void => onChange(parts.map((p, j) => (j === i ? part : p)))
+  const cell = 'w-full min-w-0 bg-transparent px-2 py-1 font-mono text-[12px] outline-none focus:bg-blue-50'
+  return (
+    <div>
+      {parts.length > 0 && (
+        <table aria-label={t('apiClient.body.multipart')} className="w-full table-fixed border-collapse">
+          <thead>
+            <tr className="text-left text-[11px] uppercase tracking-wide text-zinc-500">
+              <th className="w-8 border-b border-border py-1" />
+              <th className="border-b border-l border-border px-2 py-1 font-semibold">{t('apiClient.kv.key')}</th>
+              <th className="w-24 border-b border-l border-border px-2 py-1 font-semibold">{t('apiClient.multipart.kind')}</th>
+              <th className="border-b border-l border-border px-2 py-1 font-semibold">{t('apiClient.kv.value')}</th>
+              <th className="w-8 border-b border-border" />
+            </tr>
+          </thead>
+          <tbody>
+            {parts.map((p, i) => {
+              const n = i + 1
+              return (
+                <tr key={i} className={p.enabled ? '' : 'text-zinc-400'}>
+                  <td className="border-b border-border text-center">
+                    <input type="checkbox" checked={p.enabled} onChange={(e) => set(i, { ...p, enabled: e.target.checked })} aria-label={t('apiClient.kv.enable', { n })} className="size-3.5 accent-accent align-middle" />
+                  </td>
+                  <td className="border-b border-l border-border p-0">
+                    <input value={p.key} maxLength={API_LIMITS.keyChars} aria-label={`${t('apiClient.kv.key')} ${n}`} spellCheck={false} onChange={(e) => set(i, { ...p, key: e.target.value })} className={cell} />
+                  </td>
+                  <td className="border-b border-l border-border p-0">
+                    <select
+                      value={p.kind}
+                      aria-label={`${t('apiClient.multipart.kind')} ${n}`}
+                      onChange={(e) => set(i, e.target.value === 'file' ? { kind: 'file', key: p.key, path: '', enabled: p.enabled } : { kind: 'text', key: p.key, value: '', enabled: p.enabled })}
+                      className="w-full bg-transparent px-1 py-1 text-[12px] outline-none"
+                    >
+                      <option value="text">{t('apiClient.multipart.text')}</option>
+                      <option value="file">{t('apiClient.multipart.file')}</option>
+                    </select>
+                  </td>
+                  <td className="border-b border-l border-border px-1 py-0.5">
+                    {p.kind === 'text' ? (
+                      <input value={p.value} maxLength={API_LIMITS.valueChars} aria-label={`${t('apiClient.kv.value')} ${n}`} spellCheck={false} onChange={(e) => set(i, { ...p, value: e.target.value })} className={cell} />
+                    ) : (
+                      <FileRow path={p.path} label={`${t('apiClient.file.choose')} ${n}`} onPick={() => void pickFile('body').then((path) => path && set(i, { ...p, path }))} />
+                    )}
+                  </td>
+                  <td className="border-b border-border text-center">
+                    <button type="button" onClick={() => onChange(parts.filter((_, j) => j !== i))} title={t('apiClient.kv.remove', { n })} aria-label={t('apiClient.kv.remove', { n })} className="rounded p-0.5 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700">
+                      <Trash2 size={13} />
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      )}
+      <button
+        type="button"
+        disabled={parts.length >= API_LIMITS.keyValueRows}
+        onClick={() => onChange([...parts, { kind: 'text', key: '', value: '', enabled: true }])}
+        className="mt-2 flex items-center gap-1 rounded border border-border px-2 py-1 text-[12.5px] hover:bg-zinc-100 disabled:opacity-50"
+      >
+        <Plus size={13} /> {t('apiClient.multipart.add')}
+      </button>
+    </div>
+  )
+}
+
+export function BodyEditor({ body, onChange, doc }: { body: Body; onChange: (body: Body) => void; doc: EditorDocument }) {
   const t = useT()
   const label = (l: string): string => (l.startsWith('apiClient.') ? t(l as MessageKey) : l)
   return (
@@ -175,22 +285,16 @@ export function BodyEditor({ body, onChange }: { body: Body; onChange: (body: Bo
         </select>
       </label>
       {body.type === 'none' && <p className="text-zinc-500">{t('apiClient.body.noBody')}</p>}
-      {body.type === 'raw' && (
-        // Fase 0: caixa de texto simples; na fase 1, o Monaco com realce e formatação.
-        <textarea
-          value={body.text}
-          onChange={(e) => onChange({ ...body, text: e.target.value })}
-          aria-label={t('apiClient.body.content')}
-          spellCheck={false}
-          className="min-h-32 flex-1 resize-none rounded border border-border bg-surface p-2 font-mono text-[12.5px] outline-none focus:border-accent"
-        />
-      )}
+      {body.type === 'raw' && <BodyMonaco language={body.language} value={body.text} onChange={(text) => onChange({ ...body, text })} label={t('apiClient.body.content')} />}
       {body.type === 'urlencoded' && (
         <KeyValueTable label={t('apiClient.body.fields')} rows={body.fields} onChange={(fields) => onChange({ ...body, fields })} showDescription={false} />
       )}
-      {(body.type === 'multipart' || body.type === 'binary' || body.type === 'graphql' || body.type === 'soap') && (
-        <p className="text-zinc-500">{t('apiClient.soon')}</p>
+      {body.type === 'multipart' && <MultipartEditor parts={body.parts} onChange={(parts) => onChange({ ...body, parts })} />}
+      {body.type === 'binary' && (
+        <FileRow path={body.path} label={t('apiClient.file.choose')} onPick={() => void pickFile('body').then((path) => path && onChange({ ...body, path }))} onClear={() => onChange({ ...body, path: '' })} />
       )}
+      {body.type === 'graphql' && <GraphqlEditor body={body} onChange={onChange} doc={doc} />}
+      {body.type === 'soap' && <p className="text-zinc-500">{t('apiClient.soon')}</p>}
     </div>
   )
 }
@@ -243,6 +347,12 @@ function NumberField({
 export function SettingsEditor({ settings, onChange }: { settings: RequestSettings; onChange: (settings: RequestSettings) => void }) {
   const t = useT()
   const set = (patch: Partial<RequestSettings>): void => onChange({ ...settings, ...patch })
+  const cert = { certPath: '', keyPath: '', pfxPath: '', passphraseVar: '', ...settings.clientCert }
+  const setCert = (patch: Partial<typeof cert>): void => {
+    const next = { ...cert, ...patch }
+    // Tudo vazio: o campo some do arquivo.
+    set({ clientCert: next.certPath || next.keyPath || next.pfxPath || next.passphraseVar ? next : undefined })
+  }
   const check = (key: 'followRedirects' | 'verifyTls' | 'encodeUrl' | 'sendCookies', text: MessageKey) => (
     <label className="col-span-2 flex items-center gap-2 text-[12.5px]">
       <input type="checkbox" checked={settings[key]} onChange={(e) => set({ [key]: e.target.checked })} className="size-3.5 accent-accent" />
@@ -284,6 +394,41 @@ export function SettingsEditor({ settings, onChange }: { settings: RequestSettin
       </Row>
       {check('encodeUrl', 'apiClient.settings.encodeUrl')}
       {check('sendCookies', 'apiClient.settings.sendCookies')}
+      <Row label={t('apiClient.settings.proxy')}>
+        <select value={settings.proxy} onChange={(e) => set({ proxy: e.target.value as RequestSettings['proxy'] })} className={`${selectClass} justify-self-start`}>
+          <option value="system">{t('apiClient.settings.proxy.system')}</option>
+          <option value="none">{t('apiClient.settings.proxy.none')}</option>
+          <option value="manual">{t('apiClient.settings.proxy.manual')}</option>
+        </select>
+      </Row>
+      {settings.proxy === 'manual' && (
+        <Row label={t('apiClient.settings.proxyUrl')}>
+          <input value={settings.proxyUrl} maxLength={API_LIMITS.urlChars} spellCheck={false} placeholder="http://127.0.0.1:8080" onChange={(e) => set({ proxyUrl: e.target.value })} className={fieldClass} />
+        </Row>
+      )}
+      <label className="col-span-2 flex items-center gap-2 text-[12.5px]">
+        <input type="checkbox" checked={settings.http2} onChange={(e) => set({ http2: e.target.checked })} className="size-3.5 accent-accent" />
+        {t('apiClient.settings.http2')}
+      </label>
+      <Row label={t('apiClient.settings.ca')}>
+        <FileRow path={settings.caPath} label={t('apiClient.settings.ca')} onPick={() => void pickFile('ca').then((caPath) => caPath && set({ caPath }))} onClear={() => set({ caPath: '' })} />
+      </Row>
+      <p className="col-span-2 mt-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">{t('apiClient.settings.clientCert')}</p>
+      {(
+        [
+          ['certPath', 'certificate', 'apiClient.settings.cert'],
+          ['keyPath', 'privateKey', 'apiClient.settings.certKey'],
+          ['pfxPath', 'pfx', 'apiClient.settings.pfx']
+        ] as const
+      ).map(([field, purpose, text]) => (
+        <Row key={field} label={t(text)}>
+          <FileRow path={cert[field]} label={t(text)} onPick={() => void pickFile(purpose).then((p) => p && setCert({ [field]: p }))} onClear={() => setCert({ [field]: '' })} />
+        </Row>
+      ))}
+      <Row label={t('apiClient.settings.passphraseVar')}>
+        <input value={cert.passphraseVar} maxLength={100} spellCheck={false} placeholder="certPassword" onChange={(e) => setCert({ passphraseVar: e.target.value })} className={fieldClass} />
+      </Row>
+      <p className="col-span-2 text-xs leading-5 text-zinc-500">{t('apiClient.settings.passphraseHint')}</p>
     </div>
   )
 }

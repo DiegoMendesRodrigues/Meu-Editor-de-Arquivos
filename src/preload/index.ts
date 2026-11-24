@@ -111,6 +111,31 @@ const api: EditorApi = {
   apiSecretHas: (scope, name) => ipcRenderer.invoke(IpcChannels.apiSecretHas, scope, name),
   apiSecretNames: (scope) => ipcRenderer.invoke(IpcChannels.apiSecretNames, scope),
   apiSecretDelete: (scope, name) => ipcRenderer.invoke(IpcChannels.apiSecretDelete, scope, name),
+  apiSend: (input) => ipcRenderer.invoke(IpcChannels.apiSend, input),
+  apiCancel: (runId) => ipcRenderer.invoke(IpcChannels.apiCancel, runId),
+  apiHistoryList: () => ipcRenderer.invoke(IpcChannels.apiHistoryList),
+  apiHistoryClear: () => ipcRenderer.invoke(IpcChannels.apiHistoryClear),
+  apiCookiesList: (jar) => ipcRenderer.invoke(IpcChannels.apiCookiesList, jar),
+  apiCookiesClear: (jar, domain, name) => ipcRenderer.invoke(IpcChannels.apiCookiesClear, jar, domain, name),
+  apiPickFiles: (purpose, multiple) => ipcRenderer.invoke(IpcChannels.apiPickFiles, purpose, multiple),
+  apiImportParse: (input) => ipcRenderer.invoke(IpcChannels.apiImportParse, input),
+  apiWriteFiles: (input) => ipcRenderer.invoke(IpcChannels.apiWriteFiles, input),
+  apiRunStart: (input) => ipcRenderer.invoke(IpcChannels.apiRunStart, input),
+  apiRunCancel: (runId) => ipcRenderer.invoke(IpcChannels.apiRunCancel, runId),
+  onApiRunProgress: (listener) => {
+    const handler = (_e: IpcRendererEvent, progress: Parameters<typeof listener>[0]): void => listener(progress)
+    ipcRenderer.on(IpcChannels.apiRunProgress, handler)
+    return () => void ipcRenderer.off(IpcChannels.apiRunProgress, handler)
+  },
+  apiOAuthAuthorize: (input) => ipcRenderer.invoke(IpcChannels.apiOAuthAuthorize, input),
+  apiOAuthCancel: (runId) => ipcRenderer.invoke(IpcChannels.apiOAuthCancel, runId),
+  onApiOAuthProgress: (listener) => {
+    const handler = (_e: IpcRendererEvent, progress: Parameters<typeof listener>[0]): void => listener(progress)
+    ipcRenderer.on(IpcChannels.apiOAuthProgress, handler)
+    return () => void ipcRenderer.off(IpcChannels.apiOAuthProgress, handler)
+  },
+  apiOAuthTokenInfo: (scope, tokenVar) => ipcRenderer.invoke(IpcChannels.apiOAuthTokenInfo, scope, tokenVar),
+  apiOAuthClear: (scope, tokenVar) => ipcRenderer.invoke(IpcChannels.apiOAuthClear, scope, tokenVar),
   onBeforeClose: (listener) => {
     const handler = () => listener()
     ipcRenderer.on(IpcChannels.beforeClose, handler)

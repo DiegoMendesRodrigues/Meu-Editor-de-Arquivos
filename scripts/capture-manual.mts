@@ -9,6 +9,7 @@
  */
 import { type ChildProcess, spawn } from 'node:child_process'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { createServer as createHttpServer } from 'node:http'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join, parse, resolve } from 'node:path'
@@ -258,6 +259,11 @@ async function captureLocale(locale: Locale): Promise<void> {
   console.log(`\n== ${locale} ==`)
   let { app, page } = await launch(locale, userData)
   const api = await startApi()
+  const sample = createHttpServer((_req, res) => {
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify({ id: 42, name: 'Ana Souza', city: 'Recife', active: true, orders: [{ id: 1, total: 120.5 }, { id: 2, total: 89.9 }] }))
+  })
+  await new Promise<void>((done) => sample.listen(0, '127.0.0.1', done))
   try {
     // --- Visão geral: pasta aberta e um documento Markdown formatado
     await stubOpen(app, [folder])
@@ -393,20 +399,45 @@ async function captureLocale(locale: Locale): Promise<void> {
     await page.getByRole('menuitem', { name: t('menu.help.about') }).click()
     await shotDialog(page, img('s15-about'))
 
+    // --- Cliente de API: requisição enviada a um servidor HTTP local (respostas fixas, sem internet) e um ambiente
+    // O painel inferior (da captura da busca) cobriria a resposta.
+    const closePanel = page.getByRole('button', { name: t('bottom.close'), exact: true })
+    if (await closePanel.isVisible()) await closePanel.click()
+    await page.keyboard.press('Control+Shift+A')
+    const apiView = page.getByTestId('api-request')
+    await apiView.waitFor()
+    await apiView.getByLabel(t('apiClient.url'), { exact: true }).fill(`http://127.0.0.1:${(sample.address() as { port: number }).port}/customers/42`)
+    await page.getByTestId('api-send').click()
+    await page.getByTestId('api-status').filter({ hasText: '200' }).waitFor()
+    await page.getByTestId('api-response').getByRole('treeitem').first().waitFor()
+    await shot(page, img('s23-api-request'))
+    await page.locator('nav button').nth(MENU.tools).click()
+    await page.getByRole('menuitem', { name: t('menu.tools.apiEnvironments') }).click()
+    await page.getByTestId('api-environment').waitFor()
+    await page.getByLabel(t('apiClient.env.name'), { exact: true }).fill(locale.startsWith('pt') ? 'Homologação' : 'Staging')
+    await page.getByRole('button', { name: t('apiClient.env.add') }).click()
+    await page.getByLabel(t('apiClient.env.keyN', { n: 1 })).fill('baseUrl')
+    await page.getByLabel(t('apiClient.env.valueN', { n: 1 })).fill('https://api.example.com')
+    await page.getByRole('button', { name: t('apiClient.env.add') }).click()
+    await page.getByLabel(t('apiClient.env.keyN', { n: 2 })).fill('token')
+    await page.getByLabel(t('apiClient.env.secretN', { n: 2 })).check()
+    await page.getByLabel(t('apiClient.env.valueN', { n: 2 })).fill('valor-de-exemplo')
+    await shot(page, img('s24-api-environment'))
+
     // --- Conta e nuvem (API de teste em memória)
     // Primeiro acesso: o aplicativo pede o endereço do servidor; depois mostra a tela de entrada.
     await page.locator('nav button').nth(MENU.account).click()
     await page.getByRole('menuitem', { name: t('menu.account.signIn') }).click()
-    await page.getByLabel(t('account.serverUrl'), { exact: true }).fill(`http://localhost:${API_PORT}`)
+    await page.getByRole('dialog').getByLabel(t('account.serverUrl'), { exact: true }).fill(`http://localhost:${API_PORT}`)
     await shot(page, img('s16a-account-server'), page.getByRole('dialog'))
     await page.getByRole('dialog').getByRole('button', { name: t('account.submit.server') }).click()
     await page.getByRole('button', { name: t('account.link.register') }).waitFor()
     await shot(page, img('s16-account-login'), page.getByRole('dialog'))
     await page.getByRole('button', { name: t('account.link.register') }).click()
-    await page.getByLabel(t('account.email'), { exact: true }).fill(demo.user.email)
-    await page.getByLabel(t('account.name'), { exact: true }).fill(demo.user.name)
-    await page.getByLabel(t('account.newPassword'), { exact: true }).fill(demo.user.password)
-    await page.getByLabel(t('account.repeat'), { exact: true }).fill(demo.user.password)
+    await page.getByRole('dialog').getByLabel(t('account.email'), { exact: true }).fill(demo.user.email)
+    await page.getByRole('dialog').getByLabel(t('account.name'), { exact: true }).fill(demo.user.name)
+    await page.getByRole('dialog').getByLabel(t('account.newPassword'), { exact: true }).fill(demo.user.password)
+    await page.getByRole('dialog').getByLabel(t('account.repeat'), { exact: true }).fill(demo.user.password)
     await page.getByRole('dialog').getByRole('button', { name: t('account.submit.register') }).click()
     await page.getByRole('dialog').waitFor({ state: 'hidden' })
     await page.evaluate(
@@ -428,6 +459,7 @@ async function captureLocale(locale: Locale): Promise<void> {
     await stubMessageBox(app).catch(() => undefined)
     await app.close().catch(() => undefined)
     stopApi(api)
+    sample.close()
     rmSync(work, { recursive: true, force: true })
   }
 }

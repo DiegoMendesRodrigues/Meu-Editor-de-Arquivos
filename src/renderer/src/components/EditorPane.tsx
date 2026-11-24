@@ -6,6 +6,10 @@ import { monaco } from '@/editor/monacoSetup'
 import { consumeReveal, requestReveal, setActiveEditor } from '@/editor/editorRef'
 import { JsonViewer } from '@/json/JsonViewer'
 import { ApiRequestView } from '@/api/ApiRequestView'
+import { EnvironmentView } from '@/api/EnvironmentView'
+import { SavedResponseView } from '@/api/SavedResponseView'
+import { RunReportView } from '@/api/RunReportView'
+import { CollectionSettingsView } from '@/api/CollectionSettingsView'
 import { monacoLanguage } from '@/editor/languages'
 import { attachRecorder } from '@/editor/macros'
 import { registerMarkdownKeybindings } from '@/markdown/editorFormatting'
@@ -185,6 +189,10 @@ export function EditorPane() {
   if (canPreview(doc) && doc.mode === 'preview') {
     // key: cada requisição tem o seu construtor (aba e painel abertos).
     if (doc.language === 'apireq') return <ApiRequestView key={doc.id} doc={doc} />
+    if (doc.language === 'apienv') return <EnvironmentView key={doc.id} doc={doc} />
+    if (doc.language === 'apiresp') return <SavedResponseView key={doc.id} doc={doc} />
+    if (doc.language === 'apirun') return <RunReportView key={doc.id} doc={doc} />
+    if (doc.language === 'apicol') return <CollectionSettingsView key={doc.id} doc={doc} />
     if (doc.language === 'json') {
       const edit = (line?: number, column?: number) => {
         if (line !== undefined) requestReveal(line, column ?? 1)

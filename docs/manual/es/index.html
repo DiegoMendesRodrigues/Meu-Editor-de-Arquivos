@@ -42,7 +42,7 @@ strong{font-weight:650}
 <div class="layout">
 <nav class="toc" aria-label="En este manual">
 <h2>En este manual</h2>
-<ol><li><a href="#1-bienvenida">1. Bienvenida</a></li><li><a href="#2-conoce-la-pantalla">2. Conoce la pantalla</a></li><li><a href="#3-crear-y-abrir-archivos">3. Crear y abrir archivos</a></li><li><a href="#4-guardar-y-documentos-temporales">4. Guardar y documentos temporales</a></li><li><a href="#5-editar-texto">5. Editar texto</a></li><li><a href="#6-markdown">6. Markdown</a></li><li><a href="#7-archivos-json">7. Archivos JSON</a></li><li><a href="#8-busqueda-en-archivos">8. Búsqueda en archivos</a></li><li><a href="#9-lenguaje-codificacion-y-fines-de-linea">9. Lenguaje, codificación y fines de línea</a></li><li><a href="#10-snippets-y-macros">10. Snippets y macros</a></li><li><a href="#11-cuenta-y-archivos-en-la-nube">11. Cuenta y archivos en la nube</a></li><li><a href="#12-idiomas">12. Idiomas</a></li><li><a href="#13-atajos-de-teclado">13. Atajos de teclado</a></li><li><a href="#14-preguntas-frecuentes">14. Preguntas frecuentes</a></li><li><a href="#15-acerca-de-y-soporte">15. Acerca de y soporte</a></li></ol>
+<ol><li><a href="#1-bienvenida">1. Bienvenida</a></li><li><a href="#2-conoce-la-pantalla">2. Conoce la pantalla</a></li><li><a href="#3-crear-y-abrir-archivos">3. Crear y abrir archivos</a></li><li><a href="#4-guardar-y-documentos-temporales">4. Guardar y documentos temporales</a></li><li><a href="#5-editar-texto">5. Editar texto</a></li><li><a href="#6-markdown">6. Markdown</a></li><li><a href="#7-archivos-json">7. Archivos JSON</a></li><li><a href="#8-cliente-de-api">8. Cliente de API</a></li><li><a href="#9-busqueda-en-archivos">9. Búsqueda en archivos</a></li><li><a href="#10-lenguaje-codificacion-y-fines-de-linea">10. Lenguaje, codificación y fines de línea</a></li><li><a href="#11-snippets-y-macros">11. Snippets y macros</a></li><li><a href="#12-cuenta-y-archivos-en-la-nube">12. Cuenta y archivos en la nube</a></li><li><a href="#13-idiomas">13. Idiomas</a></li><li><a href="#14-atajos-de-teclado">14. Atajos de teclado</a></li><li><a href="#15-preguntas-frecuentes">15. Preguntas frecuentes</a></li><li><a href="#16-acerca-de-y-soporte">16. Acerca de y soporte</a></li></ol>
 </nav>
 <main>
 <h1>Meu Editor de Arquivos — Manual del usuario</h1>
@@ -150,7 +150,64 @@ strong{font-weight:650}
 <figure><img src="img/s04-json-tree.png" alt="Archivo JSON en árbol, con un elemento seleccionado"><figcaption>Archivo JSON en árbol, con un elemento seleccionado</figcaption></figure><p>Los archivos .json se abren en <strong>árbol</strong>. Haz clic en la flecha de un elemento para abrir o cerrar esa parte. Usa <strong><span class="ui">Expandir todo</span></strong> y <strong><span class="ui">Contraer todo</span></strong> para abrir o cerrar todo. Al hacer clic en un elemento, la barra muestra su ruta y puedes copiar la <strong><span class="ui">Ruta</span></strong> o el <strong><span class="ui">Valor</span></strong>. Las listas muy grandes se muestran poco a poco, con un botón para ver más.</p>
 <p>Para editar, haz clic en <strong><span class="ui">Editar texto</span></strong>. En modo de edición, el botón <strong><span class="ui">Formatear JSON</span></strong> (Shift+Alt+F) ordena el archivo.</p>
 <figure><img src="img/s05-json-error.png" alt="Mensaje de error de un JSON no válido, con línea y columna"><figcaption>Mensaje de error de un JSON no válido, con línea y columna</figcaption></figure><p>Si el archivo tiene un error, la aplicación explica el problema e indica la línea y la columna. El botón <strong><span class="ui">Editar e ir al error</span></strong> abre el editor justo en el punto del error.</p>
-<h2 id="8-busqueda-en-archivos">8. Búsqueda en archivos</h2>
+<h2 id="8-cliente-de-api">8. Cliente de API</h2>
+<figure><img src="img/s23-api-request.png" alt="Cliente de API con una solicitud enviada y la respuesta en árbol"><figcaption>Cliente de API con una solicitud enviada y la respuesta en árbol</figcaption></figure><p>El Cliente de API sirve para probar servicios en internet (APIs): montas una solicitud, la envías y compruebas la respuesta sin salir del editor. Cada solicitud es un archivo <strong>.apireq</strong>, que puedes guardar, copiar y versionar como cualquier otro.</p>
+<h3>Abrir</h3>
+<ul>
+<li>Pulsa <strong>Ctrl+Shift+A</strong>, o usa <strong><span class="ui">Herramientas</span> → <span class="ui">Cliente de API</span></strong>.</li>
+<li>O usa <strong><span class="ui">Archivo</span> → Nuevo archivo de solicitud de API (.apireq)</strong>.</li>
+</ul>
+<p>El documento se abre en el <strong><span class="ui">Constructor</span></strong>. Para ver y editar el archivo como texto (JSON), haz clic en <strong><span class="ui">Editar texto</span></strong>.</p>
+<h3>Montar la solicitud</h3>
+<p>Elige el <strong><span class="ui">Método</span></strong> (GET, POST…) y escribe la dirección en <strong><span class="ui">URL de la solicitud</span></strong>. Los datos están en pestañas:</p>
+<ul>
+<li><strong><span class="ui">Params</span></strong>: los parámetros de la query. Lo que escribes en la URL aparece aquí, y al revés.</li>
+<li><strong><span class="ui">Autorización</span></strong>: cómo identificarte ante el servicio (ver más abajo).</li>
+<li><strong><span class="ui">Encabezados</span></strong>: las cabeceras de la solicitud.</li>
+<li><strong><span class="ui">Cuerpo</span></strong>: el contenido que se envía. En <strong><span class="ui">Tipo de cuerpo</span></strong> eliges entre JSON, XML, texto, HTML, formulario, formulario con archivos, archivo binario, GraphQL, SOAP o ningún cuerpo.</li>
+<li><strong><span class="ui">Configuración</span></strong>: tiempo límite, redirecciones, proxy, certificados y <strong><span class="ui">Verificar el certificado TLS</span></strong>. Desactiva la verificación solo en entornos de prueba.</li>
+</ul>
+<p>En cualquier campo, usa <code>&#123;&#123;nombre&#125;&#125;</code> para insertar una variable del entorno activo.</p>
+<h3>Enviar y ver la respuesta</h3>
+<p>Haz clic en <strong><span class="ui">Enviar</span></strong> o pulsa <strong>Ctrl+Enter</strong>. Mientras la solicitud está en curso, <strong>Esc</strong> cancela el envío. El botón de flecha de al lado ofrece <strong><span class="ui">Enviar y descargar a un archivo</span></strong>, que guarda el cuerpo directamente en un archivo (útil para respuestas grandes o binarias).</p>
+<p>La respuesta muestra el estado, el tiempo y el tamaño, y tiene las pestañas <strong><span class="ui">Cuerpo</span></strong>, <strong><span class="ui">Encabezados</span></strong>, <strong><span class="ui">Cookies</span></strong>, <strong><span class="ui">Pruebas</span></strong> y <strong><span class="ui">Tiempos</span></strong>. El cuerpo se puede ver como <strong><span class="ui">Árbol</span></strong> (para abrir y cerrar partes del JSON), <strong><span class="ui">Formateado</span></strong> o <strong><span class="ui">Sin procesar</span></strong>. Usa <strong><span class="ui">Guardar respuesta (.apiresp)</span></strong> para guardar la respuesta en un archivo .apiresp, y <strong><span class="ui">Abrir el cuerpo en una pestaña nueva</span></strong> para editarla como un documento normal.</p>
+<h3>Autorización</h3>
+<p>En la pestaña <strong><span class="ui">Autorización</span></strong>, elige en <strong><span class="ui">Tipo</span></strong>: API Key, Basic Auth, Bearer Token, OAuth 1.0 u OAuth 2.0. En OAuth 2.0 hay los flujos <strong><span class="ui">Authorization Code (PKCE)</span></strong>, <strong><span class="ui">Client Credentials</span></strong>, <strong><span class="ui">Device Code</span></strong> y <strong><span class="ui">Password (heredado)</span></strong>; haz clic en <strong><span class="ui">Obtener token</span></strong> y, si hace falta, se abre el navegador del sistema para que autorices el acceso. Con <strong><span class="ui">Heredar de la colección</span></strong>, la solicitud usa la autorización definida en la colección.</p>
+<p>Para contraseñas y tokens, usa una variable secreta (ver &quot;Entornos y secretos&quot;): así el valor nunca se guarda en el archivo de la solicitud.</p>
+<h3>Pruebas y extracciones</h3>
+<p>En la pestaña <strong><span class="ui">Pruebas</span></strong>:</p>
+<ul>
+<li><strong><span class="ui">Aserciones</span></strong>: reglas que se comprueban en cada envío, como &quot;el estado es igual a 200&quot;, &quot;el cuerpo contiene un texto&quot; o &quot;el JSONPath existe&quot;. El resultado aparece en la pestaña <strong><span class="ui">Pruebas</span></strong> de la respuesta.</li>
+<li><strong><span class="ui">Extracciones</span></strong>: guardan un valor de la respuesta (por ejemplo, un token) en una variable del entorno, para usarlo en las siguientes solicitudes.</li>
+</ul>
+<h3>Entornos y secretos</h3>
+<figure><img src="img/s24-api-environment.png" alt="Entorno de API con una variable común y una secreta"><figcaption>Entorno de API con una variable común y una secreta</figcaption></figure><p>Un entorno reúne variables, como la dirección del servidor de pruebas y la de producción. Usa <strong><span class="ui">Herramientas</span> → <span class="ui">Entornos de API (nuevo entorno)</span></strong> para crear uno (archivo <strong>.apienv</strong>) y elige el activo en el selector <strong><span class="ui">Entorno activo</span></strong>.</p>
+<ul>
+<li>Marca <strong><span class="ui">Secreto</span></strong> en las variables confidenciales. El valor se guarda cifrado en este equipo y <strong>no va al archivo .apienv</strong>.</li>
+<li>Marca <strong><span class="ui">Entorno de producción</span></strong> en un entorno de producción: la aplicación pide confirmación antes de enviar POST, PUT, PATCH y DELETE.</li>
+<li>Las cookies recibidas se guardan separadas por entorno; consúltalas o bórralas en <strong><span class="ui">Herramientas</span> → <span class="ui">Cookies de API</span></strong>.</li>
+</ul>
+<h3>Colecciones e historial</h3>
+<p>Una colección es una carpeta con las solicitudes y el archivo <strong>.apicol</strong>, que guarda la autorización y las variables comunes. En la barra lateral, la sección <strong><span class="ui">Colecciones</span></strong> muestra las colecciones de las carpetas abiertas; con el botón derecho puedes crear solicitudes y carpetas, <strong><span class="ui">Ejecutar</span></strong>, <strong><span class="ui">Exportar</span></strong>, <strong><span class="ui">Documentar</span></strong> (genera la documentación de la colección) y <strong><span class="ui">Configuración de la colección</span></strong>.</p>
+<p>El <strong><span class="ui">Historial</span></strong> (también en <strong><span class="ui">Herramientas</span> → <span class="ui">Historial de API</span></strong>) lista las últimas solicitudes enviadas, y puedes borrarlo cuando quieras.</p>
+<h3>Importar, exportar y generar código</h3>
+<ul>
+<li><strong><span class="ui">Herramientas</span> → <span class="ui">Importar solicitudes (curl, Postman, OpenAPI)</span></strong> trae solicitudes de curl, Postman, OpenAPI/Swagger, Insomnia, HAR y archivos .http. Haz clic en <strong><span class="ui">Analizar</span></strong> para ver qué se importará y elige <strong><span class="ui">Importar como colección</span></strong> o <strong><span class="ui">Abrir en pestañas</span></strong>. Pegar un comando curl en la URL también ofrece la importación.</li>
+<li><strong><span class="ui">Exportar</span></strong> guarda la colección como Postman, OpenAPI, HAR, .http o curl. Los valores de las variables secretas nunca se exportan.</li>
+<li>El botón <strong><span class="ui">Código</span></strong> abre <strong><span class="ui">Generar código</span></strong> y muestra la solicitud en varios lenguajes, lista para copiar.</li>
+</ul>
+<h3>Ejecutar una colección</h3>
+<p>En <strong><span class="ui">Ejecutar</span></strong>, elige las solicitudes, el entorno, el número de iteraciones y el retraso entre ellas. Un archivo de datos (CSV o JSON) repite la ejecución con los valores de cada fila, y <strong><span class="ui">Detener en el primer fallo</span></strong> se detiene en el primer error. Haz clic en <strong><span class="ui">Ejecutar</span></strong>: el resultado se abre como informe (<strong>.apirun</strong>), con totales, tiempos y las pruebas de cada solicitud. Con <strong><span class="ui">Exportar</span></strong> el informe se guarda en JUnit XML, HTML o Markdown.</p>
+<h3>GraphQL</h3>
+<p>En <strong><span class="ui">Tipo de cuerpo</span></strong>, elige GraphQL para escribir la <strong><span class="ui">Consulta</span></strong> y las <strong><span class="ui">Variables (JSON)</span></strong>. Con <strong><span class="ui">Cargar esquema</span></strong>, la aplicación lee el schema del servidor, muestra la documentación de los tipos y ofrece autocompletado.</p>
+<h3>Seguridad</h3>
+<ul>
+<li>Todas las solicitudes salen de tu propio equipo, a través de la aplicación; nada pasa por servidores nuestros.</li>
+<li>Las contraseñas, los tokens y los valores secretos se guardan en el almacén seguro del sistema operativo (cifrados). Si el sistema no tiene almacén, solo quedan en la memoria y se pierden al cerrar la aplicación.</li>
+<li>Estos valores <strong>nunca</strong> van a los archivos (.apireq, .apienv, .apicol), ni a las exportaciones, la generación de código, los registros o la nube. El historial y las cookies también quedan solo en este equipo.</li>
+<li>Solo las respuestas guardadas y los informes de una colección pueden sincronizarse con la nube, y solo si activas <strong><span class="ui">Sincronizar respuestas guardadas e informes por la nube</span></strong>.</li>
+</ul>
+<h2 id="9-busqueda-en-archivos">9. Búsqueda en archivos</h2>
 <figure><img src="img/s06-search.png" alt="Panel de búsqueda con los resultados agrupados por archivo"><figcaption>Panel de búsqueda con los resultados agrupados por archivo</figcaption></figure><p>Abre una carpeta y elige <strong><span class="ui">Buscar</span> → <span class="ui">Buscar en archivos</span></strong> (<strong>Ctrl+Shift+F</strong>). Se abre el panel inferior.</p>
 <ol>
 <li>Escribe el texto y haz clic en <strong><span class="ui">Buscar</span></strong> (o pulsa Intro).</li>
@@ -160,7 +217,7 @@ strong{font-weight:650}
 </ol>
 <p>Para sustituir el texto, escribe el nuevo en el campo de reemplazo y haz clic en <strong><span class="ui">Reemplazar todo</span></strong>. Desmarca los archivos que no deben cambiar. La aplicación pide confirmación, porque <strong>el reemplazo se escribe directamente en los archivos y no se puede deshacer desde el editor</strong>. Los archivos abiertos con cambios sin guardar se omiten, para que no pierdas trabajo.</p>
 <p>La búsqueda no entra en carpetas como <code>node_modules</code> y <code>.git</code>, ni en archivos binarios o de más de 5 MB. Muestra como máximo 5.000 coincidencias cada vez.</p>
-<h2 id="9-lenguaje-codificacion-y-fines-de-linea">9. Lenguaje, codificación y fines de línea</h2>
+<h2 id="10-lenguaje-codificacion-y-fines-de-linea">10. Lenguaje, codificación y fines de línea</h2>
 <figure><img src="img/s09-menu-encoding.png" alt="Menú Codificación"><figcaption>Menú Codificación</figcaption></figure><ul>
 <li><strong><span class="ui">Lenguaje</span>:</strong> la aplicación elige el lenguaje por la extensión del archivo y usa colores para facilitar la lectura. Para cambiar el lenguaje de un documento, abre el menú y elige otro.</li>
 </ul>
@@ -173,10 +230,10 @@ strong{font-weight:650}
 </li>
 </ul>
 <p>La codificación y el fin de línea actuales aparecen en la barra de estado.</p>
-<h2 id="10-snippets-y-macros">10. Snippets y macros</h2>
+<h2 id="11-snippets-y-macros">11. Snippets y macros</h2>
 <figure><img src="img/s12-snippets.png" alt="Ventana de snippets"><figcaption>Ventana de snippets</figcaption></figure><p>Los <strong>snippets</strong> son fragmentos de texto ya preparados. Abre <strong><span class="ui">Herramientas</span> → <span class="ui">Snippets</span></strong>. La aplicación ya incluye algunos: <code>data</code>, <code>hora</code>, <code>codigo</code>, <code>tarefa</code>, <code>tabela</code>, <code>link</code> y <code>cabecalho</code>. Para usarlos, escribe el atajo en el editor y elige la sugerencia (o pulsa Ctrl+Espacio), o haz clic en <strong><span class="ui">Insertar en el editor</span></strong> en la ventana. Para crear el tuyo, haz clic en <strong><span class="ui">Nuevo snippet</span></strong> y dale un nombre, un atajo y el texto. En el texto, <code>$1</code> y <code>${2:predeterminado}</code> marcan los lugares donde se detiene el cursor, y <code>$0</code> es la posición final. Los snippets de la aplicación no se pueden editar, pero sí duplicar.</p>
 <figure><img src="img/s13-macros.png" alt="Ventana de macros"><figcaption>Ventana de macros</figcaption></figure><p>Las <strong>macros</strong> repiten una secuencia que hiciste. Pulsa <strong>Ctrl+Shift+R</strong> para empezar a grabar, escribe o edita lo que quieras y pulsa <strong>Ctrl+Shift+R</strong> otra vez para detener. Después, <strong>Ctrl+Shift+M</strong> ejecuta la última grabación. En <strong><span class="ui">Macros</span></strong> eliges cuántas veces repetirla y puedes guardar la macro con un nombre. Se graba el texto escrito, el texto pegado, las teclas de flecha, Inicio, Fin, Retroceso, Supr, Tab, Intro y los comandos de los menús. No se graban los clics del ratón ni Ctrl+Z.</p>
-<h2 id="11-cuenta-y-archivos-en-la-nube">11. Cuenta y archivos en la nube</h2>
+<h2 id="12-cuenta-y-archivos-en-la-nube">12. Cuenta y archivos en la nube</h2>
 <figure><img src="img/s16a-account-server.png" alt="Primer acceso: dirección del servidor"><figcaption>Primer acceso: dirección del servidor</figcaption></figure><p>Con una cuenta guardas archivos en la nube y los abres en otros equipos. Abre el menú <strong><span class="ui">Cuenta</span></strong>.</p>
 <ol>
 <li><strong>Dirección del servidor:</strong> la primera vez, escribe la dirección que te dio tu empresa o el administrador. Empieza por <code>https://</code>.</li>
@@ -195,16 +252,17 @@ strong{font-weight:650}
 <p>Si el archivo ha cambiado en la nube desde la última vez, la aplicación te avisa y pregunta si quieres sobrescribirlo. Cada archivo puede tener hasta 10 MB. Si tu sistema no tiene almacén de credenciales, la aplicación te avisa de que tendrás que iniciar sesión cada vez que la abras.</p>
 <p>Con la cuenta conectada, la barra de estado muestra, a la izquierda del icono de la nube, cuánto espacio usa en la nube, en MB con dos decimales (por ejemplo, <code>1.25 MB</code>). La cuenta suma todos sus archivos en la nube y los textos de los documentos aún no guardados, que se conservan para continuar en otro equipo. El valor cambia con cada guardado o eliminación. Un archivo de la nube abierto sin cambios no ocupa espacio adicional; solo se conserva el texto aún no guardado.</p>
 <p>Si el mismo documento se modifica en dos equipos antes de sincronizar, cada equipo conserva su texto, y la versión del otro se abre en una pestaña nueva con &quot;(conflicto – otro equipo)&quot; en el nombre, para que nada se pierda.</p>
-<h2 id="12-idiomas">12. Idiomas</h2>
+<h2 id="13-idiomas">13. Idiomas</h2>
 <figure><img src="img/s08-flags.png" alt="Banderas de los idiomas junto al botón de vista previa"><figcaption>Banderas de los idiomas junto al botón de vista previa</figcaption></figure><p>La aplicación está disponible en <strong>alemán, español, francés, inglés, portugués (Brasil) y portugués (Portugal)</strong>. Se abre en el idioma de tu sistema; si no hay traducción, se abre en inglés. Para cambiar, haz clic en la bandera del idioma, a la izquierda del botón de vista previa. El cambio es inmediato y se guarda para la próxima vez. Este manual se abre en el idioma que estés usando.</p>
-<h2 id="13-atajos-de-teclado">13. Atajos de teclado</h2>
+<h2 id="14-atajos-de-teclado">14. Atajos de teclado</h2>
 <figure><img src="img/s14-shortcuts.png" alt="Ventana de atajos de teclado"><figcaption>Ventana de atajos de teclado</figcaption></figure><p>Para ver la lista dentro de la aplicación, abre <strong><span class="ui">Ayuda</span> → <span class="ui">Atajos de teclado</span></strong>. Los atajos disponibles:</p>
 <h3>Archivo</h3><table><tbody><tr><td><kbd>Ctrl+N</kbd></td><td>Nuevo documento (Markdown)</td></tr><tr><td><kbd>Ctrl+O</kbd></td><td>Abrir archivos</td></tr><tr><td><kbd>Ctrl+Shift+K</kbd></td><td>Abrir carpeta</td></tr><tr><td><kbd>Ctrl+S</kbd></td><td>Guardar</td></tr><tr><td><kbd>Ctrl+Shift+S</kbd></td><td>Guardar como</td></tr><tr><td><kbd>Ctrl+W</kbd></td><td>Cerrar pestaña</td></tr><tr><td><kbd>Alt+F4</kbd></td><td>Salir</td></tr></tbody></table>
 <h3>Editar</h3><table><tbody><tr><td><kbd>Ctrl+Z</kbd></td><td>Deshacer</td></tr><tr><td><kbd>Ctrl+Y</kbd></td><td>Rehacer</td></tr><tr><td><kbd>Ctrl+X</kbd> / <kbd>Ctrl+C</kbd> / <kbd>Ctrl+V</kbd></td><td>Cortar / copiar / pegar</td></tr><tr><td><kbd>Ctrl+A</kbd></td><td>Seleccionar todo</td></tr><tr><td><kbd>Ctrl+L</kbd></td><td>Seleccionar la línea</td></tr><tr><td><kbd>Ctrl+D</kbd></td><td>Seleccionar la siguiente coincidencia (varios cursores)</td></tr><tr><td><kbd>Alt+Clic</kbd></td><td>Añadir cursor</td></tr><tr><td><kbd>Mayús+Alt+Arrastrar</kbd></td><td>Selección en columna</td></tr><tr><td><kbd>Alt+↑</kbd> / <kbd>Alt+↓</kbd></td><td>Mover la línea hacia arriba / abajo</td></tr><tr><td><kbd>Shift+Alt+↑</kbd> / <kbd>Shift+Alt+↓</kbd></td><td>Duplicar la línea</td></tr><tr><td><kbd>Ctrl+/</kbd></td><td>Comentar o descomentar la línea</td></tr><tr><td><kbd>F1</kbd></td><td>Paleta de comandos</td></tr><tr><td><kbd>F7</kbd></td><td>Revisar ortografía</td></tr><tr><td><kbd>Ctrl+.</kbd></td><td>Sugerencias ortográficas</td></tr></tbody></table>
 <h3>Buscar</h3><table><tbody><tr><td><kbd>Ctrl+F</kbd></td><td>Buscar</td></tr><tr><td><kbd>Ctrl+H</kbd></td><td>Reemplazar</td></tr><tr><td><kbd>Ctrl+Shift+F</kbd></td><td>Buscar en archivos</td></tr><tr><td><kbd>Ctrl+G</kbd></td><td>Ir a la línea</td></tr></tbody></table>
-<h3>Ver</h3><table><tbody><tr><td><kbd>Ctrl+Shift+B</kbd></td><td>Mostrar u ocultar la barra lateral</td></tr><tr><td><kbd>Ctrl+Shift+E</kbd></td><td>Alternar entre vista previa y edición (Markdown y JSON)</td></tr><tr><td><kbd>F11</kbd></td><td>Entrar o salir de pantalla completa</td></tr><tr><td><kbd>Ctrl++</kbd></td><td>Aumentar fuente</td></tr><tr><td><kbd>Ctrl+-</kbd></td><td>Reducir fuente</td></tr><tr><td><kbd>Ctrl+0</kbd></td><td>Tamaño de fuente predeterminado</td></tr></tbody></table>
+<h3>Ver</h3><table><tbody><tr><td><kbd>Ctrl+Shift+B</kbd></td><td>Mostrar u ocultar la barra lateral</td></tr><tr><td><kbd>Ctrl+Shift+E</kbd></td><td>Alternar entre vista previa y edición (Markdown, JSON y solicitudes de API)</td></tr><tr><td><kbd>F11</kbd></td><td>Entrar o salir de pantalla completa</td></tr><tr><td><kbd>Ctrl++</kbd></td><td>Aumentar fuente</td></tr><tr><td><kbd>Ctrl+-</kbd></td><td>Reducir fuente</td></tr><tr><td><kbd>Ctrl+0</kbd></td><td>Tamaño de fuente predeterminado</td></tr></tbody></table>
 <h3>Markdown y JSON</h3><table><tbody><tr><td><kbd>Ctrl+B</kbd></td><td>Negrita</td></tr><tr><td><kbd>Ctrl+I</kbd></td><td>Cursiva</td></tr><tr><td><kbd>Ctrl+Shift+X</kbd></td><td>Tachado</td></tr><tr><td><kbd>Shift+Alt+F</kbd></td><td>Formatear el documento (JSON)</td></tr></tbody></table>
-<h3>Macros</h3><table><tbody><tr><td><kbd>Ctrl+Shift+R</kbd></td><td>Iniciar o detener la grabación de macro</td></tr><tr><td><kbd>Ctrl+Shift+M</kbd></td><td>Ejecutar última macro</td></tr></tbody></table><h2 id="14-preguntas-frecuentes">14. Preguntas frecuentes</h2>
+<h3>Macros</h3><table><tbody><tr><td><kbd>Ctrl+Shift+R</kbd></td><td>Iniciar o detener la grabación de macro</td></tr><tr><td><kbd>Ctrl+Shift+M</kbd></td><td>Ejecutar última macro</td></tr></tbody></table>
+<h3>Cliente de API</h3><table><tbody><tr><td><kbd>Ctrl+Shift+A</kbd></td><td>Abrir el Cliente de API (nueva solicitud)</td></tr><tr><td><kbd>Ctrl+Enter</kbd></td><td>Enviar la solicitud (en la pestaña de API)</td></tr><tr><td><kbd>Esc</kbd></td><td>Cancelar el envío en curso (en la pestaña de API)</td></tr></tbody></table><h2 id="15-preguntas-frecuentes">15. Preguntas frecuentes</h2>
 <p><strong>Cerré la aplicación sin guardar. ¿He perdido mi texto?</strong>
 No. El texto sin guardar se conserva automáticamente y vuelve cuando abres la aplicación de nuevo.</p>
 <p><strong>¿Por qué el Markdown se abre con formato y no puedo escribir?</strong>
@@ -217,7 +275,7 @@ El límite es de 50 MB por archivo.</p>
 Comprueba la dirección del servidor y la conexión a internet. Si el mensaje dice que la sesión ha caducado, inicia sesión de nuevo.</p>
 <p><strong>¿Cómo veo la versión de la aplicación?</strong>
 En <strong><span class="ui">Ayuda</span> → <span class="ui">Acerca de Meu Editor de Arquivos</span></strong>.</p>
-<h2 id="15-acerca-de-y-soporte">15. Acerca de y soporte</h2>
+<h2 id="16-acerca-de-y-soporte">16. Acerca de y soporte</h2>
 <figure><img src="img/s15-about.png" alt="Ventana Acerca de"><figcaption>Ventana Acerca de</figcaption></figure><figure><img src="img/s19-menu-help.png" alt="Menú Ayuda"><figcaption>Menú Ayuda</figcaption></figure><p><strong>Meu Editor de Arquivos</strong> ha sido desarrollado por Diego Mendes Rodrigues. La opción <strong><span class="ui">Soporte técnico</span></strong> del menú Ayuda aún no está disponible en esta versión.</p>
 
 </main>

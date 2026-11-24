@@ -1,0 +1,318 @@
+// Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
+/**
+ * Contrato entre o Renderer e o Main do Cliente de API (canais api:*).
+ *
+ * Regras que todos os canais seguem:
+ * - A rede fica só no Main. O Renderer manda a requisição como está no documento (com {{variáveis}}) e o
+ *   Main valida com Zod, resolve as variáveis, injeta os segredos do cofre e envia.
+ * - Nenhum tipo daqui leva o valor de um segredo do Main para o Renderer. Valores secretos voltam
+ *   mascarados (MASK) na requisição enviada, e extrações marcadas como segredo vão direto para o cofre.
+ * - Erros chegam como códigos conhecidos (ApiErrorCode), traduzidos em apiClient.error.<código>; a
+ *   mensagem crua do sistema ou do servidor nunca aparece na interface.
+ */
+import { z } from 'zod'
+import { API_LIMITS as L } from './limits'
+import {
+  apiRequestSchema,
+  authSchema,
+  environmentVariableSchema,
+  type ApiEnvironment,
+  type ApiRequest,
+  type KeyValue
+} from './schema'
+import { VARIABLE_NAME_RE } from './variables'
+
+/** Como um valor secreto aparece em qualquer coisa que volte ao Renderer. */
+export const MASK = '••••••'
+
+/* ------------------------------------------------------------------ envio */
+
+/** Ambiente ativo, como está no documento .apienv (segredos sem valor; o Main busca no cofre pelo id). */
+export const environmentPayloadSchema = z.object({
+  id: z.string().min(1).max(64),
+  name: z.string().max(L.nameChars),
+  production: z.boolean().default(false),
+  variables: z.array(environmentVariableSchema).max(L.variables).default([])
+})
+export type ApiEnvironmentPayload = z.infer<typeof environmentPayloadSchema>
+
+/** Coleção da requisição (pasta com collection.apicol): variáveis e autorização herdada. */
+export const collectionPayloadSchema = z.object({
+  id: z.string().min(1).max(64),
+  variables: z.array(environmentVariableSchema).max(L.variables).default([]),
+  auth: authSchema.default({ type: 'none' })
+})
+export type ApiCollectionPayload = z.infer<typeof collectionPayloadSchema>
+
+export const sendInputSchema = z.object({
+  /** Id criado pelo Renderer (UUID) para acompanhar e cancelar o envio. */
+  runId: z.string().uuid(),
+  request: apiRequestSchema,
+  environment: environmentPayloadSchema.nullable().default(null),
+  collection: collectionPayloadSchema.nullable().default(null),
+  /** Variáveis temporárias (extraídas antes, no executor), as mais fortes. Nunca segredos. */
+  temporary: z.record(z.string().regex(VARIABLE_NAME_RE), z.string().max(L.valueChars)).default({}),
+  /** Caminho do .apireq, quando salvo (para arquivos anexados com caminho relativo). */
+  documentPath: z.string().max(4096).nullable().default(null),
+  /** Gravar o corpo da resposta num arquivo (o Main abre o diálogo e grava em streaming). */
+  saveToFile: z.boolean().default(false),
+  /** O usuário confirmou o envio num ambiente de produção (POST, PUT, PATCH e DELETE). */
+  productionConfirmed: z.boolean().default(false),
+  /** O usuário confirmou enviar segredos para este host (igual ao host de destino). */
+  confirmSecretHost: z.string().max(255).optional()
+})
+export type ApiSendInput = z.input<typeof sendInputSchema>
+
+export interface ApiTimings {
+  dns: number
+  tcp: number
+  tls: number
+  firstByte: number
+  download: number
+  total: number
+}
+
+export interface ApiTlsInfo {
+  protocol: string
+  cipher?: string
+  issuer: string
+  subject: string
+  validFrom: string
+  validTo: string
+  authorized: boolean
+  /** Código do problema do certificado, quando não autorizado (ex.: DEPTH_ZERO_SELF_SIGNED_CERT). */
+  authorizationError?: string
+}
+
+export interface ApiCookie {
+  name: string
+  value: string
+  domain?: string
+  path?: string
+  expires?: string
+  httpOnly?: boolean
+  secure?: boolean
+  sameSite?: 'Strict' | 'Lax' | 'None'
+}
+
+export interface AssertionResult {
+  /** Posição da asserção em request.tests. */
+  index: number
+  passed: boolean
+  /** Valor recebido, resumido (até 200 caracteres), para mostrar ao lado do esperado. */
+  actual?: string
+  /** Código do problema ao avaliar (ex.: badJsonPath, badRegex, timeout, notJson, badSchema). */
+  error?: string
+}
+
+export interface ExtractionResult {
+  to: string
+  secret: boolean
+  ok: boolean
+  /** Só nas extrações que não são segredo; as secretas vão direto para o cofre (escopo do ambiente). */
+  value?: string
+}
+
+export interface ApiResponseResult {
+  ok: true
+  runId: string
+  status: number
+  statusText: string
+  httpVersion: string
+  headers: KeyValue[]
+  cookies: ApiCookie[]
+  timings: ApiTimings
+  tls?: ApiTlsInfo
+  size: { headers: number; body: number; compressed?: number }
+  body: {
+    encoding: 'utf8' | 'base64'
+    text: string
+    contentType: string
+    /** O Renderer recebe no máximo API_LIMITS.displayBytes; o resto fica de fora. */
+    truncated: boolean
+    /** Corpo gravado em arquivo (saveToFile). */
+    savedTo?: string
+  }
+  /** Requisição enviada, com as variáveis resolvidas e os segredos mascarados. */
+  sentRequest: { method: string; url: string; headers: KeyValue[] }
+  redirects: { status: number; url: string }[]
+  tests: AssertionResult[]
+  extracted: ExtractionResult[]
+  /** Variáveis usadas na requisição que não existem em nenhum escopo. */
+  missingVariables: string[]
+}
+
+export const API_ERROR_CODES = [
+  'ECONNREFUSED',
+  'ENOTFOUND',
+  'ETIMEDOUT',
+  'ECONNRESET',
+  'EHOSTUNREACH',
+  'CERT_HAS_EXPIRED',
+  'DEPTH_ZERO_SELF_SIGNED_CERT',
+  'SELF_SIGNED_CERT_IN_CHAIN',
+  'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  'ERR_TLS_CERT_ALTNAME_INVALID',
+  'tlsVersion',
+  'timeout',
+  'connectTimeout',
+  'cancelled',
+  'tooLarge',
+  'tooManyRedirects',
+  'badUrl',
+  'schemeNotAllowed',
+  'fileNotAuthorized',
+  'fileNotFound',
+  'tooManyRequests',
+  'invalidRequest',
+  'productionNotConfirmed',
+  'secretHostNotConfirmed',
+  'proxy',
+  'clientCert',
+  'saveCancelled',
+  'unknown'
+] as const
+export type ApiErrorCode = (typeof API_ERROR_CODES)[number]
+
+export interface ApiSendError {
+  ok: false
+  runId: string
+  code: ApiErrorCode
+  missingVariables?: string[]
+  /** Com secretHostNotConfirmed: o host que precisa de confirmação. */
+  host?: string
+}
+
+export type ApiSendResult = ApiResponseResult | ApiSendError
+
+/* ------------------------------------------------------------------ histórico e cookies */
+
+export interface ApiHistoryEntry {
+  id: string
+  /** ISO 8601. */
+  at: string
+  method: string
+  /** URL modelo, com {{variáveis}} (nunca os valores resolvidos). */
+  url: string
+  status?: number
+  timeMs?: number
+  errorCode?: ApiErrorCode
+  environment?: string
+  /** A requisição como estava (cabeçalhos sensíveis mascarados), para reabrir como nova. */
+  request: ApiRequest
+}
+
+/** Cookies de um ambiente (ou "default" sem ambiente), por domínio. */
+export interface ApiCookieJarEntry extends ApiCookie {
+  domain: string
+}
+
+/* ------------------------------------------------------------------ arquivos anexados */
+
+/** Para que o arquivo será usado: define o filtro do diálogo nativo. O Main autoriza os escolhidos. */
+export const PICK_PURPOSES = ['body', 'certificate', 'privateKey', 'ca', 'pfx', 'data', 'import'] as const
+export type ApiPickPurpose = (typeof PICK_PURPOSES)[number]
+
+/* ------------------------------------------------------------------ importar */
+
+export const IMPORT_FORMATS = ['auto', 'curl', 'postman', 'openapi', 'insomnia', 'har', 'http'] as const
+export type ApiImportFormat = (typeof IMPORT_FORMATS)[number]
+
+export interface ApiImportItem {
+  /** Pasta dentro da coleção ("" = raiz), com "/" como separador. */
+  folder: string
+  request: ApiRequest
+}
+
+export interface ApiImportResult {
+  ok: true
+  format: Exclude<ApiImportFormat, 'auto'>
+  name: string
+  items: ApiImportItem[]
+  environments: ApiEnvironment[]
+  /** Variáveis da coleção (Postman, OpenAPI servers). */
+  variables: { key: string; value: string }[]
+  /** Avisos por código (ex.: scriptsIgnored, unsupportedAuth, unsupportedBody, truncated). */
+  warnings: string[]
+}
+export type ApiImportResponse = ApiImportResult | { ok: false; code: 'unknownFormat' | 'invalid' | 'tooLarge' | 'timeout' }
+
+/** Grava os arquivos de uma coleção importada ou criada (só dentro de uma pasta autorizada). */
+export interface ApiWriteFilesInput {
+  dir: string
+  files: { relativePath: string; content: string }[]
+}
+
+/* ------------------------------------------------------------------ executor */
+
+export const runInputSchema = z.object({
+  runId: z.string().uuid(),
+  name: z.string().max(L.nameChars),
+  /** Requisições na ordem de execução, já com a autorização da coleção resolvida pelo Renderer. */
+  items: z
+    .array(z.object({ path: z.string().max(4096), folder: z.string().max(4096).default(''), request: apiRequestSchema }))
+    .min(1)
+    .max(1000),
+  environment: environmentPayloadSchema.nullable().default(null),
+  collection: collectionPayloadSchema.nullable().default(null),
+  iterations: z.number().int().min(1).max(1000).default(1),
+  delayMs: z.number().int().min(0).max(60_000).default(0),
+  stopOnFailure: z.boolean().default(false),
+  /** Linhas do arquivo de dados (CSV ou JSON) já lidas: cada linha vira variáveis de uma iteração. */
+  data: z.array(z.record(z.string(), z.string().max(L.valueChars))).max(10_000).default([]),
+  productionConfirmed: z.boolean().default(false)
+})
+export type ApiRunInput = z.input<typeof runInputSchema>
+
+export interface ApiRunItemResult {
+  iteration: number
+  path: string
+  folder: string
+  name: string
+  method: string
+  /** URL resolvida com os segredos mascarados. */
+  url: string
+  status?: number
+  timeMs?: number
+  errorCode?: ApiErrorCode
+  tests: { name: string; passed: boolean; actual?: string; error?: string }[]
+}
+
+export interface ApiRunProgress {
+  runId: string
+  done: number
+  total: number
+  item?: ApiRunItemResult
+  finished?: boolean
+  cancelled?: boolean
+}
+
+/* ------------------------------------------------------------------ OAuth */
+
+export const oauthInputSchema = z.object({
+  runId: z.string().uuid(),
+  auth: authSchema,
+  environment: environmentPayloadSchema.nullable().default(null),
+  collection: collectionPayloadSchema.nullable().default(null),
+  verifyTls: z.boolean().default(true)
+})
+export type ApiOAuthInput = z.input<typeof oauthInputSchema>
+
+/** Andamento do OAuth 2.0 (Device Code: código para o usuário digitar). */
+export interface ApiOAuthProgress {
+  runId: string
+  verificationUri?: string
+  userCode?: string
+  expiresIn?: number
+}
+
+export type ApiOAuthResult =
+  | { ok: true; tokenVar: string; expiresAt?: string; hasRefreshToken: boolean }
+  | { ok: false; code: 'cancelled' | 'timeout' | 'denied' | 'stateMismatch' | 'invalidResponse' | 'network' | 'invalidConfig' | 'noVault' | 'unknown' }
+
+/** Estado do token guardado no cofre (sem o valor). */
+export interface ApiOAuthTokenInfo {
+  exists: boolean
+  expiresAt?: string
+  hasRefreshToken: boolean
+}

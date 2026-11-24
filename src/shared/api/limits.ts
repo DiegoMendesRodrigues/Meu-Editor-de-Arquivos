@@ -33,7 +33,24 @@ export const API_LIMITS = {
   /** Valor de um segredo guardado no cofre. */
   secretChars: 64 * 1024,
   /** Tamanho máximo do texto de um arquivo .apireq ao abrir no construtor. */
-  requestFileChars: 25 * 1024 * 1024
+  requestFileChars: 25 * 1024 * 1024,
+  /** Corpo da resposta guardado na memória do Main (acima disso, só "Enviar e baixar para arquivo"). */
+  responseMemoryBytes: 50 * 1024 * 1024,
+  /** Teto do corpo gravado em arquivo (saveToFile), depois de descomprimir. */
+  responseFileBytes: 2 * 1024 * 1024 * 1024,
+  /** O Renderer recebe no máximo isto do corpo para exibir. */
+  displayBytes: 10 * 1024 * 1024,
+  /** Requisições simultâneas por janela. */
+  concurrentRequests: 20,
+  /** Histórico: entradas guardadas. */
+  historyEntries: 200,
+  /** Avaliação dos testes da resposta (thread), por requisição. */
+  assertTimeoutMs: 2_000,
+  /** Arquivos importados (Postman, OpenAPI, HAR...). */
+  importChars: 20 * 1024 * 1024,
+  importTimeoutMs: 15_000,
+  /** OAuth: tempo máximo esperando o navegador ou o Device Code. */
+  oauthTimeoutMs: 5 * 60_000
 } as const
 
 /** Métodos oferecidos no seletor (o arquivo aceita também um método personalizado). */

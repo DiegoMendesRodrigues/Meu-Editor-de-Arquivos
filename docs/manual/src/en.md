@@ -151,7 +151,88 @@ To edit, click **{{toolbar.editText}}**. In editing mode, the **{{toolbar.format
 
 If the file has an error, the application explains the problem and gives the line and column. The **{{json.editGoToError}}** button opens the editor right at the error.
 
-## 8. Searching in files
+## 8. API Client
+
+![API Client with a request sent and the response as a tree](img/s23-api-request.png)
+
+The API Client lets you test web services (APIs): you build a request, send it and check the response without leaving the editor. Each request is a **.apireq** file that you can save, copy and version like any other file.
+
+### Opening it
+
+- Press **Ctrl+Shift+A**, or use **{{menu.tools}} → {{menu.tools.apiClient}}**.
+- Or use **{{menu.file}} → New API request (.apireq)**.
+
+The document opens in the **{{apiClient.builder}}**. To see and edit the file as text (JSON), click **{{toolbar.editText}}**.
+
+### Building the request
+
+Choose the **{{apiClient.method}}** (GET, POST…) and type the address in **{{apiClient.url}}**. The details are in tabs:
+
+- **{{apiClient.tab.params}}**: the query parameters. What you type in the URL appears here, and the other way round.
+- **{{apiClient.tab.auth}}**: how to identify yourself to the service (see below).
+- **{{apiClient.tab.headers}}**: the request headers.
+- **{{apiClient.tab.body}}**: the content you send. In **{{apiClient.body.type}}** you choose JSON, XML, text, HTML, a form, a form with files, a binary file, GraphQL, SOAP or no body.
+- **{{apiClient.tab.settings}}**: timeout, redirects, proxy, certificates and **{{apiClient.settings.verifyTls}}**. Turn the check off only in test environments.
+
+In any field, use <code>&#123;&#123;name&#125;&#125;</code> to insert a variable from the active environment.
+
+### Sending and reading the response
+
+Click **{{apiClient.send}}** or press **Ctrl+Enter**. While the request is running, **Esc** cancels it. The arrow button next to it offers **{{apiClient.sendDownload}}**, which writes the body straight to a file (useful for large or binary responses).
+
+The response shows the status, time and size, with the tabs **{{apiClient.response.tab.body}}**, **{{apiClient.response.tab.headers}}**, **{{apiClient.response.tab.cookies}}**, **{{apiClient.response.tab.tests}}** and **{{apiClient.response.tab.timings}}**. The body can be shown as **{{apiClient.response.view.tree}}** (to open and close parts of the JSON), **{{apiClient.response.view.pretty}}** or **{{apiClient.response.view.raw}}**. Use **{{apiClient.response.saveResponse}}** to keep the response in an .apiresp file, and **{{apiClient.response.openBody}}** to edit it as a regular document.
+
+### Authorization
+
+In the **{{apiClient.tab.auth}}** tab, pick the **{{apiClient.auth.type}}**: API Key, Basic Auth, Bearer Token, OAuth 1.0 or OAuth 2.0. OAuth 2.0 offers the **{{apiClient.oauth.flow.authorizationCode}}**, **{{apiClient.oauth.flow.clientCredentials}}**, **{{apiClient.oauth.flow.deviceCode}}** and **{{apiClient.oauth.flow.password}}** flows; click **{{apiClient.oauth.getToken}}** and, when needed, the system browser opens so you can authorize access. With **{{apiClient.auth.inherit}}**, the request uses the authorization set on the collection.
+
+For passwords and tokens, use a secret variable (see "Environments and secrets"): that way the value is never written to the request file.
+
+### Tests and extractions
+
+In the **{{apiClient.tab.tests}}** tab:
+
+- **{{apiClient.tests.assertions}}**: rules checked on every send, such as "status equals 200", "the body contains a text" or "the JSONPath exists". The result appears in the response's **{{apiClient.response.tab.tests}}** tab.
+- **{{apiClient.tests.extractions}}**: store a value from the response (a token, for example) in an environment variable, to use in the next requests.
+
+### Environments and secrets
+
+![API environment with a regular and a secret variable](img/s24-api-environment.png)
+
+An environment groups variables, such as the address of the test server and of production. Use **{{menu.tools}} → {{menu.tools.apiEnvironments}}** to create one (an **.apienv** file) and pick the active one in the **{{apiClient.env.select}}** selector.
+
+- Tick **{{apiClient.env.secret}}** on sensitive variables. The value is encrypted on this computer and **does not go into the .apienv file**.
+- Tick **{{apiClient.env.production}}** on a production environment: the app asks for confirmation before sending POST, PUT, PATCH and DELETE.
+- Received cookies are kept separately per environment; view or delete them in **{{menu.tools}} → {{menu.tools.apiCookies}}**.
+
+### Collections and history
+
+A collection is a folder with the requests and the **.apicol** file, which holds the shared authorization and variables. In the sidebar, the **{{apiClient.col.section}}** section lists the collections in your open folders; right-click to create requests and folders, **{{apiClient.col.run}}**, **{{apiClient.col.export}}**, **{{apiClient.col.document}}** (generates the collection's documentation) and **{{apiClient.col.settings}}**.
+
+The **{{apiClient.history.section}}** (also under **{{menu.tools}} → {{menu.tools.apiHistory}}**) lists the latest requests you sent, and you can clear it whenever you like.
+
+### Importing, exporting and generating code
+
+- **{{menu.tools}} → {{menu.tools.apiImport}}** brings in requests from curl, Postman, OpenAPI/Swagger, Insomnia, HAR and .http files. Click **{{apiClient.import.analyze}}** to see what will be imported and choose **{{apiClient.import.asCollection}}** or **{{apiClient.import.openInTabs}}**. Pasting a curl command into the URL also offers to import it.
+- **{{apiClient.col.export}}** saves the collection as Postman, OpenAPI, HAR, .http or curl. Values of secret variables are never exported.
+- The **{{apiClient.code}}** button opens **{{apiClient.codegen.title}}** and shows the request in several languages, ready to copy.
+
+### Running a collection
+
+In **{{apiClient.col.run}}**, choose the requests, the environment, the number of iterations and the delay between them. A data file (CSV or JSON) repeats the run with the values of each row, and **{{apiClient.runner.stopOnFailure}}** stops at the first failure. Click **{{apiClient.runner.start}}**: the result opens as a report (**.apirun**) with totals, times and each request's tests. With **{{apiClient.report.export}}** the report can be saved as JUnit XML, HTML or Markdown.
+
+### GraphQL
+
+In **{{apiClient.body.type}}**, choose GraphQL to write the **{{apiClient.graphql.query}}** and the **{{apiClient.graphql.variables}}**. With **{{apiClient.graphql.loadSchema}}**, the app reads the server's schema, shows the documentation for the types and offers autocomplete.
+
+### Security
+
+- Every request leaves from your own computer, through the app; nothing goes through our servers.
+- Passwords, tokens and secret values are kept in the operating system's vault (encrypted). If the system has no vault, they stay in memory only and are lost when you close the app.
+- These values **never** go into files (.apireq, .apienv, .apicol), exports, generated code, logs or the cloud. History and cookies also stay on this computer only.
+- Only the saved responses and reports of a collection can be synced to the cloud, and only if you turn on **{{apiClient.col.syncResponses}}**.
+
+## 9. Searching in files
 
 ![Search panel with results grouped by file](img/s06-search.png)
 
@@ -166,7 +247,7 @@ To replace the text, type the new text in the replacement field and click **{{se
 
 The search does not enter folders such as `node_modules` and `.git`, nor binary files or files larger than 5 MB. It shows at most 5,000 matches at a time.
 
-## 9. Language, encoding and line endings
+## 10. Language, encoding and line endings
 
 ![Encoding menu](img/s09-menu-encoding.png)
 
@@ -181,7 +262,7 @@ The search does not enter folders such as `node_modules` and `.git`, nor binary 
 
 The current encoding and line ending appear in the status bar.
 
-## 10. Snippets and macros
+## 11. Snippets and macros
 
 ![Snippets window](img/s12-snippets.png)
 
@@ -191,7 +272,7 @@ The current encoding and line ending appear in the status bar.
 
 **Macros** repeat a sequence you performed. Press **Ctrl+Shift+R** to start recording, type or edit whatever you like, and press **Ctrl+Shift+R** again to stop. After that, **Ctrl+Shift+M** runs the last recording. In **{{menu.tools.macros}}** you choose how many times to repeat it and can save the macro with a name. What gets recorded: typed text, pasted text, the arrow keys, Home, End, Backspace, Delete, Tab, Enter and menu commands. Mouse clicks and Ctrl+Z are not recorded.
 
-## 11. Account and cloud files
+## 12. Account and cloud files
 
 ![First access: server address](img/s16a-account-server.png)
 
@@ -219,13 +300,13 @@ While you are signed in, the status bar shows, to the left of the cloud icon, ho
 
 If the same document is changed on two computers before they sync, each computer keeps its own text, and the other version opens in a new tab with "(conflict – other computer)" in its name, so nothing is lost.
 
-## 12. Languages
+## 13. Languages
 
 ![Language flags next to the preview button](img/s08-flags.png)
 
 The application is available in **German, Spanish, French, English, Portuguese (Brazil) and Portuguese (Portugal)**. It opens in your system's language; if there is no translation, it opens in English. To switch, click the flag of the language, to the left of the preview button. The change is immediate and remembered for next time. This manual opens in the language currently in use.
 
-## 13. Keyboard shortcuts
+## 14. Keyboard shortcuts
 
 ![Keyboard shortcuts window](img/s14-shortcuts.png)
 
@@ -233,7 +314,7 @@ To see the list inside the application, open **{{menu.help}} → {{menu.help.sho
 
 {{shortcuts}}
 
-## 14. Frequently asked questions
+## 15. Frequently asked questions
 
 **I closed the application without saving. Did I lose my text?**
 No. Unsaved text is kept automatically and comes back when you open the application again.
@@ -253,7 +334,7 @@ Check the server address and your internet connection. If the message says the s
 **How do I see the application version?**
 In **{{menu.help}} → {{menu.help.about}}**.
 
-## 15. About and support
+## 16. About and support
 
 ![About window](img/s15-about.png)
 

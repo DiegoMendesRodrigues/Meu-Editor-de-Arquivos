@@ -23,6 +23,7 @@ import type { Eol, HashAlgorithm } from '@shared/ipc'
 import { useNotice } from '@/store/notice'
 import { selectedText } from '@/textCommands'
 import { createTerminal } from '@/terminal/terminalBus'
+import { useApiStore } from '@/store/api'
 export { autoFormat, collapseSpaces, convertCase, trimSpaces, urlEncodeDecode } from '@/textCommands'
 
 const docs = () => useDocuments.getState()
@@ -44,7 +45,31 @@ export function newFile(extension?: string): void {
 
 /** Ferramentas → Cliente de API (Ctrl+Shift+A): uma nova requisição, aberta no construtor. */
 export function openApiClient(): void {
+  useApiStore.getState().setSidebarOn(true)
   docs().newDocument('apireq')
+}
+
+/** Ferramentas → Ambientes: um ambiente novo, aberto no construtor. */
+export function newEnvironmentDocument(): void {
+  useApiStore.getState().setSidebarOn(true)
+  docs().newDocument('apienv')
+}
+
+/** Ferramentas → Importar…: curl, Postman, OpenAPI, Insomnia, HAR e .http. */
+export function openApiImport(): void {
+  useApiStore.getState().setSidebarOn(true)
+  useApiStore.getState().openDialog({ kind: 'import' })
+}
+
+/** Ferramentas → Cookies: os cookies guardados pelo Cliente de API. */
+export function openApiCookies(): void {
+  useApiStore.getState().openDialog({ kind: 'cookies' })
+}
+
+/** Ferramentas → Histórico: mostra as seções de API (com o histórico) na barra lateral. */
+export function showApiHistory(): void {
+  useApiStore.getState().setSidebarOn(true)
+  if (!useView.getState().sidebarVisible) useView.getState().toggle('sidebarVisible')
 }
 
 export async function openFile(): Promise<void> {

@@ -63,6 +63,8 @@ export const authSchema = z.discriminatedUnion('type', [
     tokenSecret: z.string().max(L.valueChars).optional(),
     signature: z.enum(['HMAC-SHA1', 'HMAC-SHA256', 'RSA-SHA1', 'PLAINTEXT']).default('HMAC-SHA1'),
     realm: z.string().max(L.valueChars).optional(),
+    /** RSA-SHA1: caminho da chave privada PEM (escolhida em diálogo; o Main só lê arquivos autorizados). */
+    privateKeyPath: z.string().max(4096).optional(),
     placement: z.enum(['header', 'query', 'body']).default('header')
   }),
   z.object({
@@ -75,6 +77,9 @@ export const authSchema = z.discriminatedUnion('type', [
     scopes: z.array(z.string().max(L.keyChars)).max(100).default([]),
     pkce: z.boolean().default(true),
     audience: z.string().max(L.valueChars).optional(),
+    /** Fluxo Password (legado). */
+    username: z.string().max(L.valueChars).optional(),
+    password: z.string().max(L.valueChars).optional(),
     tokenVar: variableName.default('token'),
     autoRefresh: z.boolean().default(true)
   })
@@ -167,7 +172,23 @@ export const requestSettingsSchema = z.object({
   verifyTls: z.boolean().default(true),
   minTlsVersion: z.enum(['TLSv1.2', 'TLSv1.3']).default('TLSv1.2'),
   encodeUrl: z.boolean().default(true),
-  sendCookies: z.boolean().default(true)
+  sendCookies: z.boolean().default(true),
+  /** Proxy: o do sistema, nenhum ou um endereço (http://host:porta, pode ter {{variáveis}}). */
+  proxy: z.enum(['system', 'none', 'manual']).default('system'),
+  proxyUrl: z.string().max(L.urlChars).default(''),
+  /** HTTP/2 (só https, com ALPN); sem suporte no servidor, volta para HTTP/1.1. */
+  http2: z.boolean().default(false),
+  /** Certificado de cliente e CA própria: caminhos neste computador, autorizados pelo diálogo. */
+  clientCert: z
+    .object({
+      certPath: z.string().max(4096).default(''),
+      keyPath: z.string().max(4096).default(''),
+      pfxPath: z.string().max(4096).default(''),
+      /** Nome da variável secreta com a senha da chave ou do PFX. */
+      passphraseVar: z.string().max(100).default('')
+    })
+    .optional(),
+  caPath: z.string().max(4096).default('')
 })
 export type RequestSettings = z.infer<typeof requestSettingsSchema>
 

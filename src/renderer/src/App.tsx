@@ -30,6 +30,7 @@ import { useLibrary } from '@/store/library'
 import { useApplyTheme } from '@/theme'
 import { TerminalPanel } from '@/terminal/TerminalPanel'
 import { useTerminals } from '@/store/terminals'
+import { ApiDialogs } from '@/api/ApiDialogs'
 
 /** Atalhos globais da aplicação (os de edição ficam com o próprio Monaco). */
 function useGlobalShortcuts(): void {
@@ -154,6 +155,7 @@ export function App() {
       {dialog === 'about' && <AboutDialog />}
       {dialog === 'update' && <UpdateDialog />}
       {dialog === 'hash' && <HashDialog />}
+      <ApiDialogs />
     </>
   )
 

@@ -36,8 +36,8 @@ export function FolderIcon({ colorKey, open, size = 14 }: { colorKey: string; op
   return <Icon size={size} aria-hidden data-color={color ?? 'amber'} className="shrink-0" style={{ color: folderColorHex(color ?? 'amber') }} />
 }
 
-const contentClass = 'z-50 min-w-48 rounded-md border border-border bg-surface py-1 text-[13px] shadow-lg'
-const itemClass =
+export const contentClass = 'z-50 min-w-48 rounded-md border border-border bg-surface py-1 text-[13px] shadow-lg'
+export const itemClass =
   'flex cursor-default items-center gap-2 px-3 py-1.5 outline-none data-[disabled]:text-zinc-400 data-[highlighted]:bg-accent data-[highlighted]:text-white'
 
 /**
@@ -49,7 +49,8 @@ export function EntryMenu({
   children,
   canRename = true,
   isEmpty,
-  onDelete
+  onDelete,
+  extra
 }: {
   target: SidebarTarget
   children: React.ReactNode
@@ -57,6 +58,8 @@ export function EntryMenu({
   /** Pastas: diz se está vazia (pode ler o disco na hora). */
   isEmpty?: () => boolean | Promise<boolean>
   onDelete?: () => void
+  /** Itens a mais no topo do menu (ContextMenu.Item), usados pelo Cliente de API. */
+  extra?: React.ReactNode
 }) {
   const t = useT()
   const openDialog = useSidebarDialog((s) => s.open)
@@ -74,6 +77,12 @@ export function EntryMenu({
       <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
       <ContextMenu.Portal>
         <ContextMenu.Content className={contentClass} aria-label={target.name}>
+          {extra && (
+            <>
+              {extra}
+              <ContextMenu.Separator className="my-1 h-px bg-zinc-200" />
+            </>
+          )}
           <ContextMenu.Item disabled={!canRename} onSelect={() => openDialog('rename', target)} className={itemClass}>
             <Pencil size={14} /> {t('sidebar.rename')}
           </ContextMenu.Item>
