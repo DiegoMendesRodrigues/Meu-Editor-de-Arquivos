@@ -27,6 +27,45 @@ test.describe('edição e arquivos', () => {
   })
 })
 
+test.describe('seleção por coluna e cores do editor', () => {
+  test('Shift+Ctrl+arrastar cria uma seleção por coluna (vários cursores)', async ({ app, page, workspace }) => {
+    await stubOpenDialog(app, [workspace.file('notas.txt')])
+    await page.keyboard.press('Control+O')
+    await expect(page.locator('.view-lines')).toContainText('primeira laranja')
+    const lines = page.locator('.view-line')
+    const a = (await lines.nth(0).boundingBox())!
+    const b = (await lines.nth(1).boundingBox())!
+    await page.keyboard.down('Control')
+    await page.keyboard.down('Shift')
+    await page.mouse.move(a.x + 40, a.y + a.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(a.x + 40, b.y + b.height / 2, { steps: 5 })
+    await page.mouse.up()
+    await page.keyboard.up('Shift')
+    await page.keyboard.up('Control')
+    await expect(page.locator('.cursors-layer .cursor')).toHaveCount(2) // um cursor por linha
+    await page.keyboard.type('#')
+    // O mesmo caractere entra na mesma coluna das duas linhas.
+    const texto = await page.locator('.view-lines').innerText()
+    const [l1, l2] = texto.replace(/ /g, ' ').split(String.fromCharCode(10))
+    expect(l1.indexOf('#')).toBeGreaterThanOrEqual(0)
+    expect(l2.indexOf('#')).toBe(l1.indexOf('#'))
+  })
+
+  test('a coluna dos números de linha tem fundo cinza nos dois modos', async ({ app, page, workspace }) => {
+    await stubOpenDialog(app, [workspace.file('notas.txt')])
+    await page.keyboard.press('Control+O')
+    await expect(page.locator('.view-lines')).toContainText('primeira laranja')
+    const cor = (): Promise<string> => page.locator('.margin').first().evaluate((el) => getComputedStyle(el).backgroundColor)
+    await page.screenshot({ path: process.env.SHOT_DIR ? `${process.env.SHOT_DIR}/claro.png` : undefined })
+    expect(await cor()).toBe('rgb(228, 228, 233)')
+    await page.getByRole('button', { name: 'Exibir' }).click()
+    await page.getByRole('menuitem', { name: 'Alterar entre o modo claro e escuro' }).click()
+    await expect.poll(cor).toBe('rgb(45, 45, 49)')
+    await page.screenshot({ path: process.env.SHOT_DIR ? `${process.env.SHOT_DIR}/escuro.png` : undefined })
+  })
+})
+
 test.describe('novo documento e barra lateral', () => {
   test('a seta ao lado de Novo cria documentos de cada tipo', async ({ page }) => {
     // Os tipos sem seção ficam no próprio menu; os outros, no submenu da seção.

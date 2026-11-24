@@ -2,7 +2,7 @@
 /** Seções do Cliente de API na barra lateral: ambiente ativo, coleções e histórico. */
 import { useEffect, useMemo, useState } from 'react'
 import * as ContextMenu from '@radix-ui/react-context-menu'
-import { Activity, ChevronRight, Cloud, Cookie, FilePlus, FileText, FolderPlus, Layers, Library, Play, Plus, RefreshCw, Settings, Server, Share, Sparkles, Trash2, X } from 'lucide-react'
+import { Activity, ChevronRight, Cloud, Cookie, FilePlus, FileText, FolderPlus, Layers, Library, Play, Plus, RefreshCw, Settings, Server, Share, Sparkles, Trash2 } from 'lucide-react'
 import { useT } from '@/i18n'
 import { useCloud, joinPath } from '@/store/cloud'
 import { isDirty, useActiveDocument, useDocuments } from '@/store/documents'
@@ -238,7 +238,6 @@ export function useApiSidebarVisible(): boolean {
 /** Ambiente ativo. */
 export function ApiEnvironmentSection() {
   const t = useT()
-  const setSidebarOn = useApiStore((s) => s.setSidebarOn)
   const doc = useActiveDocument()
   return (
     <Section
@@ -248,7 +247,6 @@ export function ApiEnvironmentSection() {
       actions={
         <>
           <IconButton icon={Plus} label={t('apiClient.env.new')} onClick={newEnvironmentDocument} />
-          <IconButton icon={X} label={t('apiClient.sidebar.hide')} onClick={() => setSidebarOn(false)} />
         </>
       }
     >

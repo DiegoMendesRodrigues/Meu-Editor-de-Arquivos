@@ -80,7 +80,7 @@ export const ptBR = {
   "menu.edit.redo": "Refazer",
   "menu.edit.selectAll": "Selecionar tudo",
   "menu.edit.columnSelection": "Seleção por coluna",
-  "menu.edit.columnSelectionKeys": "Shift+Alt+Arrastar",
+  "menu.edit.columnSelectionKeys": "Shift+Ctrl+Arrastar",
   "menu.edit.sortAsc": "Ordenar linhas (A-Z)",
   "menu.edit.sortDesc": "Ordenar linhas (Z-A)",
   "menu.edit.removeDuplicates": "Remover linhas duplicadas",
@@ -326,7 +326,7 @@ export const ptBR = {
   "sc.cutCopyPaste": "Recortar / copiar / colar",
   "sc.selectLine": "Selecionar a linha",
   "sc.nextOccurrence": "Selecionar a próxima ocorrência (vários cursores)",
-  "sc.altClickKeys": "Alt+Clique",
+  "sc.altClickKeys": "Ctrl+Clique",
   "sc.addCursor": "Adicionar cursor",
   "sc.moveLine": "Mover a linha para cima / para baixo",
   "sc.copyLine": "Duplicar a linha",
@@ -1412,6 +1412,13 @@ export const ptBR = {
   "ai.error.diskFull": "Não há espaço livre suficiente em disco para o download.",
   "ai.error.busy": "Já há uma operação igual em andamento.",
   "ai.error.cancelled": "Operação cancelada.",
+  "menu.view.sidebarAreas": "Áreas da barra lateral",
+  "menu.view.showOpenDocs": "Exibir Documentos Abertos",
+  "menu.view.showCloud": "Exibir Nuvem",
+  "menu.view.showApiEnv": "Exibir Ambiente (API)",
+  "menu.view.showApiCollections": "Exibir Coleções",
+  "menu.view.showApiHistory": "Exibir Histórico",
+  "sidebar.removeArea": "Remover a área {name} da barra lateral",
 }
 
 export type Messages = typeof ptBR

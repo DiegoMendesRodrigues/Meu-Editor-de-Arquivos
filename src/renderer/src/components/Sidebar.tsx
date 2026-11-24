@@ -111,6 +111,7 @@ export function Sidebar() {
   const activePath = documents.find((d) => d.id === activeId)?.path ?? null
   const apiVisible = useApiSidebarVisible()
   const order = useSidebarLayout((s) => s.order)
+  const hidden = useSidebarLayout((s) => s.hidden)
 
   // Cada área visível agora; a ordem vem do usuário (arrastar o título), guardada neste computador.
   const sections: Partial<Record<SidebarSectionId, React.ReactNode>> = {
@@ -220,7 +221,7 @@ export function Sidebar() {
           )
         })
   }
-  const visible = order.filter((id) => sections[id] !== undefined)
+  const visible = order.filter((id) => sections[id] !== undefined && !hidden.includes(id))
 
   return (
     <aside className="h-full overflow-y-auto bg-chrome pt-2">

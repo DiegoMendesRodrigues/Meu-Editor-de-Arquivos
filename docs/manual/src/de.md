@@ -53,7 +53,7 @@ Der im Explorer geöffnete Ordner kann hier weder umbenannt noch gelöscht werde
 
 Jede Datei hat ein Symbol nach ihrem Typ: Dokumente (.md, .txt, .tex), Logs, Programmierung, Skripte, Web, Daten und Konfiguration (dieselben Bereiche wie die Schaltfläche **+**) und ein allgemeines Symbol für alle anderen.
 
-Die Bereiche der Seitenleiste ({{sidebar.openDocs}}, {{sidebar.recent}}, die des API-Clients und die übrigen) haben links vom Namen ein Dreieck: Klicken Sie darauf oder auf den Namen, um den Bereich auf- oder zuzuklappen. Um die Reihenfolge zu ändern, ziehen Sie den Namen des Bereichs nach oben oder unten (per Tastatur Alt+↑ und Alt+↓ bei ausgewähltem Namen). Die Reihenfolge und die zugeklappten Bereiche werden auf diesem Computer gespeichert.
+Die Bereiche der Seitenleiste ({{sidebar.openDocs}}, {{sidebar.recent}}, die des API-Clients und die übrigen) haben links vom Namen ein Dreieck: Klicken Sie darauf oder auf den Namen, um den Bereich auf- oder zuzuklappen. Um die Reihenfolge zu ändern, ziehen Sie den Namen des Bereichs nach oben oder unten (per Tastatur Alt+↑ und Alt+↓ bei ausgewähltem Namen). Die Reihenfolge und die zugeklappten Bereiche werden auf diesem Computer gespeichert. Um einen Bereich aus der Seitenleiste zu entfernen, klicken Sie auf das X rechts neben seinem Namen oder entfernen Sie das Häkchen unter **{{menu.view.sidebarAreas}}** im Menü **{{menu.view}}**; setzen Sie es erneut, damit der Bereich an seinen alten Platz zurückkehrt.
 
 ## 4. Speichern und temporäre Dokumente
 
@@ -75,8 +75,8 @@ Die Bearbeitungsbefehle finden Sie unter **{{menu.edit}}**, die Anzeigeoptionen 
 
 - **Rückgängig und Wiederholen:** Ctrl+Z und Ctrl+Y.
 - **Suchen und Ersetzen** im Dokument: Ctrl+F und Ctrl+H. Zu einer Zeile springen Sie mit Ctrl+G.
-- **Mehrere Cursor:** Halten Sie Alt gedrückt und klicken Sie dorthin, wo ein weiterer Cursor stehen soll, oder wählen Sie mit Ctrl+D das nächste Vorkommen des Wortes aus.
-- **{{menu.edit.columnSelection}}:** Halten Sie Shift+Alt gedrückt und ziehen Sie mit der Maus, um mehrere Zeilen in derselben Spalte zu bearbeiten.
+- **Mehrere Cursor:** Halten Sie Ctrl gedrückt und klicken Sie dorthin, wo ein weiterer Cursor stehen soll, oder wählen Sie mit Ctrl+D das nächste Vorkommen des Wortes aus.
+- **{{menu.edit.columnSelection}}:** Halten Sie Shift+Ctrl gedrückt und ziehen Sie mit der Maus, um mehrere Zeilen in derselben Spalte zu bearbeiten.
 - **Zeilen:** Alt+↑ und Alt+↓ verschieben die Zeile; Shift+Alt+↑ und Shift+Alt+↓ duplizieren sie; Ctrl+/ kommentiert sie aus oder ein.
 - **Aufräumen:** {{menu.edit.sortAsc}}, {{menu.edit.sortDesc}}, {{menu.edit.removeDuplicates}} und {{menu.edit.trimWhitespace}}.
 - **{{menu.view.invisibles}}:** zeigt Leerzeichen (·), Tabulatoren (→) und das Ende jeder Zeile (¶). Damit finden Sie überflüssige Leerzeichen sofort.

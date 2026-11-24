@@ -53,7 +53,7 @@ Le dossier ouvert dans l'explorateur ne peut être ni renommé ni supprimé d'ic
 
 Chaque fichier a une icône selon son type : documents (.md, .txt, .tex), journaux, programmation, scripts, web, données et configuration (les mêmes sections que le bouton **+**) et une icône générique pour les autres.
 
-Les zones de la barre latérale ({{sidebar.openDocs}}, {{sidebar.recent}}, celles du client d'API et les autres) ont un triangle à gauche du nom : cliquez dessus, ou sur le nom, pour ouvrir ou fermer la zone. Pour changer l'ordre, faites glisser le nom de la zone vers le haut ou vers le bas (au clavier, Alt+↑ et Alt+↓ avec le nom sélectionné). L'ordre et les zones fermées sont enregistrés sur cet ordinateur.
+Les zones de la barre latérale ({{sidebar.openDocs}}, {{sidebar.recent}}, celles du client d'API et les autres) ont un triangle à gauche du nom : cliquez dessus, ou sur le nom, pour ouvrir ou fermer la zone. Pour changer l'ordre, faites glisser le nom de la zone vers le haut ou vers le bas (au clavier, Alt+↑ et Alt+↓ avec le nom sélectionné). L'ordre et les zones fermées sont enregistrés sur cet ordinateur. Pour retirer une zone de la barre latérale, cliquez sur le X à droite de son nom, ou décochez-la dans **{{menu.view.sidebarAreas}}**, du menu **{{menu.view}}** ; cochez-la de nouveau pour qu'elle retrouve sa place.
 
 ## 4. Enregistrer et documents temporaires
 
@@ -75,8 +75,8 @@ Les commandes de modification se trouvent dans **{{menu.edit}}** et les options 
 
 - **Annuler et rétablir :** Ctrl+Z et Ctrl+Y.
 - **Rechercher et remplacer** dans le document : Ctrl+F et Ctrl+H. Pour aller à une ligne, utilisez Ctrl+G.
-- **Plusieurs curseurs :** maintenez Alt et cliquez là où vous voulez un autre curseur, ou appuyez sur Ctrl+D pour sélectionner l'occurrence suivante du mot.
-- **{{menu.edit.columnSelection}} :** maintenez Maj+Alt et faites glisser la souris pour modifier plusieurs lignes dans la même colonne.
+- **Plusieurs curseurs :** maintenez Ctrl et cliquez là où vous voulez un autre curseur, ou appuyez sur Ctrl+D pour sélectionner l'occurrence suivante du mot.
+- **{{menu.edit.columnSelection}} :** maintenez Maj+Ctrl et faites glisser la souris pour modifier plusieurs lignes dans la même colonne.
 - **Lignes :** Alt+↑ et Alt+↓ déplacent la ligne ; Shift+Alt+↑ et Shift+Alt+↓ la dupliquent ; Ctrl+/ la commente ou la décommente.
 - **Ranger :** {{menu.edit.sortAsc}}, {{menu.edit.sortDesc}}, {{menu.edit.removeDuplicates}} et {{menu.edit.trimWhitespace}}.
 - **{{menu.view.invisibles}} :** affiche les espaces (·), les tabulations (→) et la fin de chaque ligne (¶). Très pratique pour repérer les espaces en trop.

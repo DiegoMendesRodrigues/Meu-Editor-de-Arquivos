@@ -10,7 +10,12 @@ const STORAGE_KEY = 'sidebar.layout'
 interface StoredLayout {
   order: SidebarSectionId[]
   collapsed: SidebarSectionId[]
+  /** Áreas que o usuário escolheu não exibir (Exibir → Áreas da barra lateral, ou o X da área). */
+  hidden: SidebarSectionId[]
 }
+
+/** Áreas que podem ser ocultadas pelo usuário. */
+export const HIDEABLE_SECTIONS = ['openDocs', 'cloud', 'apiEnv', 'apiCollections', 'apiHistory'] as const satisfies readonly SidebarSectionId[]
 
 const isSection = (v: unknown): v is SidebarSectionId => typeof v === 'string' && (SIDEBAR_SECTIONS as readonly string[]).includes(v)
 
@@ -35,9 +40,13 @@ function load(): StoredLayout {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     const data = raw ? (JSON.parse(raw) as Partial<StoredLayout>) : {}
-    return { order: normalizeOrder(data.order), collapsed: Array.isArray(data.collapsed) ? data.collapsed.filter(isSection) : [] }
+    return {
+      order: normalizeOrder(data.order),
+      collapsed: Array.isArray(data.collapsed) ? data.collapsed.filter(isSection) : [],
+      hidden: Array.isArray(data.hidden) ? [...new Set(data.hidden.filter(isSection))] : []
+    }
   } catch {
-    return { order: [...SIDEBAR_SECTIONS], collapsed: [] }
+    return { order: [...SIDEBAR_SECTIONS], collapsed: [], hidden: [] }
   }
 }
 
@@ -51,6 +60,8 @@ function save(layout: StoredLayout): void {
 
 interface SidebarLayoutState extends StoredLayout {
   toggle: (id: SidebarSectionId) => void
+  setHidden: (id: SidebarSectionId, hidden: boolean) => void
+  toggleHidden: (id: SidebarSectionId) => void
   move: (id: SidebarSectionId, target: SidebarSectionId, after: boolean) => void
   /** Sobe (-1) ou desce (+1) uma posição entre as áreas visíveis agora. */
   step: (id: SidebarSectionId, delta: -1 | 1, visible: SidebarSectionId[]) => void
@@ -60,8 +71,8 @@ interface SidebarLayoutState extends StoredLayout {
 export const useSidebarLayout = create<SidebarLayoutState>((set, get) => {
   const commit = (patch: Partial<StoredLayout>): void => {
     set(patch)
-    const { order, collapsed } = get()
-    save({ order, collapsed })
+    const { order, collapsed, hidden } = get()
+    save({ order, collapsed, hidden })
   }
   return {
     ...load(),
@@ -69,6 +80,12 @@ export const useSidebarLayout = create<SidebarLayoutState>((set, get) => {
       const { collapsed } = get()
       commit({ collapsed: collapsed.includes(id) ? collapsed.filter((x) => x !== id) : [...collapsed, id] })
     },
+    // Ocultar não mexe na ordem: ao exibir de novo, a área volta onde estava.
+    setHidden: (id, hide) => {
+      const { hidden } = get()
+      if (hidden.includes(id) !== hide) commit({ hidden: hide ? [...hidden, id] : hidden.filter((x) => x !== id) })
+    },
+    toggleHidden: (id) => get().setHidden(id, !get().hidden.includes(id)),
     move: (id, target, after) => commit({ order: moveSection(get().order, id, target, after) }),
     step: (id, delta, visible) => {
       const shown = get().order.filter((x) => visible.includes(x))

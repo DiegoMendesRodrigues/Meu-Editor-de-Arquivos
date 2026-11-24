@@ -8,6 +8,7 @@ import type { MessageKey } from '@shared/i18n'
 import { t } from '@/i18n'
 import { useDocuments, isDirty, canPreview, type EditorDocument } from '@/store/documents'
 import { useWorkspace } from '@/store/workspace'
+import { useSidebarLayout } from '@/store/sidebarLayout'
 import { getActiveEditor, revealInDocument, runEditorAction } from '@/editor/editorRef'
 import { useSearch } from '@/store/search'
 import { useView } from '@/store/view'
@@ -97,6 +98,7 @@ export function openApiCookies(): void {
 /** Ferramentas → Histórico: mostra as seções de API (com o histórico) na barra lateral. */
 export function showApiHistory(): void {
   useApiStore.getState().setSidebarOn(true)
+  useSidebarLayout.getState().setHidden('apiHistory', false)
   if (!useView.getState().sidebarVisible) useView.getState().toggle('sidebarVisible')
 }
 

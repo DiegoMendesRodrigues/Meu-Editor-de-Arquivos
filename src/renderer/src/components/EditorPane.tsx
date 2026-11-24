@@ -139,7 +139,7 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
         renderControlCharacters: view.showInvisibles,
         folding: true,
         showFoldingControls: 'always',
-        multiCursorModifier: 'alt',
+        multiCursorModifier: 'ctrlCmd',
         smoothScrolling: true,
         scrollBeyondLastLine: false,
         tabSize: view.tabSize,

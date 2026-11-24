@@ -43,6 +43,10 @@ monaco.editor.defineTheme('meu-claro', {
   inherit: true,
   rules: [],
   colors: {
+    // Coluna dos números de linha (e da dobra) em cinza claro, diferente do editor, da barra lateral e das abas.
+    'editorGutter.background': '#e4e4e9',
+    'editorLineNumber.foreground': '#6b7280',
+    'editorLineNumber.activeForeground': '#27272a',
     'editorWhitespace.foreground': '#7c8591',
     // Sublinhado do corretor ortográfico (marcadores "info"): vermelho, como nos processadores de texto.
     'editorInfo.foreground': '#d32f2f'
@@ -54,6 +58,9 @@ monaco.editor.defineTheme('meu-escuro', {
   inherit: true,
   rules: [],
   colors: {
+    'editorGutter.background': '#2d2d31',
+    'editorLineNumber.foreground': '#8b8b93',
+    'editorLineNumber.activeForeground': '#e4e4e7',
     'editorWhitespace.foreground': '#6b7280',
     'editorInfo.foreground': '#f14c4c'
   }

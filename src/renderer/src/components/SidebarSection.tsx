@@ -1,8 +1,8 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { createContext, useContext, useState } from 'react'
-import { Play, type X } from 'lucide-react'
+import { Play, X } from 'lucide-react'
 import { useT } from '@/i18n'
-import { useSidebarLayout, type SidebarSectionId } from '@/store/sidebarLayout'
+import { HIDEABLE_SECTIONS, useSidebarLayout, type SidebarSectionId } from '@/store/sidebarLayout'
 
 /** Áreas visíveis agora, na ordem da tela (para mover pelo teclado com Alt+↑/↓). */
 export const VisibleSectionsContext = createContext<SidebarSectionId[]>([])
@@ -15,7 +15,8 @@ let dragging: SidebarSectionId | null = null
 /**
  * Área da barra lateral. O triângulo (ou um clique no título) abre e fecha a área; arrastar o título para
  * cima ou para baixo muda a ordem, que fica guardada neste computador (Alt+↑/↓ faz o mesmo pelo teclado).
- * Os botões de ação ficam à direita do título (visíveis ao passar o mouse).
+ * Os botões de ação ficam à direita do título (visíveis ao passar o mouse). As áreas que o usuário pode
+ * ocultar (HIDEABLE_SECTIONS) ganham um X junto das ações, com a mesma regra de visibilidade.
  */
 export function Section({
   id,
@@ -36,6 +37,8 @@ export function Section({
   const toggle = useSidebarLayout((s) => s.toggle)
   const move = useSidebarLayout((s) => s.move)
   const step = useSidebarLayout((s) => s.step)
+  const setHidden = useSidebarLayout((s) => s.setHidden)
+  const removable = (HIDEABLE_SECTIONS as readonly string[]).includes(id)
   const visible = useContext(VisibleSectionsContext)
   const [dropAt, setDropAt] = useState<'before' | 'after' | null>(null)
   const bodyId = `sidebar-section-${id}`
@@ -97,8 +100,11 @@ export function Section({
           />
           <h2 className="truncate text-[11px] font-semibold uppercase tracking-wide text-zinc-500">{title}</h2>
         </button>
-        {actions && (
-          <div className={`flex gap-0.5 ${alwaysShowActions ? '' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>{actions}</div>
+        {(actions || removable) && (
+          <div className={`flex gap-0.5 ${alwaysShowActions ? '' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>
+            {actions}
+            {removable && <IconButton icon={X} label={t('sidebar.removeArea', { name: title })} onClick={() => setHidden(id, true)} />}
+          </div>
         )}
       </div>
       <div id={bodyId} hidden={collapsed} className="mb-2">

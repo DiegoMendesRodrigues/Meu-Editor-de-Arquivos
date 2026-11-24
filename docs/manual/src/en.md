@@ -53,7 +53,7 @@ The folder open in the explorer cannot be renamed or deleted from here.
 
 Each file has an icon for its type: documents (.md, .txt, .tex), logs, programming, scripts, web, data and configuration (the same sections as the **+** button) and a generic icon for the rest.
 
-The sidebar areas ({{sidebar.openDocs}}, {{sidebar.recent}}, the API client areas and the others) have a triangle to the left of the name: click it, or the name, to expand or collapse the area. To change the order, drag the area name up or down (with the keyboard, Alt+↑ and Alt+↓ with the name focused). The order and the collapsed areas are saved on this computer.
+The sidebar areas ({{sidebar.openDocs}}, {{sidebar.recent}}, the API client areas and the others) have a triangle to the left of the name: click it, or the name, to expand or collapse the area. To change the order, drag the area name up or down (with the keyboard, Alt+↑ and Alt+↓ with the name focused). The order and the collapsed areas are saved on this computer. To remove an area from the sidebar, click the X to the right of its name, or clear it under **{{menu.view.sidebarAreas}}** in the **{{menu.view}}** menu; select it again to bring it back where it was.
 
 ## 4. Saving and temporary documents
 
@@ -75,8 +75,8 @@ Editing commands are in **{{menu.edit}}** and display options are in **{{menu.vi
 
 - **Undo and redo:** Ctrl+Z and Ctrl+Y.
 - **Find and replace** in the document: Ctrl+F and Ctrl+H. To jump to a line, use Ctrl+G.
-- **Multiple cursors:** hold Alt and click wherever you want another cursor, or press Ctrl+D to select the next occurrence of the word.
-- **{{menu.edit.columnSelection}}:** hold Shift+Alt and drag the mouse to edit several lines in the same column.
+- **Multiple cursors:** hold Ctrl and click wherever you want another cursor, or press Ctrl+D to select the next occurrence of the word.
+- **{{menu.edit.columnSelection}}:** hold Shift+Ctrl and drag the mouse to edit several lines in the same column.
 - **Lines:** Alt+↑ and Alt+↓ move the line; Shift+Alt+↑ and Shift+Alt+↓ duplicate it; Ctrl+/ comments or uncomments it.
 - **Tidying up:** {{menu.edit.sortAsc}}, {{menu.edit.sortDesc}}, {{menu.edit.removeDuplicates}} and {{menu.edit.trimWhitespace}}.
 - **{{menu.view.invisibles}}:** shows spaces (·), tabs (→) and the end of each line (¶). It is great for finding stray spaces.

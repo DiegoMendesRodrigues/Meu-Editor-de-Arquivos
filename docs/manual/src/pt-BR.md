@@ -53,7 +53,7 @@ A pasta aberta no explorador não pode ser renomeada nem excluída por aqui.
 
 Cada arquivo tem um ícone conforme o tipo: documentos (.md, .txt, .tex), logs, programação, scripts, web, dados e configuração (as mesmas seções do botão **+**) e um ícone genérico para os demais.
 
-As áreas da barra lateral ({{sidebar.openDocs}}, {{sidebar.recent}}, as do Cliente de API e as outras) têm um triângulo à esquerda do nome: clique nele, ou no nome, para abrir ou fechar a área. Para mudar a ordem, arraste o nome da área para cima ou para baixo (pelo teclado, Alt+↑ e Alt+↓ com o nome selecionado). A ordem e as áreas fechadas ficam guardadas neste computador.
+As áreas da barra lateral ({{sidebar.openDocs}}, {{sidebar.recent}}, as do Cliente de API e as outras) têm um triângulo à esquerda do nome: clique nele, ou no nome, para abrir ou fechar a área. Para mudar a ordem, arraste o nome da área para cima ou para baixo (pelo teclado, Alt+↑ e Alt+↓ com o nome selecionado). A ordem e as áreas fechadas ficam guardadas neste computador. Para tirar uma área da barra lateral, clique no X à direita do nome dela, ou desmarque-a em **{{menu.view.sidebarAreas}}**, no menu **{{menu.view}}**; marque-a de novo para ela voltar ao lugar de antes.
 
 ## 4. Salvar e documentos temporários
 
@@ -75,8 +75,8 @@ Os comandos de edição ficam em **{{menu.edit}}**, e os de exibição em **{{me
 
 - **Desfazer e refazer:** Ctrl+Z e Ctrl+Y.
 - **Localizar e substituir** no documento: Ctrl+F e Ctrl+H. Para ir a uma linha, use Ctrl+G.
-- **Vários cursores:** segure Alt e clique onde quiser um cursor, ou use Ctrl+D para selecionar a próxima ocorrência da palavra.
-- **{{menu.edit.columnSelection}}:** segure Shift+Alt e arraste o mouse para editar várias linhas na mesma coluna.
+- **Vários cursores:** segure Ctrl e clique onde quiser um cursor, ou use Ctrl+D para selecionar a próxima ocorrência da palavra.
+- **{{menu.edit.columnSelection}}:** segure Shift+Ctrl e arraste o mouse para editar várias linhas na mesma coluna.
 - **Linhas:** Alt+↑ e Alt+↓ movem a linha; Shift+Alt+↑ e Shift+Alt+↓ a duplicam; Ctrl+/ comenta ou descomenta.
 - **Organizar:** {{menu.edit.sortAsc}}, {{menu.edit.sortDesc}}, {{menu.edit.removeDuplicates}} e {{menu.edit.trimWhitespace}}.
 - **{{menu.view.invisibles}}:** mostra os espaços (·), as tabulações (→) e o fim de cada linha (¶). É ótimo para achar espaços sobrando.

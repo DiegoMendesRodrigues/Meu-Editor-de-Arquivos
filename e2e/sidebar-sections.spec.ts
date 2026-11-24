@@ -37,4 +37,28 @@ test.describe('barra lateral: áreas recolhíveis e reordenáveis', () => {
     await expect(header(page, 'Recentes')).toBeVisible()
     expect(await order(page)).toEqual(['openDocs', 'recent', 'explorer'])
   })
+
+  test('o X remove a área, o menu Exibir reflete, marcar de novo a traz de volta e o estado sobrevive ao recarregar', async ({ page }) => {
+    const abrirItem = async () => {
+      await page.getByRole('button', { name: 'Exibir', exact: true }).click()
+      await page.getByRole('menuitem', { name: 'Áreas da barra lateral' }).hover()
+      return page.getByRole('menuitem', { name: 'Exibir Documentos Abertos' })
+    }
+    await page.getByRole('button', { name: 'Remover a área Documentos abertos da barra lateral' }).click({ force: true })
+    expect(await order(page)).toEqual(['explorer', 'recent'])
+
+    let item = await abrirItem()
+    await expect(item.locator('svg')).toHaveCount(0)
+    await page.keyboard.press('Escape')
+
+    await page.reload()
+    await expect(header(page, 'Recentes')).toBeVisible()
+    expect(await order(page)).toEqual(['explorer', 'recent'])
+
+    item = await abrirItem()
+    await item.click()
+    expect(await order(page)).toEqual(['openDocs', 'explorer', 'recent'])
+    item = await abrirItem()
+    await expect(item.locator('svg')).toHaveCount(1)
+  })
 })

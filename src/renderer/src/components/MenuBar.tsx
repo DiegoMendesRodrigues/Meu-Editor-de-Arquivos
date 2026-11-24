@@ -10,6 +10,7 @@ import { useAccount } from '@/store/account'
 import { useLibrary } from '@/store/library'
 import { useView } from '@/store/view'
 import { useSpelling } from '@/store/spelling'
+import { HIDEABLE_SECTIONS, useSidebarLayout, type SidebarSectionId } from '@/store/sidebarLayout'
 import { LOCALES } from '@shared/i18n'
 import { HASH_ALGORITHMS } from '@shared/ipc'
 import { useWorkspace } from '@/store/workspace'
@@ -26,6 +27,15 @@ interface SubMenu {
   items: Entry[]
 }
 type Entry = Item | SubMenu | 'separator'
+
+/** Texto do item de cada área no menu Exibir → Áreas da barra lateral. */
+const SECTION_MENU_KEYS = {
+  openDocs: 'menu.view.showOpenDocs',
+  cloud: 'menu.view.showCloud',
+  apiEnv: 'menu.view.showApiEnv',
+  apiCollections: 'menu.view.showApiCollections',
+  apiHistory: 'menu.view.showApiHistory'
+} as const satisfies Partial<Record<SidebarSectionId, string>>
 
 const contentClass = 'z-50 max-h-[75vh] min-w-60 overflow-y-auto rounded-md border border-border bg-surface py-1 text-[13px] shadow-lg'
 const itemClass =
@@ -82,6 +92,8 @@ export function MenuBar() {
   const t = useT()
   const view = useView()
   const spelling = useSpelling()
+  const hiddenSections = useSidebarLayout((s) => s.hidden)
+  const toggleSectionHidden = useSidebarLayout((s) => s.toggleHidden)
   const folderOpen = useWorkspace((s) => s.folder !== null)
   const doc = useActiveDocument()
   const recording = useLibrary((s) => s.recording)
@@ -174,6 +186,14 @@ export function MenuBar() {
         { label: t('menu.view.togglePreview'), shortcut: 'Ctrl+Shift+E', action: cmd.togglePreview },
         'separator',
         { label: t('menu.view.sidebar'), shortcut: 'Ctrl+Shift+B', checked: view.sidebarVisible, action: () => view.toggle('sidebarVisible') },
+        {
+          label: t('menu.view.sidebarAreas'),
+          items: HIDEABLE_SECTIONS.map((id) => ({
+            label: t(SECTION_MENU_KEYS[id]),
+            checked: !hiddenSections.includes(id),
+            action: () => toggleSectionHidden(id)
+          }))
+        },
         { label: t('menu.view.bottomPanel'), checked: view.bottomPanelVisible, action: () => view.toggle('bottomPanelVisible') },
         { label: t('menu.view.fullScreen'), shortcut: 'F11', checked: view.fullScreen, action: cmd.toggleFullScreen },
         'separator',
@@ -223,6 +243,7 @@ export function MenuBar() {
         { label: t('menu.tools.macros'), action: cmd.openMacros },
         { label: t('menu.tools.openTerminal'), action: cmd.openTerminal },
         { label: t('menu.tools.ai'), shortcut: 'Ctrl+Shift+I', action: cmd.toggleAssistant },
+        'separator',
         { label: t('menu.tools.apiClient'), shortcut: 'Ctrl+Shift+A', action: cmd.openApiClient },
         { label: t('menu.tools.apiWebSocket'), action: cmd.newWebSocketDocument },
         { label: t('menu.tools.apiGrpc'), action: cmd.newGrpcDocument },
