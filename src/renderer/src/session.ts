@@ -122,6 +122,7 @@ async function restoreDocument(s: SessionDocument): Promise<Omit<EditorDocument,
       // Conversões de codificação/quebra de linha ainda não salvas voltam como estavam.
       encoding: s.unsavedContent === undefined ? file.encoding : s.encoding,
       savedEncoding: file.encoding,
+      savedEol: file.eol,
       eol: s.unsavedContent === undefined ? file.eol : s.eol,
       content: s.unsavedContent ?? file.content,
       savedContent: file.content

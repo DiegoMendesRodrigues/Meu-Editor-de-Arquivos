@@ -18,6 +18,9 @@ export type ViewKey = {
 }[keyof ViewValues]
 
 interface ViewState extends ViewValues {
+  /** Documento em tela inteira (sem menus, barras e painéis). Não fica guardado na sessão. */
+  fullScreen: boolean
+  setFullScreen(on: boolean): void
   toggle(key: ViewKey): void
   setAll(values: Partial<ViewValues>): void
   /** Altera o tamanho da fonte (limitado a 8–40). */
@@ -37,6 +40,8 @@ export const useView = create<ViewState>((set) => ({
   insertSpaces: true,
   fontSize: DEFAULT_FONT_SIZE,
   tabSize: 4,
+  fullScreen: false,
+  setFullScreen: (on) => set({ fullScreen: on }),
   toggle: (key) => set((s) => ({ [key]: !s[key] })),
   setAll: (values) => set(values),
   zoomFont: (delta) => set((s) => ({ fontSize: clamp(s.fontSize + delta, 8, 40) })),

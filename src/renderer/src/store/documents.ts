@@ -4,6 +4,7 @@ import type { CloudFileContent, Encoding, Eol, OpenedFile, SavedFile } from '@sh
 import { untitledNumber } from '@shared/i18n'
 import { languageFromName } from '@/editor/languages'
 import { t } from '@/i18n'
+import { applyEol } from '@shared/eol'
 
 export interface EditorDocument {
   id: string
@@ -17,6 +18,9 @@ export interface EditorDocument {
   encoding: Encoding
   /** Codificação da última gravação/leitura; se diferir de `encoding`, há conversão pendente. Ausente = igual. */
   savedEncoding?: Encoding
+  /** Quebra de linha guardada no disco (LF e CR têm o mesmo texto dentro do app). Ausente = igual a `eol`. */
+  savedEol?: Eol
+  /** Quebra de linha do arquivo. Documentos CR ficam com LF no app e são convertidos ao gravar. */
   eol: Eol
   /** Markdown abre formatado ('preview'); o usuário alterna para 'edit' para editar o texto. */
   mode: DocumentMode
@@ -80,16 +84,13 @@ interface DocumentsState {
 }
 
 const defaultEol: Eol = navigator.userAgent.includes('Windows') ? 'CRLF' : 'LF'
-const LF = String.fromCharCode(10)
-const CRLF = String.fromCharCode(13, 10)
-const EOL_PATTERN = new RegExp(`${CRLF}|${String.fromCharCode(13)}|${LF}`, 'g')
 let seq = 0
 const nextId = (): string => `doc-${++seq}`
 /** Identificador do documento entre computadores (área de trabalho sincronizada). */
 export const newSyncId = (): string => crypto.randomUUID()
 
 export const isDirty = (d: EditorDocument): boolean =>
-  d.content !== d.savedContent || d.encoding !== (d.savedEncoding ?? d.encoding)
+  d.content !== d.savedContent || d.encoding !== (d.savedEncoding ?? d.encoding) || d.eol !== (d.savedEol ?? d.eol)
 
 /** Identificador estável do modelo no Monaco (um modelo por documento). */
 export const modelPath = (d: EditorDocument): string => `inmemory://doc/${d.id}/${d.name}`
@@ -159,7 +160,7 @@ export const useDocuments = create<DocumentsState>((set) => ({
     set((s) => ({
       documents: s.documents.map((d) =>
         d.id === id
-          ? { ...d, path: saved.path, name: saved.name, savedContent: content, savedEncoding: d.encoding, language: languageFromName(saved.name), missingOnDisk: false }
+          ? { ...d, path: saved.path, name: saved.name, savedContent: content, savedEncoding: d.encoding, savedEol: undefined, language: languageFromName(saved.name), missingOnDisk: false }
           : d
       )
     })),
@@ -182,7 +183,7 @@ export const useDocuments = create<DocumentsState>((set) => ({
     set((s) => ({
       documents: s.documents.map((d) =>
         d.id === id
-          ? { ...d, content: file.content, savedContent: file.content, encoding: file.encoding, savedEncoding: file.encoding, eol: file.eol, missingOnDisk: false }
+          ? { ...d, content: file.content, savedContent: file.content, encoding: file.encoding, savedEncoding: file.encoding, eol: file.eol, savedEol: undefined, missingOnDisk: false }
           : d
       )
     })),
@@ -240,7 +241,7 @@ export const useDocuments = create<DocumentsState>((set) => ({
         if (d.id !== id) return d
         // O nome da aba passa a ser o do arquivo na nuvem (e a linguagem segue a extensão).
         const name = cloud.path.split('/').pop() ?? cloud.path
-        return { ...d, cloud, name, language: languageFromName(name), savedContent: content, savedEncoding: d.encoding }
+        return { ...d, cloud, name, language: languageFromName(name), savedContent: content, savedEncoding: d.encoding, savedEol: undefined }
       })
     })),
 
@@ -264,7 +265,7 @@ export const useDocuments = create<DocumentsState>((set) => ({
   setEol: (id, eol) =>
     set((s) => ({
       documents: s.documents.map((d) =>
-        d.id === id ? { ...d, eol, content: d.content.replace(EOL_PATTERN, eol === 'CRLF' ? CRLF : LF) } : d
+        d.id === id ? { ...d, eol, savedEol: d.savedEol ?? d.eol, content: applyEol(d.content, eol) } : d
       )
     }))
 }))

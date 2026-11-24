@@ -10,6 +10,7 @@ import { open, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { join, relative, resolve } from 'node:path'
 import type { SearchFileResult, SearchResponse } from '@shared/ipc'
 import { buildGlobFilter, buildRegex, replaceText, searchText } from '@shared/search'
+import { toStoredText } from '@shared/eol'
 import { decodeText, encodeText } from './textCodec'
 import { MAX_FILES_SCANNED, type ReplaceWorkResult, type WorkRequest } from './searchTypes'
 
@@ -111,7 +112,7 @@ async function replaceInFiles(req: Extract<WorkRequest, { kind: 'replace' }>): P
       const decoded = decodeText(buf)
       const replaced = replaceText(decoded.content.replace(/\r\n/g, '\n'), re, req.replacement, req.options.regex)
       if (replaced.count === 0) continue
-      const out = decoded.eol === 'CRLF' ? replaced.text.replace(/\n/g, '\r\n') : replaced.text
+      const out = decoded.eol === 'CRLF' ? replaced.text.replace(/\n/g, '\r\n') : toStoredText(replaced.text, decoded.eol)
       await writeFile(path, encodeText(out, decoded.encoding))
       result.filesChanged++
       result.replacements += replaced.count

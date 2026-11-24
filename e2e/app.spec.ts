@@ -29,13 +29,15 @@ test.describe('edição e arquivos', () => {
 
 test.describe('novo documento e barra lateral', () => {
   test('a seta ao lado de Novo cria documentos de cada tipo', async ({ page }) => {
-    for (const [opcao, nome] of [
-      ['.txt (texto)', 'Sem título 2.txt'],
-      ['.py (Python)', 'Sem título 3.py'],
-      ['.sql (SQL)', 'Sem título 4.sql'],
-      ['.md (Markdown)', 'Sem título 5.md']
+    // Os tipos sem seção ficam no próprio menu; os outros, no submenu da seção.
+    for (const [secao, opcao, nome] of <[string | null, string, string][]>[
+      [null, '.txt (texto)', 'Sem título 2.txt'],
+      ['Programação', '.py (Python)', 'Sem título 3.py'],
+      ['Dados e configuração', '.sql (SQL)', 'Sem título 4.sql'],
+      [null, '.md (Markdown)', 'Sem título 5.md']
     ]) {
       await page.getByRole('button', { name: 'Escolher o tipo do novo documento' }).click()
+      if (secao) await page.getByRole('menuitem', { name: secao }).hover()
       await page.getByRole('menuitem', { name: opcao }).click()
       await expect(page.getByRole('tab', { selected: true })).toContainText(nome)
     }
@@ -57,9 +59,9 @@ test.describe('menu Ajuda', () => {
     await expect(page.getByRole('button', { name: 'Plugins' })).toHaveCount(0)
     await page.getByRole('button', { name: 'Ajuda' }).click()
     const items = await page.getByRole('menuitem').allInnerTexts()
-    expect(items.map((t) => t.trim())).toEqual(['Manual do usuário', 'Atalhos de teclado', 'Sobre o Meu Editor de Arquivos', 'Suporte Técnico'])
+    expect(items.map((t) => t.trim())).toEqual(['Manual do usuário', 'Atalhos de teclado', 'Sobre o Meu Editor de Arquivos', 'Suporte Técnico', 'Verificar por atualizações'])
     await expect(page.getByRole('menuitem', { name: 'Manual do usuário' })).not.toHaveAttribute('data-disabled', '') // o manual já existe
-    await expect(page.getByRole('menuitem', { name: 'Suporte Técnico' })).toHaveAttribute('data-disabled', '')
+    await expect(page.getByRole('menuitem', { name: 'Suporte Técnico' })).not.toHaveAttribute('data-disabled', '') // abre a página de suporte do site
   })
 
   test('Sobre mostra ícone, nome, versão, desenvolvedor com link e botão Fechar', async ({ page }) => {
@@ -68,7 +70,7 @@ test.describe('menu Ajuda', () => {
     const dialog = page.getByRole('dialog')
     await expect(dialog.locator('img')).toBeVisible()
     await expect(dialog.getByRole('heading', { name: 'Meu Editor de Arquivos', exact: true })).toBeVisible()
-    await expect(dialog).toContainText('Versão 1.0.0')
+    await expect(dialog).toContainText('Versão 1.1.0')
     await expect(dialog).not.toContainText('Informações sobre o aplicativo')
     const link = dialog.getByRole('link', { name: 'Diego Mendes Rodrigues' })
     await expect(link).toHaveAttribute('href', 'https://www.linkedin.com/in/diegomendesrodrigues/')
@@ -342,7 +344,7 @@ test.describe('manual do usuário', () => {
       await expect(manual.locator('main h2')).toHaveCount(15)
       // todas as telas do manual carregam (e estão no idioma do manual: cada idioma tem a sua pasta de imagens)
       const images = await manual.evaluate(() => [...document.images].map((i) => ({ src: i.getAttribute('src'), ok: i.complete && i.naturalWidth > 0 })))
-      expect(images.length).toBe(21)
+      expect(images.length).toBe(23)
       expect(images.filter((i) => !i.ok), `imagens quebradas em ${locale}`).toEqual([])
       // os rótulos do aplicativo citados no texto são os desta tela
       await expect(manual.locator('.ui').first()).toHaveText(translate(locale, 'menu.file'))

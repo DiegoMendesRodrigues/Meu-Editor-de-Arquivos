@@ -1,6 +1,6 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { Check } from 'lucide-react'
+import { Check, ChevronRight } from 'lucide-react'
 import * as cmd from '@/commands'
 import { languageLabel, languageMenu } from '@/editor/languages'
 import { useT } from '@/i18n'
@@ -11,6 +11,7 @@ import { useLibrary } from '@/store/library'
 import { useView } from '@/store/view'
 import { useSpelling } from '@/store/spelling'
 import { LOCALES } from '@shared/i18n'
+import { HASH_ALGORITHMS } from '@shared/ipc'
 import { useWorkspace } from '@/store/workspace'
 
 interface Item {
@@ -19,7 +20,47 @@ interface Item {
   action?: () => void
   checked?: boolean
 }
-type Entry = Item | 'separator'
+/** Item que abre um submenu. */
+interface SubMenu {
+  label: string
+  items: Entry[]
+}
+type Entry = Item | SubMenu | 'separator'
+
+const contentClass = 'z-50 max-h-[75vh] min-w-60 overflow-y-auto rounded-md border border-border bg-white py-1 text-[13px] shadow-lg'
+const itemClass =
+  'flex cursor-default items-center gap-2 px-3 py-1.5 outline-none data-[disabled]:text-zinc-400 data-[highlighted]:bg-accent data-[highlighted]:text-white'
+
+function Entries({ items }: { items: Entry[] }) {
+  return (
+    <>
+      {items.map((item, i) =>
+        item === 'separator' ? (
+          <DropdownMenu.Separator key={i} className="my-1 h-px bg-zinc-200" />
+        ) : 'items' in item ? (
+          <DropdownMenu.Sub key={item.label}>
+            <DropdownMenu.SubTrigger className={`${itemClass} data-[state=open]:bg-zinc-200`}>
+              <span className="w-4" />
+              <span className="flex-1">{item.label}</span>
+              <ChevronRight size={14} className="opacity-60" />
+            </DropdownMenu.SubTrigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.SubContent sideOffset={2} alignOffset={-4} className={contentClass}>
+                <Entries items={item.items} />
+              </DropdownMenu.SubContent>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Sub>
+        ) : (
+          <DropdownMenu.Item key={item.label} disabled={!item.action} onSelect={() => item.action?.()} className={itemClass}>
+            <span className="w-4">{item.checked && <Check size={14} />}</span>
+            <span className="flex-1">{item.label}</span>
+            {item.shortcut && <span className="text-xs opacity-60">{item.shortcut}</span>}
+          </DropdownMenu.Item>
+        )
+      )}
+    </>
+  )
+}
 
 function Menu({ title, items }: { title: string; items: Entry[] }) {
   return (
@@ -28,27 +69,8 @@ function Menu({ title, items }: { title: string; items: Entry[] }) {
         {title}
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          align="start"
-          sideOffset={2}
-          className="z-50 max-h-[75vh] min-w-60 overflow-y-auto rounded-md border border-border bg-white py-1 text-[13px] shadow-lg"
-        >
-          {items.map((item, i) =>
-            item === 'separator' ? (
-              <DropdownMenu.Separator key={i} className="my-1 h-px bg-zinc-200" />
-            ) : (
-              <DropdownMenu.Item
-                key={item.label}
-                disabled={!item.action}
-                onSelect={() => item.action?.()}
-                className="flex cursor-default items-center gap-2 px-3 py-1.5 outline-none data-[disabled]:text-zinc-400 data-[highlighted]:bg-accent data-[highlighted]:text-white"
-              >
-                <span className="w-4">{item.checked && <Check size={14} />}</span>
-                <span className="flex-1">{item.label}</span>
-                {item.shortcut && <span className="text-xs opacity-60">{item.shortcut}</span>}
-              </DropdownMenu.Item>
-            )
-          )}
+        <DropdownMenu.Content align="start" sideOffset={2} className={contentClass}>
+          <Entries items={items} />
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
@@ -107,7 +129,33 @@ export function MenuBar() {
         { label: t('menu.edit.trimWhitespace'), action: cmd.trimWhitespace },
         'separator',
         { label: t('menu.edit.indentSpaces'), checked: view.insertSpaces, action: () => view.toggle('insertSpaces') },
-        ...[2, 4, 8].map((n) => ({ label: t('menu.edit.tabSize', { n }), checked: view.tabSize === n, action: () => view.setTabSize(n) }))
+        ...[2, 4, 8].map((n) => ({ label: t('menu.edit.tabSize', { n }), checked: view.tabSize === n, action: () => view.setTabSize(n) })),
+        'separator',
+        {
+          label: t('menu.edit.eol'),
+          items: [
+            { label: t('menu.edit.eolWindows'), checked: doc?.eol === 'CRLF', action: withDoc(() => cmd.convertEol('CRLF')) },
+            { label: t('menu.edit.eolUnix'), checked: doc?.eol === 'LF', action: withDoc(() => cmd.convertEol('LF')) },
+            { label: t('menu.edit.eolMac'), checked: doc?.eol === 'CR', action: withDoc(() => cmd.convertEol('CR')) }
+          ]
+        },
+        {
+          label: t('menu.edit.case'),
+          items: [
+            { label: t('menu.edit.caseUpper'), action: withDoc(() => cmd.convertCase('upper')) },
+            { label: t('menu.edit.caseLower'), action: withDoc(() => cmd.convertCase('lower')) },
+            { label: t('menu.edit.caseSentence'), action: withDoc(() => cmd.convertCase('sentence')) }
+          ]
+        },
+        {
+          label: t('menu.edit.spaces'),
+          items: [
+            { label: t('menu.edit.trimRight'), action: withDoc(() => cmd.trimSpaces('right')) },
+            { label: t('menu.edit.trimLeft'), action: withDoc(() => cmd.trimSpaces('left')) },
+            { label: t('menu.edit.trimBoth'), action: withDoc(() => cmd.trimSpaces('both')) },
+            { label: t('menu.edit.collapseSpaces'), action: withDoc(cmd.collapseSpaces) }
+          ]
+        }
       ]
     },
     {
@@ -127,6 +175,7 @@ export function MenuBar() {
         'separator',
         { label: t('menu.view.sidebar'), shortcut: 'Ctrl+Shift+B', checked: view.sidebarVisible, action: () => view.toggle('sidebarVisible') },
         { label: t('menu.view.bottomPanel'), checked: view.bottomPanelVisible, action: () => view.toggle('bottomPanelVisible') },
+        { label: t('menu.view.fullScreen'), shortcut: 'F11', checked: view.fullScreen, action: cmd.toggleFullScreen },
         'separator',
         { label: t('menu.view.wordWrap'), checked: view.wordWrap, action: () => view.toggle('wordWrap') },
         { label: t('menu.view.invisibles'), checked: view.showInvisibles, action: () => view.toggle('showInvisibles') },
@@ -146,7 +195,8 @@ export function MenuBar() {
         { label: t('menu.encoding.utf8bom'), checked: doc?.encoding === 'UTF-8 BOM', action: withDoc(() => cmd.convertEncoding('UTF-8 BOM')) },
         'separator',
         { label: t('menu.encoding.crlf'), checked: doc?.eol === 'CRLF', action: withDoc(() => cmd.convertEol('CRLF')) },
-        { label: t('menu.encoding.lf'), checked: doc?.eol === 'LF', action: withDoc(() => cmd.convertEol('LF')) }
+        { label: t('menu.encoding.lf'), checked: doc?.eol === 'LF', action: withDoc(() => cmd.convertEol('LF')) },
+        { label: t('menu.encoding.cr'), checked: doc?.eol === 'CR', action: withDoc(() => cmd.convertEol('CR')) }
       ]
     },
     {
@@ -172,7 +222,15 @@ export function MenuBar() {
         ...LOCALES.map((l) => ({ label: t('menu.tools.spellLanguage', { name: l.name }), checked: spelling.locale === l.code, action: () => spelling.setLocale(l.code) })),
         'separator',
         { label: t('menu.tools.compare') },
-        { label: t('menu.tools.ai') }
+        { label: t('menu.tools.ai') },
+        'separator',
+        ...HASH_ALGORITHMS.map((algorithm) => ({
+          label: algorithm,
+          items: [
+            { label: t('menu.tools.hashGenerate'), action: () => cmd.openHash(algorithm) },
+            { label: t('menu.tools.hashSelection'), action: withDoc(() => void cmd.hashSelection(algorithm)) }
+          ]
+        }))
       ]
     },
     {

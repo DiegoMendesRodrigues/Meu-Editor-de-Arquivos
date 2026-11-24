@@ -46,7 +46,7 @@ strong{font-weight:650}
 </nav>
 <main>
 <h1>Meu Editor de Arquivos — Manual do usuário</h1>
-<p>Versão 1.0.0</p>
+<p>Versão 1.1.0</p>
 <h2 id="1-bem-vindo">1. Bem-vindo</h2>
 <p>O <strong>Meu Editor de Arquivos</strong> é um editor leve para quem trabalha com textos, anotações, scripts, arquivos de configuração, logs e código. Ele funciona no Windows 11, no Debian 12 e 13 e no Ubuntu 22.04 ou mais novo, e <strong>não precisa de internet</strong> para editar.</p>
 <p>O que você encontra nele:</p>
@@ -99,8 +99,22 @@ strong{font-weight:650}
 <li><strong><span class="ui">Quebra automática de linha</span></strong> e <strong><span class="ui">Recolher tudo</span> / <span class="ui">Expandir tudo</span></strong> ajudam a ler arquivos longos.</li>
 <li><strong>Tamanho da letra:</strong> Ctrl++ aumenta, Ctrl+- diminui e Ctrl+0 volta ao tamanho padrão.</li>
 <li><strong>Indentação:</strong> em <strong><span class="ui">Editar</span></strong>, escolha entre espaços ou tabulação e o tamanho (2, 4 ou 8 colunas).</li>
+<li><strong><span class="ui">Exibir Tela Inteira</span></strong> (F11, em <strong><span class="ui">Exibir</span></strong>): mostra só o documento, ocupando a tela toda. Pressione F11 de novo, ou clique no botão do canto superior direito, para sair.</li>
 </ul>
 <p>As suas preferências de exibição ficam guardadas para a próxima vez. Os textos internos do editor, como a caixa de busca (Ctrl+F) e a paleta de comandos (F1), aparecem em inglês.</p>
+<h3>Letras, espaços e quebras de linha</h3>
+<figure><img src="img/s20-menu-edit.png" alt="Menu Editar com o submenu Converter letras para aberto"><figcaption>Menu Editar com o submenu Converter letras para aberto</figcaption></figure><p>No fim do menu <strong><span class="ui">Editar</span></strong> há três submenus:</p>
+<ul>
+<li><strong><span class="ui">Conversão de final de linha</span>:</strong> converte as quebras de linha do documento para o formato Windows (CRLF), Unix (LF) ou Mac (CR). A conversão marca o documento como alterado; basta salvar para valer.</li>
+<li><strong><span class="ui">Converter letras para</span>:</strong> com um texto selecionado, escolha <span class="ui">Converter para MAIÚSCULAS</span>, <span class="ui">Converter para minúsculas</span> ou <span class="ui">Converter para o modo Título</span> (só a primeira letra de cada frase fica maiúscula).</li>
+<li><strong><span class="ui">Operações com espaços</span>:</strong> <span class="ui">Limpar espaços à direita</span>, <span class="ui">Limpar espaços à esquerda</span> e <span class="ui">Limpar espaços à direita e à esquerda</span> valem para a linha do cursor (ou para as linhas selecionadas). <span class="ui">Limpar espaços duplos do documento</span> troca dois ou mais espaços seguidos por um só no documento inteiro, sem mexer na indentação do começo das linhas.</li>
+</ul>
+<h3>MD5, SHA-1, SHA-256 e SHA-512</h3>
+<figure><img src="img/s21-hash.png" alt="Janela para gerar o SHA-256 de um texto"><figcaption>Janela para gerar o SHA-256 de um texto</figcaption></figure><p>No fim do menu <strong><span class="ui">Ferramentas</span></strong>, cada algoritmo tem duas opções:</p>
+<ul>
+<li><strong><span class="ui">Gerar</span>:</strong> abre uma janela; digite ou cole o texto e o resultado aparece na hora, logo abaixo. <strong><span class="ui">Copiar</span></strong> leva o resultado para a área de transferência.</li>
+<li><strong><span class="ui">Gerar a partir do texto selecionado</span>:</strong> calcula o resultado a partir do texto selecionado no documento e o deixa na área de transferência, pronto para colar. Um aviso aparece na barra de status.</li>
+</ul>
 <h3>Corretor ortográfico</h3>
 <figure><img src="img/s11a-spelling.png" alt="Palavra sublinhada e as sugestões de correção"><figcaption>Palavra sublinhada e as sugestões de correção</figcaption></figure><p>Em documentos Markdown, de texto (.txt) e LaTeX, as palavras que não estão no dicionário ficam sublinhadas em vermelho. Código, links, endereços, siglas e trechos entre crases não são verificados, e arquivos de log e CSV ficam de fora.</p>
 <ul>
@@ -133,7 +147,7 @@ strong{font-weight:650}
 <li><strong><span class="ui">Linguagem</span>:</strong> o aplicativo escolhe a linguagem pela extensão do arquivo e usa cores para facilitar a leitura. Para mudar a de um documento, abra o menu e escolha outra.</li>
 </ul>
 <figure><img src="img/s10-menu-language.png" alt="Menu Linguagem"><figcaption>Menu Linguagem</figcaption></figure><ul>
-<li><strong><span class="ui">Codificação</span>:</strong> converta o documento para <strong>UTF-8</strong> ou <strong>UTF-8 com BOM</strong>, e escolha a quebra de linha do <strong>Windows (CRLF)</strong> ou do <strong>Unix/Mac (LF)</strong>. A conversão marca o documento como alterado; basta salvar para valer.</li>
+<li><strong><span class="ui">Codificação</span>:</strong> converta o documento para <strong>UTF-8</strong> ou <strong>UTF-8 com BOM</strong>, e escolha a quebra de linha do <strong>Windows (CRLF)</strong>, do <strong>Unix (LF)</strong> ou do <strong>Mac (CR)</strong>. A conversão marca o documento como alterado; basta salvar para valer.</li>
 </ul>
 <p>A codificação e a quebra de linha atuais aparecem na barra de status.</p>
 <h2 id="10-snippets-e-macros">10. Snippets e macros</h2>
@@ -163,7 +177,7 @@ strong{font-weight:650}
 <h3>Arquivo</h3><table><tbody><tr><td><kbd>Ctrl+N</kbd></td><td>Novo documento (Markdown)</td></tr><tr><td><kbd>Ctrl+O</kbd></td><td>Abrir arquivos</td></tr><tr><td><kbd>Ctrl+Shift+K</kbd></td><td>Abrir pasta</td></tr><tr><td><kbd>Ctrl+S</kbd></td><td>Salvar</td></tr><tr><td><kbd>Ctrl+Shift+S</kbd></td><td>Salvar como</td></tr><tr><td><kbd>Ctrl+W</kbd></td><td>Fechar aba</td></tr><tr><td><kbd>Alt+F4</kbd></td><td>Sair</td></tr></tbody></table>
 <h3>Editar</h3><table><tbody><tr><td><kbd>Ctrl+Z</kbd></td><td>Desfazer</td></tr><tr><td><kbd>Ctrl+Y</kbd></td><td>Refazer</td></tr><tr><td><kbd>Ctrl+X</kbd> / <kbd>Ctrl+C</kbd> / <kbd>Ctrl+V</kbd></td><td>Recortar / copiar / colar</td></tr><tr><td><kbd>Ctrl+A</kbd></td><td>Selecionar tudo</td></tr><tr><td><kbd>Ctrl+L</kbd></td><td>Selecionar a linha</td></tr><tr><td><kbd>Ctrl+D</kbd></td><td>Selecionar a próxima ocorrência (vários cursores)</td></tr><tr><td><kbd>Alt+Clique</kbd></td><td>Adicionar cursor</td></tr><tr><td><kbd>Shift+Alt+Arrastar</kbd></td><td>Seleção por coluna</td></tr><tr><td><kbd>Alt+↑</kbd> / <kbd>Alt+↓</kbd></td><td>Mover a linha para cima / para baixo</td></tr><tr><td><kbd>Shift+Alt+↑</kbd> / <kbd>Shift+Alt+↓</kbd></td><td>Duplicar a linha</td></tr><tr><td><kbd>Ctrl+/</kbd></td><td>Comentar ou descomentar a linha</td></tr><tr><td><kbd>F1</kbd></td><td>Paleta de comandos</td></tr><tr><td><kbd>F7</kbd></td><td>Verificar ortografia</td></tr><tr><td><kbd>Ctrl+.</kbd></td><td>Sugestões de ortografia</td></tr></tbody></table>
 <h3>Pesquisar</h3><table><tbody><tr><td><kbd>Ctrl+F</kbd></td><td>Localizar</td></tr><tr><td><kbd>Ctrl+H</kbd></td><td>Substituir</td></tr><tr><td><kbd>Ctrl+Shift+F</kbd></td><td>Localizar em arquivos</td></tr><tr><td><kbd>Ctrl+G</kbd></td><td>Ir para linha</td></tr></tbody></table>
-<h3>Exibir</h3><table><tbody><tr><td><kbd>Ctrl+Shift+B</kbd></td><td>Mostrar ou ocultar a barra lateral</td></tr><tr><td><kbd>Ctrl+Shift+E</kbd></td><td>Alternar entre visualização e edição (Markdown e JSON)</td></tr><tr><td><kbd>Ctrl++</kbd></td><td>Aumentar fonte</td></tr><tr><td><kbd>Ctrl+-</kbd></td><td>Diminuir fonte</td></tr><tr><td><kbd>Ctrl+0</kbd></td><td>Tamanho padrão da fonte</td></tr></tbody></table>
+<h3>Exibir</h3><table><tbody><tr><td><kbd>Ctrl+Shift+B</kbd></td><td>Mostrar ou ocultar a barra lateral</td></tr><tr><td><kbd>Ctrl+Shift+E</kbd></td><td>Alternar entre visualização e edição (Markdown e JSON)</td></tr><tr><td><kbd>F11</kbd></td><td>Entrar ou sair da tela inteira</td></tr><tr><td><kbd>Ctrl++</kbd></td><td>Aumentar fonte</td></tr><tr><td><kbd>Ctrl+-</kbd></td><td>Diminuir fonte</td></tr><tr><td><kbd>Ctrl+0</kbd></td><td>Tamanho padrão da fonte</td></tr></tbody></table>
 <h3>Markdown e JSON</h3><table><tbody><tr><td><kbd>Ctrl+B</kbd></td><td>Negrito</td></tr><tr><td><kbd>Ctrl+I</kbd></td><td>Itálico</td></tr><tr><td><kbd>Ctrl+Shift+X</kbd></td><td>Tachado</td></tr><tr><td><kbd>Shift+Alt+F</kbd></td><td>Formatar o documento (JSON)</td></tr></tbody></table>
 <h3>Macros</h3><table><tbody><tr><td><kbd>Ctrl+Shift+R</kbd></td><td>Iniciar ou parar a gravação de macro</td></tr><tr><td><kbd>Ctrl+Shift+M</kbd></td><td>Executar última macro</td></tr></tbody></table><h2 id="14-perguntas-frequentes">14. Perguntas frequentes</h2>
 <p><strong>Fechei o aplicativo sem salvar. Perdi meu texto?</strong>

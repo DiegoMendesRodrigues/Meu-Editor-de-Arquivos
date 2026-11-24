@@ -26,7 +26,7 @@ const entrySchema = z.object({
   language: z.string().max(64),
   mode: z.enum(['preview', 'edit']),
   encoding: z.enum(['UTF-8', 'UTF-8 BOM']),
-  eol: z.enum(['LF', 'CRLF']),
+  eol: z.enum(['LF', 'CRLF', 'CR']),
   cloud: z.object({ id: z.string().min(1).max(64), path: z.string().min(1).max(512), version: z.number().int().min(0) }).optional(),
   content: z.string(),
   savedContent: z.string()

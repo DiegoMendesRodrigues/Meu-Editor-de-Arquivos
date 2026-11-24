@@ -4,7 +4,7 @@ import { app, BrowserWindow, Menu, session, shell } from 'electron'
 import log from 'electron-log/main'
 import { windowIcon } from './icon'
 import { registerFileHandlers } from './ipc/files'
-import { guardWindowClose, registerAppHandlers } from './ipc/app'
+import { guardWindowClose, registerAppHandlers, reportFullScreen } from './ipc/app'
 import { registerFolderHandlers } from './ipc/folders'
 import { registerSearchHandlers } from './ipc/search'
 import { loadRecent, registerRecentHandlers } from './ipc/recent'
@@ -56,6 +56,7 @@ function createWindow(): void {
 
   win.once('ready-to-show', () => win.show())
   guardWindowClose(win)
+  reportFullScreen(win)
   setWatchTarget(win.webContents)
   win.on('closed', () => setWatchTarget(null))
 

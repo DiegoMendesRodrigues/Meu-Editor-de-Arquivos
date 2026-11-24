@@ -12,6 +12,7 @@ import {
   type CloudFileMeta,
   type CloudSaveResult
 } from '@shared/ipc'
+import { fromStoredText } from '@shared/eol'
 import { detectEol } from './textCodec'
 import type { MessageKey } from '@shared/i18n'
 import { tm } from '../i18n'
@@ -228,7 +229,8 @@ export function registerAccountHandlers(): void {
   handle(IpcChannels.cloudRead, async (_e, raw: unknown): Promise<CloudFileContent> => {
     const id = z.string().min(1).max(64).parse(raw)
     const res = await api<{ file: CloudFileMeta & { content: string; encoding: 'UTF-8' | 'UTF-8 BOM' } }>('GET', `/v1/files/${encodeURIComponent(id)}`, { auth: true })
-    return { ...toMeta(res.file), content: res.file.content, encoding: res.file.encoding, eol: detectEol(res.file.content) }
+    const eol = detectEol(res.file.content)
+    return { ...toMeta(res.file), content: fromStoredText(res.file.content, eol), encoding: res.file.encoding, eol }
   })
 
   handle(IpcChannels.cloudSave, async (_e, raw: unknown): Promise<CloudSaveResult> => {

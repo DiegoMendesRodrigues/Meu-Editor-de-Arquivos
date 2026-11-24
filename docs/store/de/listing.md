@@ -22,7 +22,7 @@ Beim Schließen der Anwendung geht nichts verloren: Die Dokumente sind beim näc
 
 ## Neuerungen in dieser Version
 
-Version 1.0.0: erste im Microsoft Store veröffentlichte Version.
+Version 1.1.0: Umwandlung der Zeilenenden (Windows, Unix und Mac), Groß-/Kleinschreibung und Satzanfang, Leerzeichen-Bereinigung, Vollbildmodus (F11) sowie MD5-, SHA-1-, SHA-256- und SHA-512-Hashes.
 
 ## Produktfunktionen
 

@@ -69,8 +69,28 @@ Editing commands are in **{{menu.edit}}** and display options are in **{{menu.vi
 - **{{menu.view.wordWrap}}** and **{{menu.view.foldAll}} / {{menu.view.unfoldAll}}** help you read long files.
 - **Font size:** Ctrl++ makes it larger, Ctrl+- makes it smaller and Ctrl+0 restores the default.
 - **Indentation:** in **{{menu.edit}}**, choose between spaces and tabs and the size (2, 4 or 8 columns).
+- **{{menu.view.fullScreen}}** (F11, in **{{menu.view}}**): shows only the document, filling the whole screen. Press F11 again, or click the button in the top right corner, to leave.
 
 Your display preferences are remembered for next time. The editor's own texts, such as the find box (Ctrl+F) and the command palette (F1), appear in English.
+
+### Case, whitespace and line endings
+
+![Edit menu with the Convert Case To submenu open](img/s20-menu-edit.png)
+
+At the end of the **{{menu.edit}}** menu there are three submenus:
+
+- **{{menu.edit.eol}}:** converts the document's line endings to Windows (CRLF), Unix (LF) or Mac (CR) format. A conversion marks the document as changed; just save for it to take effect.
+- **{{menu.edit.case}}:** with some text selected, choose {{menu.edit.caseUpper}}, {{menu.edit.caseLower}} or {{menu.edit.caseSentence}} (only the first letter of each sentence is capitalized).
+- **{{menu.edit.spaces}}:** {{menu.edit.trimRight}}, {{menu.edit.trimLeft}} and {{menu.edit.trimBoth}} apply to the cursor's line (or to the selected lines). {{menu.edit.collapseSpaces}} replaces two or more consecutive spaces with a single one in the whole document, without touching the indentation at the start of lines.
+
+### MD5, SHA-1, SHA-256 and SHA-512
+
+![Window that generates the SHA-256 of a text](img/s21-hash.png)
+
+At the end of the **{{menu.tools}}** menu, each algorithm has two options:
+
+- **{{menu.tools.hashGenerate}}:** opens a window; type or paste the text and the result appears right away, just below. **{{hash.copy}}** puts the result on the clipboard.
+- **{{menu.tools.hashSelection}}:** computes the result from the text selected in the document and puts it on the clipboard, ready to paste. A notice appears in the status bar.
 
 ### Spell checker
 
@@ -130,7 +150,7 @@ The search does not enter folders such as `node_modules` and `.git`, nor binary 
 
 ![Language menu](img/s10-menu-language.png)
 
-- **{{menu.encoding}}:** convert the document to **UTF-8** or **UTF-8 with BOM**, and choose **Windows (CRLF)** or **Unix/Mac (LF)** line endings. A conversion marks the document as changed; just save for it to take effect.
+- **{{menu.encoding}}:** convert the document to **UTF-8** or **UTF-8 with BOM**, and choose **Windows (CRLF)**, **Unix (LF)** or **Mac (CR)** line endings. A conversion marks the document as changed; just save for it to take effect.
 
 The current encoding and line ending appear in the status bar.
 

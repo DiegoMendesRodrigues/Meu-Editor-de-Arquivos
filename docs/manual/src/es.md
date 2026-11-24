@@ -69,8 +69,28 @@ Los comandos de edición están en **{{menu.edit}}** y las opciones de visualiza
 - **{{menu.view.wordWrap}}** y **{{menu.view.foldAll}} / {{menu.view.unfoldAll}}** ayudan a leer archivos largos.
 - **Tamaño de la letra:** Ctrl++ la agranda, Ctrl+- la reduce y Ctrl+0 vuelve al tamaño predeterminado.
 - **Sangría:** en **{{menu.edit}}**, elige entre espacios o tabulación y el tamaño (2, 4 u 8 columnas).
+- **{{menu.view.fullScreen}}** (F11, en **{{menu.view}}**): muestra solo el documento, ocupando toda la pantalla. Pulsa F11 de nuevo, o haz clic en el botón de la esquina superior derecha, para salir.
 
 Tus preferencias de visualización se guardan para la próxima vez. Los textos propios del editor, como el cuadro de búsqueda (Ctrl+F) y la paleta de comandos (F1), aparecen en inglés.
+
+### Letras, espacios y finales de línea
+
+![Menú Editar con el submenú Convertir letras a abierto](img/s20-menu-edit.png)
+
+Al final del menú **{{menu.edit}}** hay tres submenús:
+
+- **{{menu.edit.eol}}:** convierte los finales de línea del documento al formato Windows (CRLF), Unix (LF) o Mac (CR). La conversión marca el documento como modificado; basta con guardar para que surta efecto.
+- **{{menu.edit.case}}:** con un texto seleccionado, elige {{menu.edit.caseUpper}}, {{menu.edit.caseLower}} o {{menu.edit.caseSentence}} (solo la primera letra de cada oración queda en mayúscula).
+- **{{menu.edit.spaces}}:** {{menu.edit.trimRight}}, {{menu.edit.trimLeft}} y {{menu.edit.trimBoth}} se aplican a la línea del cursor (o a las líneas seleccionadas). {{menu.edit.collapseSpaces}} reemplaza dos o más espacios seguidos por uno solo en todo el documento, sin tocar la sangría del comienzo de las líneas.
+
+### MD5, SHA-1, SHA-256 y SHA-512
+
+![Ventana para generar el SHA-256 de un texto](img/s21-hash.png)
+
+Al final del menú **{{menu.tools}}**, cada algoritmo tiene dos opciones:
+
+- **{{menu.tools.hashGenerate}}:** abre una ventana; escribe o pega el texto y el resultado aparece al instante, justo debajo. **{{hash.copy}}** lleva el resultado al portapapeles.
+- **{{menu.tools.hashSelection}}:** calcula el resultado a partir del texto seleccionado en el documento y lo deja en el portapapeles, listo para pegar. Aparece un aviso en la barra de estado.
 
 ### Corrector ortográfico
 
@@ -130,7 +150,7 @@ La búsqueda no entra en carpetas como `node_modules` y `.git`, ni en archivos b
 
 ![Menú Lenguaje](img/s10-menu-language.png)
 
-- **{{menu.encoding}}:** convierte el documento a **UTF-8** o **UTF-8 con BOM**, y elige el fin de línea de **Windows (CRLF)** o de **Unix/Mac (LF)**. La conversión marca el documento como modificado; basta con guardar para que surta efecto.
+- **{{menu.encoding}}:** convierte el documento a **UTF-8** o **UTF-8 con BOM**, y elige el fin de línea de **Windows (CRLF)**, de **Unix (LF)** o de **Mac (CR)**. La conversión marca el documento como modificado; basta con guardar para que surta efecto.
 
 La codificación y el fin de línea actuales aparecen en la barra de estado.
 

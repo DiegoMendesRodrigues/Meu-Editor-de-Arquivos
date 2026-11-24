@@ -1,5 +1,6 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useEffect } from 'react'
+import { Minimize2 } from 'lucide-react'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { MenuBar } from '@/components/MenuBar'
 import { Toolbar } from '@/components/Toolbar'
@@ -21,8 +22,9 @@ import { AccountDialog } from '@/components/AccountDialog'
 import { CloudOpenDialog, CloudSaveDialog } from '@/components/CloudDialogs'
 import { MacrosDialog } from '@/components/MacrosDialog'
 import { SnippetsDialog } from '@/components/SnippetsDialog'
+import { HashDialog } from '@/components/HashDialog'
 import { useDialogs } from '@/store/dialogs'
-import { applyLocale, useLocale } from '@/i18n'
+import { applyLocale, useLocale, useT } from '@/i18n'
 import { useAccount } from '@/store/account'
 import { useLibrary } from '@/store/library'
 
@@ -33,6 +35,12 @@ function useGlobalShortcuts(): void {
       if (e.key === 'F7' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         e.preventDefault()
         useSpelling.getState().toggle()
+        return
+      }
+      if (e.key === 'F11' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        e.preventDefault()
+        e.stopPropagation()
+        cmd.toggleFullScreen()
         return
       }
       if (!e.ctrlKey || e.altKey) return
@@ -65,10 +73,15 @@ function useGlobalShortcuts(): void {
 const separatorClass = 'bg-border transition-colors data-[separator]:hover:bg-accent'
 
 export function App() {
+  const t = useT()
   const sidebarVisible = useView((s) => s.sidebarVisible)
   const bottomPanelVisible = useView((s) => s.bottomPanelVisible)
+  const fullScreen = useView((s) => s.fullScreen)
   const dialog = useDialogs((s) => s.open)
   useGlobalShortcuts()
+
+  // A janela também pode sair da tela inteira por fora do app; o estado acompanha.
+  useEffect(() => window.api.onFullScreenChanged((on) => useView.getState().setFullScreen(on)), [])
 
   // Restaura a sessão anterior; sem nada para restaurar, começa com um documento em branco.
   useEffect(() => {
@@ -122,12 +135,28 @@ export function App() {
   useEffect(() => void useAccount.getState().load(), [])
   useEffect(() => window.api.onBeforeClose(() => void cmd.requestQuit()), [])
 
+  const dialogs = (
+    <>
+      {dialog === 'snippets' && <SnippetsDialog />}
+      {dialog === 'macros' && <MacrosDialog />}
+      {dialog === 'account' && <AccountDialog />}
+      {dialog === 'cloudOpen' && <CloudOpenDialog />}
+      {dialog === 'cloudSave' && <CloudSaveDialog />}
+      {dialog === 'shortcuts' && <ShortcutsDialog />}
+      {dialog === 'about' && <AboutDialog />}
+      {dialog === 'update' && <UpdateDialog />}
+      {dialog === 'hash' && <HashDialog />}
+    </>
+  )
+
+  // Tela inteira: só o documento atual, sem menus, barras, abas e painéis. A árvore é a mesma
+  // (os elementos só são omitidos) para o editor não ser recriado nem perder o desfazer.
   return (
-    <div className="flex h-full flex-col">
-      <MenuBar />
-      <Toolbar />
+    <div className="relative flex h-full flex-col" {...(fullScreen ? { 'data-fullscreen': '' } : {})}>
+      {!fullScreen && <MenuBar />}
+      {!fullScreen && <Toolbar />}
       <Group orientation="horizontal" className="min-h-0 flex-1">
-        {sidebarVisible && (
+        {sidebarVisible && !fullScreen && (
           <>
             <Panel id="sidebar" defaultSize={240} minSize={160} maxSize="50%">
               <Sidebar />
@@ -139,13 +168,13 @@ export function App() {
           <Group orientation="vertical" className="h-full">
             <Panel id="editor" minSize={120}>
               <div className="flex h-full flex-col">
-                <TabBar />
+                {!fullScreen && <TabBar />}
                 <div className="min-h-0 flex-1">
                   <EditorPane />
                 </div>
               </div>
             </Panel>
-            {bottomPanelVisible && (
+            {bottomPanelVisible && !fullScreen && (
               <>
                 <Separator className={`h-px ${separatorClass}`} />
                 <Panel id="bottom" defaultSize={180} minSize={80}>
@@ -156,15 +185,19 @@ export function App() {
           </Group>
         </Panel>
       </Group>
-      <StatusBar />
-      {dialog === 'snippets' && <SnippetsDialog />}
-      {dialog === 'macros' && <MacrosDialog />}
-      {dialog === 'account' && <AccountDialog />}
-      {dialog === 'cloudOpen' && <CloudOpenDialog />}
-      {dialog === 'cloudSave' && <CloudSaveDialog />}
-      {dialog === 'shortcuts' && <ShortcutsDialog />}
-      {dialog === 'about' && <AboutDialog />}
-      {dialog === 'update' && <UpdateDialog />}
+      {!fullScreen && <StatusBar />}
+      {fullScreen && (
+        <button
+          type="button"
+          onClick={cmd.toggleFullScreen}
+          title={t('fullScreen.exit')}
+          aria-label={t('fullScreen.exit')}
+          className="absolute right-5 top-2 z-40 rounded border border-border bg-white/80 p-1 text-zinc-600 opacity-40 shadow-sm transition-opacity hover:opacity-100 focus-visible:opacity-100"
+        >
+          <Minimize2 size={16} />
+        </button>
+      )}
+      {dialogs}
     </div>
   )
 }

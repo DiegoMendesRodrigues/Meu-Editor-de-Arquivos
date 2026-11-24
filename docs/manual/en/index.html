@@ -46,7 +46,7 @@ strong{font-weight:650}
 </nav>
 <main>
 <h1>Meu Editor de Arquivos — User Manual</h1>
-<p>Version 1.0.0</p>
+<p>Version 1.1.0</p>
 <h2 id="1-welcome">1. Welcome</h2>
 <p><strong>Meu Editor de Arquivos</strong> is a lightweight editor for anyone who works with text, notes, scripts, configuration files, logs and code. It runs on Windows 11, Debian 12 and 13, and Ubuntu 22.04 or newer, and it <strong>does not need an internet connection</strong> for editing.</p>
 <p>What you will find in it:</p>
@@ -99,8 +99,22 @@ strong{font-weight:650}
 <li><strong><span class="ui">Word Wrap</span></strong> and <strong><span class="ui">Fold All</span> / <span class="ui">Unfold All</span></strong> help you read long files.</li>
 <li><strong>Font size:</strong> Ctrl++ makes it larger, Ctrl+- makes it smaller and Ctrl+0 restores the default.</li>
 <li><strong>Indentation:</strong> in <strong><span class="ui">Edit</span></strong>, choose between spaces and tabs and the size (2, 4 or 8 columns).</li>
+<li><strong><span class="ui">Full Screen</span></strong> (F11, in <strong><span class="ui">View</span></strong>): shows only the document, filling the whole screen. Press F11 again, or click the button in the top right corner, to leave.</li>
 </ul>
 <p>Your display preferences are remembered for next time. The editor&#39;s own texts, such as the find box (Ctrl+F) and the command palette (F1), appear in English.</p>
+<h3>Case, whitespace and line endings</h3>
+<figure><img src="img/s20-menu-edit.png" alt="Edit menu with the Convert Case To submenu open"><figcaption>Edit menu with the Convert Case To submenu open</figcaption></figure><p>At the end of the <strong><span class="ui">Edit</span></strong> menu there are three submenus:</p>
+<ul>
+<li><strong><span class="ui">Line Ending Conversion</span>:</strong> converts the document&#39;s line endings to Windows (CRLF), Unix (LF) or Mac (CR) format. A conversion marks the document as changed; just save for it to take effect.</li>
+<li><strong><span class="ui">Convert Case To</span>:</strong> with some text selected, choose <span class="ui">Convert to UPPERCASE</span>, <span class="ui">Convert to lowercase</span> or <span class="ui">Convert to Sentence case</span> (only the first letter of each sentence is capitalized).</li>
+<li><strong><span class="ui">Whitespace Operations</span>:</strong> <span class="ui">Trim Trailing Spaces</span>, <span class="ui">Trim Leading Spaces</span> and <span class="ui">Trim Leading and Trailing Spaces</span> apply to the cursor&#39;s line (or to the selected lines). <span class="ui">Remove Double Spaces from Document</span> replaces two or more consecutive spaces with a single one in the whole document, without touching the indentation at the start of lines.</li>
+</ul>
+<h3>MD5, SHA-1, SHA-256 and SHA-512</h3>
+<figure><img src="img/s21-hash.png" alt="Window that generates the SHA-256 of a text"><figcaption>Window that generates the SHA-256 of a text</figcaption></figure><p>At the end of the <strong><span class="ui">Tools</span></strong> menu, each algorithm has two options:</p>
+<ul>
+<li><strong><span class="ui">Generate</span>:</strong> opens a window; type or paste the text and the result appears right away, just below. <strong><span class="ui">Copy</span></strong> puts the result on the clipboard.</li>
+<li><strong><span class="ui">Generate from Selected Text</span>:</strong> computes the result from the text selected in the document and puts it on the clipboard, ready to paste. A notice appears in the status bar.</li>
+</ul>
 <h3>Spell checker</h3>
 <figure><img src="img/s11a-spelling.png" alt="Underlined word and the suggested corrections"><figcaption>Underlined word and the suggested corrections</figcaption></figure><p>In Markdown, text (.txt) and LaTeX documents, words that are not in the dictionary are underlined in red. Code, links, addresses, acronyms and text between backticks are not checked, and log and CSV files are left out.</p>
 <ul>
@@ -133,7 +147,7 @@ strong{font-weight:650}
 <li><strong><span class="ui">Language</span>:</strong> the application picks the language from the file extension and uses colors to make reading easier. To change a document&#39;s language, open the menu and choose another one.</li>
 </ul>
 <figure><img src="img/s10-menu-language.png" alt="Language menu"><figcaption>Language menu</figcaption></figure><ul>
-<li><strong><span class="ui">Encoding</span>:</strong> convert the document to <strong>UTF-8</strong> or <strong>UTF-8 with BOM</strong>, and choose <strong>Windows (CRLF)</strong> or <strong>Unix/Mac (LF)</strong> line endings. A conversion marks the document as changed; just save for it to take effect.</li>
+<li><strong><span class="ui">Encoding</span>:</strong> convert the document to <strong>UTF-8</strong> or <strong>UTF-8 with BOM</strong>, and choose <strong>Windows (CRLF)</strong>, <strong>Unix (LF)</strong> or <strong>Mac (CR)</strong> line endings. A conversion marks the document as changed; just save for it to take effect.</li>
 </ul>
 <p>The current encoding and line ending appear in the status bar.</p>
 <h2 id="10-snippets-and-macros">10. Snippets and macros</h2>
@@ -163,7 +177,7 @@ strong{font-weight:650}
 <h3>File</h3><table><tbody><tr><td><kbd>Ctrl+N</kbd></td><td>New document (Markdown)</td></tr><tr><td><kbd>Ctrl+O</kbd></td><td>Open files</td></tr><tr><td><kbd>Ctrl+Shift+K</kbd></td><td>Open folder</td></tr><tr><td><kbd>Ctrl+S</kbd></td><td>Save</td></tr><tr><td><kbd>Ctrl+Shift+S</kbd></td><td>Save As</td></tr><tr><td><kbd>Ctrl+W</kbd></td><td>Close Tab</td></tr><tr><td><kbd>Alt+F4</kbd></td><td>Exit</td></tr></tbody></table>
 <h3>Edit</h3><table><tbody><tr><td><kbd>Ctrl+Z</kbd></td><td>Undo</td></tr><tr><td><kbd>Ctrl+Y</kbd></td><td>Redo</td></tr><tr><td><kbd>Ctrl+X</kbd> / <kbd>Ctrl+C</kbd> / <kbd>Ctrl+V</kbd></td><td>Cut / copy / paste</td></tr><tr><td><kbd>Ctrl+A</kbd></td><td>Select All</td></tr><tr><td><kbd>Ctrl+L</kbd></td><td>Select line</td></tr><tr><td><kbd>Ctrl+D</kbd></td><td>Select next occurrence (multiple cursors)</td></tr><tr><td><kbd>Alt+Click</kbd></td><td>Add cursor</td></tr><tr><td><kbd>Shift+Alt+Drag</kbd></td><td>Column Selection</td></tr><tr><td><kbd>Alt+↑</kbd> / <kbd>Alt+↓</kbd></td><td>Move line up / down</td></tr><tr><td><kbd>Shift+Alt+↑</kbd> / <kbd>Shift+Alt+↓</kbd></td><td>Duplicate line</td></tr><tr><td><kbd>Ctrl+/</kbd></td><td>Toggle line comment</td></tr><tr><td><kbd>F1</kbd></td><td>Command Palette</td></tr><tr><td><kbd>F7</kbd></td><td>Check Spelling</td></tr><tr><td><kbd>Ctrl+.</kbd></td><td>Spelling Suggestions</td></tr></tbody></table>
 <h3>Search</h3><table><tbody><tr><td><kbd>Ctrl+F</kbd></td><td>Find</td></tr><tr><td><kbd>Ctrl+H</kbd></td><td>Replace</td></tr><tr><td><kbd>Ctrl+Shift+F</kbd></td><td>Find in files</td></tr><tr><td><kbd>Ctrl+G</kbd></td><td>Go to line</td></tr></tbody></table>
-<h3>View</h3><table><tbody><tr><td><kbd>Ctrl+Shift+B</kbd></td><td>Show or hide the sidebar</td></tr><tr><td><kbd>Ctrl+Shift+E</kbd></td><td>Switch between preview and editing (Markdown and JSON)</td></tr><tr><td><kbd>Ctrl++</kbd></td><td>Increase Font Size</td></tr><tr><td><kbd>Ctrl+-</kbd></td><td>Decrease Font Size</td></tr><tr><td><kbd>Ctrl+0</kbd></td><td>Reset Font Size</td></tr></tbody></table>
+<h3>View</h3><table><tbody><tr><td><kbd>Ctrl+Shift+B</kbd></td><td>Show or hide the sidebar</td></tr><tr><td><kbd>Ctrl+Shift+E</kbd></td><td>Switch between preview and editing (Markdown and JSON)</td></tr><tr><td><kbd>F11</kbd></td><td>Enter or exit full screen</td></tr><tr><td><kbd>Ctrl++</kbd></td><td>Increase Font Size</td></tr><tr><td><kbd>Ctrl+-</kbd></td><td>Decrease Font Size</td></tr><tr><td><kbd>Ctrl+0</kbd></td><td>Reset Font Size</td></tr></tbody></table>
 <h3>Markdown and JSON</h3><table><tbody><tr><td><kbd>Ctrl+B</kbd></td><td>Bold</td></tr><tr><td><kbd>Ctrl+I</kbd></td><td>Italic</td></tr><tr><td><kbd>Ctrl+Shift+X</kbd></td><td>Strikethrough</td></tr><tr><td><kbd>Shift+Alt+F</kbd></td><td>Format document (JSON)</td></tr></tbody></table>
 <h3>Macros</h3><table><tbody><tr><td><kbd>Ctrl+Shift+R</kbd></td><td>Start or stop macro recording</td></tr><tr><td><kbd>Ctrl+Shift+M</kbd></td><td>Run Last Macro</td></tr></tbody></table><h2 id="14-frequently-asked-questions">14. Frequently asked questions</h2>
 <p><strong>I closed the application without saving. Did I lose my text?</strong>

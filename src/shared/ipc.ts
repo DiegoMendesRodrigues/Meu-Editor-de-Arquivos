@@ -54,13 +54,22 @@ export const IpcChannels = {
   setLocale: 'app:set-locale',
   openManual: 'app:open-manual',
   openSupport: 'app:open-support',
-  checkUpdate: 'app:check-update'
+  checkUpdate: 'app:check-update',
+  setFullScreen: 'app:set-full-screen',
+  fullScreenChanged: 'app:full-screen-changed',
+  hashText: 'tools:hash-text',
+  copyText: 'tools:copy-text'
 } as const
+
+/** Algoritmos de resumo (hash) do menu Ferramentas. */
+export const HASH_ALGORITHMS = ['MD5', 'SHA-1', 'SHA-256', 'SHA-512'] as const
+export type HashAlgorithm = (typeof HASH_ALGORITHMS)[number]
 
 /** Limite de texto não salvo guardado na sessão (acima disso o app volta a perguntar ao fechar). */
 export const SESSION_MAX_UNSAVED_CHARS = 100 * 1024 * 1024
 
-export type Eol = 'LF' | 'CRLF'
+/** Windows (CRLF), Unix (LF) ou Mac clássico (CR). */
+export type Eol = 'LF' | 'CRLF' | 'CR'
 export type Encoding = 'UTF-8' | 'UTF-8 BOM'
 
 export interface OpenedFile {
@@ -327,6 +336,14 @@ export interface EditorApi {
   checkUpdate(): Promise<UpdateInfo>
 
   getAppInfo(): Promise<AppInfo>
+  /** Coloca a janela em tela inteira (ou a tira). */
+  setFullScreen(on: boolean): Promise<void>
+  /** O Main avisa quando a janela entra ou sai da tela inteira. */
+  onFullScreenChanged(listener: (on: boolean) => void): () => void
+  /** Resumo do texto (UTF-8) em hexadecimal minúsculo. */
+  hashText(algorithm: HashAlgorithm, text: string): Promise<string>
+  /** Copia o texto para a área de transferência do sistema. */
+  copyText(text: string): Promise<void>
   /** O Main avisa que o usuário quer fechar a janela; o Renderer decide e chama closeWindow(). */
   onBeforeClose(listener: () => void): () => void
   closeWindow(): Promise<void>

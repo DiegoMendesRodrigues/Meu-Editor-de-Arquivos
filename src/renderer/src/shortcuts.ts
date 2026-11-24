@@ -56,6 +56,7 @@ export function shortcutGroups(t: Translate): ShortcutGroup[] {
       items: [
         { keys: 'Ctrl+Shift+B', action: t('sc.sidebar') },
         { keys: 'Ctrl+Shift+E', action: t('sc.togglePreview') },
+        { keys: 'F11', action: t('sc.fullScreen') },
         { keys: 'Ctrl++', action: t('menu.view.fontIncrease') },
         { keys: 'Ctrl+-', action: t('menu.view.fontDecrease') },
         { keys: 'Ctrl+0', action: t('menu.view.fontReset') }

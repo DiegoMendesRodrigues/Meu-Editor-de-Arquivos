@@ -24,7 +24,7 @@ O **Meu Editor de Arquivos** é um editor leve para desktop, feito para desenvol
 
 O Markdown é o formato padrão de documento. Os arquivos Markdown abrem formatados e continuam editáveis: a barra de ferramentas aplica títulos, listas, recuos, negrito, itálico, tachado, links e tabelas direto no texto formatado, e um clique alterna para o código Markdown. O aplicativo funciona totalmente sem internet, consome poucos recursos em comparação com uma IDE completa e tem a interface em seis idiomas.
 
-Versão atual: **1.0.0**.
+Versão atual: **1.1.0**.
 
 ## Funcionalidades
 

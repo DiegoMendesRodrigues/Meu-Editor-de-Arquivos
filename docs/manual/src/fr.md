@@ -69,8 +69,28 @@ Les commandes de modification se trouvent dans **{{menu.edit}}** et les options 
 - **{{menu.view.wordWrap}}** et **{{menu.view.foldAll}} / {{menu.view.unfoldAll}}** aident à lire les longs fichiers.
 - **Taille de la police :** Ctrl++ l'agrandit, Ctrl+- la réduit et Ctrl+0 rétablit la taille par défaut.
 - **Indentation :** dans **{{menu.edit}}**, choisissez entre espaces et tabulation, ainsi que la taille (2, 4 ou 8 colonnes).
+- **{{menu.view.fullScreen}}** (F11, dans **{{menu.view}}**) : affiche uniquement le document, sur tout l’écran. Appuyez de nouveau sur F11, ou cliquez sur le bouton en haut à droite, pour en sortir.
 
 Vos préférences d'affichage sont conservées pour la prochaine fois. Les textes propres à l'éditeur, comme la zone de recherche (Ctrl+F) et la palette de commandes (F1), apparaissent en anglais.
+
+### Lettres, espaces et fins de ligne
+
+![Menu Édition avec le sous-menu Convertir les lettres en ouvert](img/s20-menu-edit.png)
+
+À la fin du menu **{{menu.edit}}**, trois sous-menus sont proposés :
+
+- **{{menu.edit.eol}} :** convertit les fins de ligne du document au format Windows (CRLF), Unix (LF) ou Mac (CR). Une conversion marque le document comme modifié ; il suffit d’enregistrer pour qu’elle prenne effet.
+- **{{menu.edit.case}} :** avec du texte sélectionné, choisissez {{menu.edit.caseUpper}}, {{menu.edit.caseLower}} ou {{menu.edit.caseSentence}} (seule la première lettre de chaque phrase passe en majuscule).
+- **{{menu.edit.spaces}} :** {{menu.edit.trimRight}}, {{menu.edit.trimLeft}} et {{menu.edit.trimBoth}} s’appliquent à la ligne du curseur (ou aux lignes sélectionnées). {{menu.edit.collapseSpaces}} remplace deux espaces consécutifs ou plus par un seul dans tout le document, sans toucher à l’indentation en début de ligne.
+
+### MD5, SHA-1, SHA-256 et SHA-512
+
+![Fenêtre qui génère le SHA-256 d’un texte](img/s21-hash.png)
+
+À la fin du menu **{{menu.tools}}**, chaque algorithme propose deux options :
+
+- **{{menu.tools.hashGenerate}} :** ouvre une fenêtre ; saisissez ou collez le texte et le résultat s’affiche aussitôt, juste en dessous. **{{hash.copy}}** place le résultat dans le presse-papiers.
+- **{{menu.tools.hashSelection}} :** calcule le résultat à partir du texte sélectionné dans le document et le place dans le presse-papiers, prêt à être collé. Un message s’affiche dans la barre d’état.
 
 ### Correcteur orthographique
 
@@ -130,7 +150,7 @@ La recherche n'entre pas dans des dossiers comme `node_modules` et `.git`, ni da
 
 ![Menu Langage](img/s10-menu-language.png)
 
-- **{{menu.encoding}} :** convertissez le document en **UTF-8** ou en **UTF-8 avec BOM**, et choisissez les fins de ligne **Windows (CRLF)** ou **Unix/Mac (LF)**. Une conversion marque le document comme modifié ; il suffit d'enregistrer pour qu'elle soit effective.
+- **{{menu.encoding}} :** convertissez le document en **UTF-8** ou en **UTF-8 avec BOM**, et choisissez les fins de ligne **Windows (CRLF)**, **Unix (LF)** ou **Mac (CR)**. Une conversion marque le document comme modifié ; il suffit d'enregistrer pour qu'elle soit effective.
 
 L'encodage et la fin de ligne actuels s'affichent dans la barre d'état.
 

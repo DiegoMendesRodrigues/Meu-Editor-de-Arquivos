@@ -18,6 +18,11 @@ import { useLibrary } from '@/store/library'
 import { playMacro, startRecording, stopRecording } from '@/editor/macros'
 import { flushWorkspace } from '@/workspaceSync'
 import { flushSession, hasUnsavedText, unsavedFitsInSession } from '@/session'
+import { toStoredText } from '@shared/eol'
+import type { Eol, HashAlgorithm } from '@shared/ipc'
+import { useNotice } from '@/store/notice'
+import { selectedText } from '@/textCommands'
+export { collapseSpaces, convertCase, trimSpaces } from '@/textCommands'
 
 const docs = () => useDocuments.getState()
 const active = (): EditorDocument | undefined => {
@@ -88,7 +93,7 @@ export async function saveAs(doc = active()): Promise<boolean> {
   if (storageMode() === 'cloud') return requestCloudSave(doc)
   try {
     const content = doc.content
-    const saved = await window.api.saveFileAs({ suggestedName: doc.path ?? doc.name, content, encoding: doc.encoding })
+    const saved = await window.api.saveFileAs({ suggestedName: doc.path ?? doc.name, content: toStoredText(content, doc.eol), encoding: doc.encoding })
     if (!saved) return false
     if (doc.path && doc.path !== saved.path) void window.api.unwatchFile(doc.path)
     docs().markSaved(doc.id, saved, content)
@@ -107,7 +112,7 @@ export async function save(doc = active()): Promise<boolean> {
   if (!doc.path) return saveAs(doc)
   try {
     const content = doc.content
-    const saved = await window.api.saveFile({ path: doc.path, content, encoding: doc.encoding })
+    const saved = await window.api.saveFile({ path: doc.path, content: toStoredText(content, doc.eol), encoding: doc.encoding })
     docs().markSaved(doc.id, saved, content)
     return true
   } catch (err) {
@@ -230,9 +235,31 @@ export function convertEncoding(encoding: 'UTF-8' | 'UTF-8 BOM'): void {
   if (doc) docs().setEncoding(doc.id, encoding)
 }
 
-export function convertEol(eol: 'LF' | 'CRLF'): void {
+/** Converte as quebras de linha do documento ativo: Windows (CRLF), Unix (LF) ou Mac (CR). */
+export function convertEol(eol: Eol): void {
   const doc = active()
   if (doc) docs().setEol(doc.id, eol)
+}
+
+/** Entra ou sai da tela inteira: a janela ocupa a tela e só o documento fica visível. */
+export function toggleFullScreen(): void {
+  const on = !useView.getState().fullScreen
+  useView.getState().setFullScreen(on)
+  void window.api.setFullScreen(on)
+}
+
+export const openHash = (algorithm: HashAlgorithm): void => useDialogs.getState().showHash(algorithm)
+
+/** Gera o hash do texto selecionado no documento e o deixa na área de transferência. */
+export async function hashSelection(algorithm: HashAlgorithm): Promise<void> {
+  const text = selectedText()
+  if (!text) return window.alert(t('hash.noSelection', { algorithm }))
+  try {
+    await window.api.copyText(await window.api.hashText(algorithm, text))
+    useNotice.getState().show(t('hash.copied', { algorithm }))
+  } catch (err) {
+    reportError('err.hash', err)
+  }
 }
 
 export const zoomIn = (): void => useView.getState().zoomFont(1)

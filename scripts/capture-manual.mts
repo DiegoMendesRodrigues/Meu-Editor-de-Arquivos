@@ -353,6 +353,29 @@ async function captureLocale(locale: Locale): Promise<void> {
     await page.getByRole('menuitem', { name: t('menu.tools.macros') }).click()
     await shotDialog(page, img('s13-macros'))
 
+    // --- Menu Editar com o submenu "Converter letras para" aberto
+    await openMenu(page, MENU.edit)
+    await page.getByRole('menuitem', { name: t('menu.edit.case') }).hover()
+    const caseMenu = page.getByRole('menu', { name: t('menu.edit.case') })
+    await caseMenu.waitFor()
+    await sleep(200)
+    const editBox = (await page.getByRole('menu', { name: t('menu.edit'), exact: true }).boundingBox())!
+    const caseBox = (await caseMenu.boundingBox())!
+    await shot(page, img('s20-menu-edit'), {
+      clip: { x: 0, y: 0, width: Math.min(caseBox.x + caseBox.width + 24, 1100), height: Math.min(Math.max(editBox.y + editBox.height, caseBox.y + caseBox.height) + 16, 700) }
+    })
+    await page.keyboard.press('Escape')
+    await page.keyboard.press('Escape')
+    await sleep(150)
+
+    // --- MD5 e SHA: janela "Gerar SHA-256" com um texto
+    await page.locator('nav button').nth(MENU.tools).click()
+    await page.getByRole('menuitem', { name: 'SHA-256' }).hover()
+    await page.getByRole('menuitem', { name: t('menu.tools.hashGenerate'), exact: true }).click()
+    await page.getByRole('dialog').locator('textarea').first().fill('Meu Editor de Arquivos')
+    await sleep(300)
+    await shotDialog(page, img('s21-hash'))
+
     // --- Atalhos e Sobre
     await page.locator('nav button').nth(MENU.help).click()
     await page.getByRole('menuitem', { name: t('menu.help.shortcuts') }).click()

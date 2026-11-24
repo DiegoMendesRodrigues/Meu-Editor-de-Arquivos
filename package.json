@@ -1,7 +1,7 @@
 {
   "name": "meu-editor-de-arquivos",
   "productName": "Meu Editor de Arquivos",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Editor de arquivos leve para Windows e Linux, com foco em Markdown e código.",
   "author": {
     "name": "Diego Mendes Rodrigues",

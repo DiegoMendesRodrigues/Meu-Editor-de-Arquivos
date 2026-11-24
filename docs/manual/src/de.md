@@ -69,8 +69,28 @@ Die Bearbeitungsbefehle finden Sie unter **{{menu.edit}}**, die Anzeigeoptionen 
 - **{{menu.view.wordWrap}}** und **{{menu.view.foldAll}} / {{menu.view.unfoldAll}}** helfen beim Lesen langer Dateien.
 - **Schriftgröße:** Ctrl++ vergrößert, Ctrl+- verkleinert und Ctrl+0 stellt die Standardgröße wieder her.
 - **Einrückung:** Wählen Sie unter **{{menu.edit}}** zwischen Leerzeichen und Tabulator sowie die Größe (2, 4 oder 8 Spalten).
+- **{{menu.view.fullScreen}}** (F11, unter **{{menu.view}}**): zeigt nur das Dokument, bildschirmfüllend. Drücken Sie erneut F11 oder klicken Sie auf die Schaltfläche oben rechts, um den Modus zu verlassen.
 
 Ihre Anzeigeeinstellungen werden für das nächste Mal gespeichert. Die eigenen Texte des Editors, etwa das Suchfeld (Ctrl+F) und die Befehlspalette (F1), erscheinen auf Englisch.
+
+### Buchstaben, Leerzeichen und Zeilenenden
+
+![Menü Bearbeiten mit geöffnetem Untermenü Buchstaben umwandeln in](img/s20-menu-edit.png)
+
+Am Ende des Menüs **{{menu.edit}}** gibt es drei Untermenüs:
+
+- **{{menu.edit.eol}}:** wandelt die Zeilenenden des Dokuments in das Windows- (CRLF), Unix- (LF) oder Mac-Format (CR) um. Eine Umwandlung markiert das Dokument als geändert; zum Wirksamwerden genügt Speichern.
+- **{{menu.edit.case}}:** Wählen Sie bei markiertem Text {{menu.edit.caseUpper}}, {{menu.edit.caseLower}} oder {{menu.edit.caseSentence}} (nur der erste Buchstabe jedes Satzes wird großgeschrieben).
+- **{{menu.edit.spaces}}:** {{menu.edit.trimRight}}, {{menu.edit.trimLeft}} und {{menu.edit.trimBoth}} gelten für die Zeile des Cursors (oder die markierten Zeilen). {{menu.edit.collapseSpaces}} ersetzt im ganzen Dokument zwei oder mehr aufeinanderfolgende Leerzeichen durch eines, ohne die Einrückung am Zeilenanfang zu verändern.
+
+### MD5, SHA-1, SHA-256 und SHA-512
+
+![Fenster zum Erzeugen des SHA-256-Werts eines Textes](img/s21-hash.png)
+
+Am Ende des Menüs **{{menu.tools}}** bietet jeder Algorithmus zwei Optionen:
+
+- **{{menu.tools.hashGenerate}}:** öffnet ein Fenster; geben Sie den Text ein oder fügen Sie ihn ein, und das Ergebnis erscheint sofort darunter. **{{hash.copy}}** legt das Ergebnis in die Zwischenablage.
+- **{{menu.tools.hashSelection}}:** berechnet das Ergebnis aus dem im Dokument markierten Text und legt es in die Zwischenablage, bereit zum Einfügen. In der Statusleiste erscheint ein Hinweis.
 
 ### Rechtschreibprüfung
 
@@ -130,7 +150,7 @@ Die Suche durchsucht keine Ordner wie `node_modules` und `.git` und auch keine B
 
 ![Menü Sprache](img/s10-menu-language.png)
 
-- **{{menu.encoding}}:** Wandeln Sie das Dokument in **UTF-8** oder **UTF-8 mit BOM** um und wählen Sie Zeilenenden nach **Windows (CRLF)** oder **Unix/Mac (LF)**. Eine Umwandlung markiert das Dokument als geändert; zum Wirksamwerden genügt Speichern.
+- **{{menu.encoding}}:** Wandeln Sie das Dokument in **UTF-8** oder **UTF-8 mit BOM** um und wählen Sie Zeilenenden nach **Windows (CRLF)**, **Unix (LF)** oder **Mac (CR)**. Eine Umwandlung markiert das Dokument als geändert; zum Wirksamwerden genügt Speichern.
 
 Kodierung und Zeilenenden werden in der Statusleiste angezeigt.
 

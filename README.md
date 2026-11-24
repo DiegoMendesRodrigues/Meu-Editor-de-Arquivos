@@ -24,7 +24,7 @@
 
 Markdown is the default document format. Markdown files open formatted and remain editable: the toolbar applies headings, lists, indentation, bold, italic, strikethrough, links and tables directly to the formatted text, and one click switches to the plain Markdown source. The application runs entirely offline, uses few resources compared with a full IDE, and its interface is available in six languages.
 
-Current version: **1.0.0**.
+Current version: **1.1.0**.
 
 ## Features
 

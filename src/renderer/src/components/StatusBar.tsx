@@ -7,6 +7,7 @@ import { languageLabel } from '@/editor/languages'
 import { useT } from '@/i18n'
 import { useActiveDocument, useDocuments } from '@/store/documents'
 import { useLibrary } from '@/store/library'
+import { useNotice } from '@/store/notice'
 
 const formatSize = (bytes: number): string =>
   bytes < 1024 ? `${bytes} B` : bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`
@@ -18,6 +19,7 @@ export function StatusBar() {
   const doc = useActiveDocument()
   const cursor = useDocuments((s) => s.cursor)
   const recording = useLibrary((s) => s.recording)
+  const notice = useNotice((s) => s.message)
   // O tamanho só é recalculado quando o texto muda (não a cada movimento do cursor), importante em arquivos grandes.
   const content = doc?.content
   const mode = useStorageMode()
@@ -37,6 +39,11 @@ export function StatusBar() {
             {t('status.lineCol', { line: cursor.line, col: cursor.column })}
           </span>
           {cursor.selectedChars > 0 && <span>{t('status.selected', { n: cursor.selectedChars })}</span>}
+          {notice && (
+            <span role="status" className="font-medium text-emerald-700">
+              {notice}
+            </span>
+          )}
           <span className="ml-auto">{formatSize(size)}</span>
           <span>{doc.encoding}</span>
           <span>{doc.eol}</span>

@@ -22,7 +22,7 @@ Ao fechar a aplicação, nada se perde: os documentos regressam como estavam na 
 
 ## Novidades desta versão
 
-Versão 1.0.0: primeira versão publicada na Microsoft Store.
+Versão 1.1.0: conversão de fim de linha (Windows, Unix e Mac), conversão para maiúsculas, minúsculas e modo Título, limpeza de espaços, ecrã inteiro (F11) e geração de MD5, SHA-1, SHA-256 e SHA-512.
 
 ## Recursos do produto
 

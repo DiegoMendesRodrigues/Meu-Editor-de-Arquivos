@@ -1,6 +1,7 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 /** Ações na nuvem (API intermediária): abrir, salvar, mover, excluir e pastas. */
 import type { CloudFileMeta } from '@shared/ipc'
+import { toStoredText } from '@shared/eol'
 import type { MessageKey } from '@shared/i18n'
 import { t } from '@/i18n'
 import { useDocuments, type EditorDocument } from '@/store/documents'
@@ -21,11 +22,11 @@ export async function pushToCloud(doc: EditorDocument, cloudPath: string): Promi
   const content = doc.content
   const baseVersion = doc.cloud && doc.cloud.path === cloudPath ? doc.cloud.version : null
   try {
-    let res = await window.api.cloudSave({ path: cloudPath, content, encoding: doc.encoding, baseVersion, force: false })
+    let res = await window.api.cloudSave({ path: cloudPath, content: toStoredText(content, doc.eol), encoding: doc.encoding, baseVersion, force: false })
     if (!res.ok) {
       const overwrite = window.confirm(t('cloud.confirmOverwrite', { path: cloudPath, version: res.current.version }))
       if (!overwrite) return false
-      res = await window.api.cloudSave({ path: cloudPath, content, encoding: doc.encoding, baseVersion, force: true })
+      res = await window.api.cloudSave({ path: cloudPath, content: toStoredText(content, doc.eol), encoding: doc.encoding, baseVersion, force: true })
     }
     if (!res.ok) return false
     useDocuments.getState().markCloudSaved(doc.id, { id: res.file.id, path: res.file.path, version: res.file.version }, content)
@@ -75,7 +76,7 @@ export function finishCloudSave(saved: boolean): void {
  */
 export async function copyDocumentToCloud(doc: EditorDocument, folder: string): Promise<boolean> {
   const path = joinPath(folder, doc.name)
-  const req = { path, content: doc.content, encoding: doc.encoding, baseVersion: null, force: false }
+  const req = { path, content: toStoredText(doc.content, doc.eol), encoding: doc.encoding, baseVersion: null, force: false }
   try {
     let res = await window.api.cloudSave(req)
     if (!res.ok) {

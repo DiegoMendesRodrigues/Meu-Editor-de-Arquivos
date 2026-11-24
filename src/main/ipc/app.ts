@@ -1,6 +1,7 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import { BrowserWindow, shell } from 'electron'
-import { IpcChannels, type AppInfo, type UpdateInfo } from '@shared/ipc'
+import { createHash } from 'node:crypto'
+import { BrowserWindow, clipboard, shell } from 'electron'
+import { HASH_ALGORITHMS, IpcChannels, type AppInfo, type UpdateInfo } from '@shared/ipc'
 import { z } from 'zod'
 import { LOCALES, type Locale } from '@shared/i18n'
 import { currentLocale, setMainLocale } from '../i18n'
@@ -22,6 +23,18 @@ export function guardWindowClose(win: BrowserWindow): void {
     win.webContents.send(IpcChannels.beforeClose)
   })
 }
+
+/** Avisa o Renderer quando a janela entra ou sai da tela inteira (F11, menu ou sistema). */
+export function reportFullScreen(win: BrowserWindow): void {
+  win.on('enter-full-screen', () => win.webContents.send(IpcChannels.fullScreenChanged, true))
+  win.on('leave-full-screen', () => win.webContents.send(IpcChannels.fullScreenChanged, false))
+}
+
+/** Nomes do node:crypto para os algoritmos oferecidos. */
+const NODE_HASH: Record<(typeof HASH_ALGORITHMS)[number], string> = { MD5: 'md5', 'SHA-1': 'sha1', 'SHA-256': 'sha256', 'SHA-512': 'sha512' }
+const hashSchema = z.enum(HASH_ALGORITHMS)
+/** Mesmo limite dos arquivos abertos (50 MB) com folga para UTF-16. */
+const textSchema = z.string().max(64 * 1024 * 1024)
 
 const localeSchema = z.enum(LOCALES.map((l) => l.code) as [Locale, ...Locale[]])
 
@@ -54,6 +67,16 @@ export function registerAppHandlers(): void {
     version: __APP_VERSION__,
     platform: process.platform
   }))
+
+  handle(IpcChannels.setFullScreen, (e, raw: unknown) => {
+    BrowserWindow.fromWebContents(e.sender)?.setFullScreen(z.boolean().parse(raw))
+  })
+
+  handle(IpcChannels.hashText, (_e, algorithm: unknown, text: unknown): string =>
+    createHash(NODE_HASH[hashSchema.parse(algorithm)]).update(textSchema.parse(text), 'utf8').digest('hex')
+  )
+
+  handle(IpcChannels.copyText, (_e, text: unknown) => clipboard.writeText(textSchema.parse(text)))
 
   handle(IpcChannels.closeWindow, (e) => {
     const win = BrowserWindow.fromWebContents(e.sender)

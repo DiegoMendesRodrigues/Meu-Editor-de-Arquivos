@@ -72,6 +72,14 @@ const api: EditorApi = {
   checkUpdate: () => ipcRenderer.invoke(IpcChannels.checkUpdate),
   setLocale: (locale) => ipcRenderer.invoke(IpcChannels.setLocale, locale),
   getAppInfo: () => ipcRenderer.invoke(IpcChannels.appInfo),
+  setFullScreen: (on) => ipcRenderer.invoke(IpcChannels.setFullScreen, on),
+  onFullScreenChanged: (listener) => {
+    const handler = (_e: unknown, on: boolean) => listener(on)
+    ipcRenderer.on(IpcChannels.fullScreenChanged, handler)
+    return () => void ipcRenderer.off(IpcChannels.fullScreenChanged, handler)
+  },
+  hashText: (algorithm, text) => ipcRenderer.invoke(IpcChannels.hashText, algorithm, text),
+  copyText: (text) => ipcRenderer.invoke(IpcChannels.copyText, text),
   onBeforeClose: (listener) => {
     const handler = () => listener()
     ipcRenderer.on(IpcChannels.beforeClose, handler)

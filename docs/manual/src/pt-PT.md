@@ -69,8 +69,28 @@ Os comandos de edição ficam em **{{menu.edit}}** e as opções de visualizaç�
 - **{{menu.view.wordWrap}}** e **{{menu.view.foldAll}} / {{menu.view.unfoldAll}}** ajudam a ler ficheiros compridos.
 - **Tamanho do tipo de letra:** Ctrl++ aumenta, Ctrl+- diminui e Ctrl+0 repõe o tamanho predefinido.
 - **Indentação:** em **{{menu.edit}}**, escolha entre espaços ou tabulação e o tamanho (2, 4 ou 8 colunas).
+- **{{menu.view.fullScreen}}** (F11, em **{{menu.view}}**): mostra só o documento, a ocupar o ecrã todo. Prima F11 outra vez, ou clique no botão do canto superior direito, para sair.
 
 As suas preferências de visualização ficam guardadas para a próxima vez. Os textos internos do editor, como a caixa de pesquisa (Ctrl+F) e a paleta de comandos (F1), aparecem em inglês.
+
+### Letras, espaços e quebras de linha
+
+![Menu Editar com o submenu Converter letras para aberto](img/s20-menu-edit.png)
+
+No fim do menu **{{menu.edit}}** há três submenus:
+
+- **{{menu.edit.eol}}:** converte as quebras de linha do documento para o formato Windows (CRLF), Unix (LF) ou Mac (CR). A conversão marca o documento como alterado; basta guardar para ter efeito.
+- **{{menu.edit.case}}:** com um texto selecionado, escolha {{menu.edit.caseUpper}}, {{menu.edit.caseLower}} ou {{menu.edit.caseSentence}} (só a primeira letra de cada frase fica em maiúscula).
+- **{{menu.edit.spaces}}:** {{menu.edit.trimRight}}, {{menu.edit.trimLeft}} e {{menu.edit.trimBoth}} aplicam-se à linha do cursor (ou às linhas selecionadas). {{menu.edit.collapseSpaces}} troca dois ou mais espaços seguidos por um só no documento inteiro, sem mexer na indentação do início das linhas.
+
+### MD5, SHA-1, SHA-256 e SHA-512
+
+![Janela para gerar o SHA-256 de um texto](img/s21-hash.png)
+
+No fim do menu **{{menu.tools}}**, cada algoritmo tem duas opções:
+
+- **{{menu.tools.hashGenerate}}:** abre uma janela; escreva ou cole o texto e o resultado aparece de imediato, logo abaixo. **{{hash.copy}}** leva o resultado para a área de transferência.
+- **{{menu.tools.hashSelection}}:** calcula o resultado a partir do texto selecionado no documento e deixa-o na área de transferência, pronto a colar. Aparece um aviso na barra de estado.
 
 ### Corretor ortográfico
 
@@ -130,7 +150,7 @@ A pesquisa não entra em pastas como `node_modules` e `.git`, nem em ficheiros b
 
 ![Menu Linguagem](img/s10-menu-language.png)
 
-- **{{menu.encoding}}:** converta o documento para **UTF-8** ou **UTF-8 com BOM**, e escolha a quebra de linha do **Windows (CRLF)** ou do **Unix/Mac (LF)**. A conversão marca o documento como alterado; basta guardar para ter efeito.
+- **{{menu.encoding}}:** converta o documento para **UTF-8** ou **UTF-8 com BOM**, e escolha a quebra de linha do **Windows (CRLF)**, do **Unix (LF)** ou do **Mac (CR)**. A conversão marca o documento como alterado; basta guardar para ter efeito.
 
 A codificação e a quebra de linha atuais aparecem na barra de estado.
 

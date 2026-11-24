@@ -101,7 +101,7 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
     }
   }, [view.showInvisibles, doc.id])
 
-  // Aplica a quebra de linha do documento ao modelo do Monaco.
+  // Aplica a quebra de linha do documento ao modelo do Monaco (que não tem CR: documentos CR usam LF).
   useEffect(() => {
     const model = editorRef.current?.getModel()
     if (model) {
