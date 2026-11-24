@@ -362,6 +362,7 @@ export const es: Messages = {
   "cloud.save.description": "Guarda este documento en tu cuenta para abrirlo en otros equipos.",
   "cloud.save.sending": "Enviando…",
   "storage.cloud": "Almacenamiento en la nube (haga clic para usar el equipo)",
+  "storage.used": "Espacio usado en la nube: sus archivos y los textos aún no guardados",
   "storage.local": "Almacenamiento en el equipo (inicie sesión para usar la nube; con la sesión iniciada, haga clic para usar la nube)",
   "sidebar.cloud": "Nube",
   "cloud.root": "Nube (raíz)",

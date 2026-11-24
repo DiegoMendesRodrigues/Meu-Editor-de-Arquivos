@@ -362,6 +362,7 @@ export const fr: Messages = {
   "cloud.save.description": "Conserve ce document dans votre compte pour l’ouvrir sur d’autres ordinateurs.",
   "cloud.save.sending": "Envoi…",
   "storage.cloud": "Stockage dans le cloud (cliquez pour utiliser cet ordinateur)",
+  "storage.used": "Espace utilisé dans le cloud : vos fichiers et les textes non enregistrés",
   "storage.local": "Stockage sur l'ordinateur (connectez-vous pour utiliser le cloud ; une fois connecté, cliquez pour utiliser le cloud)",
   "sidebar.cloud": "Cloud",
   "cloud.root": "Cloud (racine)",

@@ -66,6 +66,12 @@ const api: EditorApi = {
   cloudFolders: () => ipcRenderer.invoke(IpcChannels.cloudFolders),
   cloudCreateFolder: (path) => ipcRenderer.invoke(IpcChannels.cloudCreateFolder, path),
   cloudDeleteFolder: (path) => ipcRenderer.invoke(IpcChannels.cloudDeleteFolder, path),
+  cloudStorage: () => ipcRenderer.invoke(IpcChannels.cloudStorage),
+  onCloudStorageChanged: (listener) => {
+    const handler = (_e: unknown, bytes: number) => listener(bytes)
+    ipcRenderer.on(IpcChannels.cloudStorageChanged, handler)
+    return () => void ipcRenderer.off(IpcChannels.cloudStorageChanged, handler)
+  },
 
   openManual: () => ipcRenderer.invoke(IpcChannels.openManual),
   openSupport: () => ipcRenderer.invoke(IpcChannels.openSupport),

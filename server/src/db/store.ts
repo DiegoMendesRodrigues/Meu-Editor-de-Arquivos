@@ -81,5 +81,13 @@ export interface Store {
   /** Remove a pasta, só se estiver vazia (sem arquivos nem subpastas). */
   deleteFolder(userId: string, path: string): Promise<DeleteFolderResult>
 
+  /** Espaço usado na nuvem (bytes), como está gravado para o usuário. */
+  getStorageBytes(userId: string): Promise<number>
+  /**
+   * Recalcula e grava o espaço usado: soma dos arquivos + área de trabalho (textos dos documentos
+   * não salvos). Chamado depois de cada gravação ou exclusão; devolve o novo total.
+   */
+  refreshStorageBytes(userId: string): Promise<number>
+
   close(): Promise<void>
 }

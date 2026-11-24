@@ -362,6 +362,7 @@ export const de: Messages = {
   "cloud.save.description": "Speichert dieses Dokument in Ihrem Konto, damit Sie es auf anderen Computern öffnen können.",
   "cloud.save.sending": "Wird gesendet…",
   "storage.cloud": "Cloud-Speicher (klicken, um diesen Computer zu verwenden)",
+  "storage.used": "Belegter Cloud-Speicher: Ihre Dateien und noch nicht gespeicherte Texte",
   "storage.local": "Speicher auf dem Computer (anmelden, um die Cloud zu nutzen; angemeldet: klicken, um die Cloud zu verwenden)",
   "sidebar.cloud": "Cloud",
   "cloud.root": "Cloud (Stammordner)",

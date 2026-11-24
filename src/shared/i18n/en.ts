@@ -362,6 +362,7 @@ export const en: Messages = {
   "cloud.save.description": "Stores this document in your account, to open on other computers.",
   "cloud.save.sending": "Uploading…",
   "storage.cloud": "Cloud storage (click to use this computer)",
+  "storage.used": "Cloud storage used: your files and unsaved text",
   "storage.local": "Computer storage (sign in to use the cloud; when signed in, click to use the cloud)",
   "sidebar.cloud": "Cloud",
   "cloud.root": "Cloud (root)",

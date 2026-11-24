@@ -17,6 +17,10 @@ interface CloudState {
   error: string | null
   /** Com a conta conectada, usar a nuvem (padrão) ou o disco do computador. */
   preferCloud: boolean
+  /** Espaço usado na nuvem, em bytes (arquivos + textos não salvos); null = desconhecido ou sem conta. */
+  storageBytes: number | null
+  /** Busca no servidor o espaço usado na nuvem. */
+  refreshStorage(): Promise<void>
   /** Pasta sugerida para salvar (a última selecionada na barra lateral). */
   targetFolder: string
   setTargetFolder(path: string): void
@@ -32,6 +36,15 @@ export const useCloud = create<CloudState>((set) => ({
   folders: [],
   loading: false,
   error: null,
+  storageBytes: null,
+  refreshStorage: async () => {
+    if (!useAccount.getState().status.user) return set({ storageBytes: null })
+    try {
+      set({ storageBytes: await window.api.cloudStorage() })
+    } catch {
+      set({ storageBytes: null }) // servidor fora do ar ou de versão anterior: o rodapé só mostra o ícone
+    }
+  },
   preferCloud: true,
   targetFolder: '',
   setTargetFolder: (targetFolder) => set({ targetFolder }),
@@ -41,6 +54,7 @@ export const useCloud = create<CloudState>((set) => ({
     try {
       const [files, folders] = await Promise.all([window.api.cloudList(), window.api.cloudFolders()])
       set({ files, folders, error: null, loading: false })
+      void useCloud.getState().refreshStorage()
     } catch (err) {
       set({ error: err instanceof Error ? err.message : String(err), loading: false })
       void useAccount.getState().load() // a sessão pode ter expirado
@@ -49,8 +63,16 @@ export const useCloud = create<CloudState>((set) => ({
   setPreferCloud: (preferCloud) => set({ preferCloud }),
   upsertFile: (file) =>
     set((s) => ({ files: [...s.files.filter((f) => f.id !== file.id), file].sort((a, b) => a.path.localeCompare(b.path)) })),
-  clear: () => set({ files: [], folders: [], error: null, targetFolder: '' })
+  clear: () => set({ files: [], folders: [], error: null, targetFolder: '', storageBytes: null })
 }))
+
+// O servidor informa o novo espaço usado a cada gravação, exclusão ou sincronização da área de trabalho.
+globalThis.window?.api?.onCloudStorageChanged?.((bytes) => {
+  if (useAccount.getState().status.user) useCloud.setState({ storageBytes: bytes })
+})
+
+/** Espaço usado no formato do rodapé: megabytes (1 MB = 1024 × 1024 bytes) com duas casas decimais, como o tamanho do documento. */
+export const formatStorage = (bytes: number): string => `${(bytes / (1024 * 1024)).toFixed(2)} MB`
 
 /** Local de armazenamento em uso agora. */
 export const storageMode = (): StorageMode => (useAccount.getState().status.user && useCloud.getState().preferCloud ? 'cloud' : 'local')

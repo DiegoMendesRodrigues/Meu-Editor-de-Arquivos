@@ -203,6 +203,8 @@ With an account you can keep files in the cloud and open them on other computers
 
 If the file has changed in the cloud since you last synced, the application warns you and asks whether to overwrite it. Each file can be up to 10 MB. If your system has no credential vault, the application warns you that you will need to sign in every time you open it.
 
+While you are signed in, the status bar shows, to the left of the cloud icon, how much cloud space you use, in MB with two decimal places (for example, `1.25 MB`). It adds up all your files in the cloud and the text of documents not yet saved, which is kept so you can continue on another computer. The value changes with each save or deletion.
+
 ## 12. Languages
 
 ![Language flags next to the preview button](img/s08-flags.png)

@@ -12,6 +12,7 @@ export function createMemoryStore(): Store {
   const files = new Map<string, RemoteFile & { userId: string }>()
   const folders = new Map<string, Set<string>>() // usuário -> pastas criadas
   const workspaces = new Map<string, Workspace>()
+  const storage = new Map<string, number>() // usuário -> espaço usado gravado (bytes)
   const userFolders = (userId: string): Set<string> => {
     let set = folders.get(userId)
     if (!set) folders.set(userId, (set = new Set()))
@@ -133,6 +134,15 @@ export function createMemoryStore(): Store {
       const w: Workspace = { data, version: baseVersion + 1, updatedAt: new Date() }
       workspaces.set(userId, w)
       return { ok: true, workspace: { ...w } }
+    },
+    async getStorageBytes(userId) {
+      return storage.get(userId) ?? 0
+    },
+    async refreshStorageBytes(userId) {
+      let total = Buffer.byteLength(workspaces.get(userId)?.data ?? '', 'utf8')
+      for (const f of files.values()) if (f.userId === userId) total += f.size
+      storage.set(userId, total)
+      return total
     },
     async close() {}
   }

@@ -1,8 +1,8 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Cloud, HardDrive } from 'lucide-react'
 import { useAccount } from '@/store/account'
-import { useCloud, useStorageMode } from '@/store/cloud'
+import { formatStorage, useCloud, useStorageMode } from '@/store/cloud'
 import { languageLabel } from '@/editor/languages'
 import { useT } from '@/i18n'
 import { useActiveDocument, useDocuments } from '@/store/documents'
@@ -25,6 +25,12 @@ export function StatusBar() {
   const mode = useStorageMode()
   const user = useAccount((s) => s.status.user)
   const size = useMemo(() => (content === undefined ? 0 : encoder.encode(content).length), [content])
+  const storageBytes = useCloud((s) => s.storageBytes)
+
+  // Ao entrar (ou trocar de conta), busca o espaço usado na nuvem; ao sair, ele some do rodapé.
+  useEffect(() => {
+    void useCloud.getState().refreshStorage()
+  }, [user?.id])
 
   return (
     <footer className="flex h-6 shrink-0 items-center gap-4 border-t border-border bg-chrome px-3 text-xs text-zinc-600">
@@ -52,6 +58,11 @@ export function StatusBar() {
       ) : (
         <span>{t('status.ready')}</span>
       )}
+      {user && storageBytes !== null && (
+        <span className={doc ? '' : 'ml-auto'} title={t('storage.used')} data-testid="cloud-storage">
+          {formatStorage(storageBytes)}
+        </span>
+      )}
       {/* Local de armazenamento em uso; com a conta conectada, o clique alterna entre nuvem e disco. */}
       <button
         type="button"
@@ -60,7 +71,7 @@ export function StatusBar() {
         title={mode === 'cloud' ? t('storage.cloud') : t('storage.local')}
         aria-label={mode === 'cloud' ? t('storage.cloud') : t('storage.local')}
         data-storage={mode}
-        className={`${doc ? '' : 'ml-auto '}flex items-center rounded px-1 hover:bg-zinc-300 disabled:hover:bg-transparent`}
+        className={`${doc || (user && storageBytes !== null) ? '' : 'ml-auto '}flex items-center rounded px-1 hover:bg-zinc-300 disabled:hover:bg-transparent`}
       >
         {mode === 'cloud' ? <Cloud size={14} className="text-sky-600" /> : <HardDrive size={14} />}
       </button>

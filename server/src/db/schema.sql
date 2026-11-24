@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS users (
   name          VARCHAR(100) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   created_at    DATETIME(3)  NOT NULL,
+  -- Espaço usado na nuvem, em bytes: arquivos + área de trabalho (textos não salvos). Recalculado a cada gravação.
+  storage_bytes BIGINT       NOT NULL DEFAULT 0,
   UNIQUE KEY uq_users_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

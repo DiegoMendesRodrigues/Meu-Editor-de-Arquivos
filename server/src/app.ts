@@ -233,6 +233,9 @@ export function buildApp(opts: AppOptions): FastifyInstance {
 
   app.get('/v1/me', auth, async (req) => ({ user: publicUser(req.user!) }))
 
+  // Espaço usado na nuvem (bytes): arquivos + textos não salvos da área de trabalho.
+  app.get('/v1/me/storage', auth, async (req) => ({ storageBytes: await store.getStorageBytes(req.user!.id) }))
+
   app.patch('/v1/me', auth, async (req) => {
     const body = profileSchema.parse(req.body)
     await store.updateUserName(req.user!.id, body.name)
@@ -270,7 +273,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
         current: fileMeta(result.current)
       })
     }
-    return { file: fileMeta(result.file) }
+    return { file: fileMeta(result.file), storageBytes: await store.refreshStorageBytes(req.user!.id) }
   })
 
   // Mover ou renomear: muda o caminho do arquivo (pasta e/ou nome).
@@ -294,7 +297,11 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     if (Buffer.byteLength(body.data, 'utf8') > MAX_FILE_BYTES) throw new HttpError(413, 'too_large', 'O arquivo passa de 10 MB.')
     const result = await store.putWorkspace(req.user!.id, body.data, body.baseVersion)
     if (!result.ok) throw new HttpError(409, 'workspace_conflict', 'A área de trabalho mudou em outro computador.')
-    return { version: result.workspace.version, updatedAt: result.workspace.updatedAt.toISOString() }
+    return {
+      version: result.workspace.version,
+      updatedAt: result.workspace.updatedAt.toISOString(),
+      storageBytes: await store.refreshStorageBytes(req.user!.id)
+    }
   })
 
   app.get('/v1/folders', auth, async (req) => ({ folders: await store.listFolders(req.user!.id) }))
@@ -316,10 +323,10 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return reply.status(204).send()
   })
 
-  app.delete('/v1/files/:id', auth, async (req, reply) => {
+  app.delete('/v1/files/:id', auth, async (req) => {
     const { id } = z.object({ id: z.string().min(1).max(64) }).parse(req.params)
     if (!(await store.deleteFile(req.user!.id, id))) throw new HttpError(404, 'not_found', 'Arquivo não encontrado.')
-    return reply.status(204).send()
+    return { storageBytes: await store.refreshStorageBytes(req.user!.id) }
   })
 
   return app

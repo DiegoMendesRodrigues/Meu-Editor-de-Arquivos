@@ -17,6 +17,8 @@ npm run migrate
 npm start            # escuta em 127.0.0.1:3000 (HOST e PORT configuráveis)
 ```
 
+Num banco já existente, rode `npm run migrate` de novo ao atualizar: ele acrescenta a coluna `users.storage_bytes` (espaço usado na nuvem por usuário) e calcula o valor de todos os usuários.
+
 Sem `DATABASE_URL` o servidor usa **memória** (só para experimentar; os dados somem ao parar).
 
 No app: menu **Conta → Entrar ou criar conta**, informe o endereço da API (`http://localhost:3000` em testes).
@@ -48,7 +50,7 @@ A camada MySQL (`src/db/mysql.ts`) ainda **não foi testada contra um servidor r
 ## Rotas (v1)
 
 `POST /v1/auth/register`, `/login`, `/logout`, `/password-reset/request`, `/password-reset/confirm`;
-`GET|PATCH /v1/me`, `POST /v1/me/password`; `GET /v1/files`, `GET /v1/files/:id`, `PUT /v1/files`, `DELETE /v1/files/:id`.
+`GET|PATCH /v1/me`, `POST /v1/me/password`, `GET /v1/me/storage` (espaço usado na nuvem, em bytes: arquivos + textos não salvos; também vem em `storageBytes` nas respostas de `PUT /v1/files`, `DELETE /v1/files/:id` e `PUT /v1/workspace`); `GET /v1/files`, `GET /v1/files/:id`, `PUT /v1/files`, `DELETE /v1/files/:id`.
 
 ## Pacote de instalação
 

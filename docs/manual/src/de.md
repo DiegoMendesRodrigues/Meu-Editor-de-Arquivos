@@ -203,6 +203,8 @@ Mit einem Konto speichern Sie Dateien in der Cloud und öffnen sie auf anderen C
 
 Hat sich die Datei seit der letzten Synchronisierung in der Cloud geändert, warnt die Anwendung und fragt, ob sie überschrieben werden soll. Jede Datei darf bis zu 10 MB groß sein. Hat Ihr System keinen Tresor für Anmeldedaten, weist die Anwendung darauf hin, dass Sie sich bei jedem Start neu anmelden müssen.
 
+Solange Sie angemeldet sind, zeigt die Statusleiste links neben dem Cloud-Symbol, wie viel Cloud-Speicher Sie belegen, in MB mit zwei Nachkommastellen (zum Beispiel `1.25 MB`). Gezählt werden alle Ihre Dateien in der Cloud und die Texte noch nicht gespeicherter Dokumente, die aufbewahrt werden, damit Sie an einem anderen Computer weiterarbeiten können. Der Wert ändert sich bei jedem Speichern oder Löschen.
+
 ## 12. Sprachen
 
 ![Sprachflaggen neben der Schaltfläche für die Vorschau](img/s08-flags.png)

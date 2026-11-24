@@ -203,6 +203,8 @@ Com uma conta, guarda ficheiros na nuvem e abre-os noutros computadores. Abra o 
 
 Se o ficheiro tiver mudado na nuvem desde a última vez, a aplicação avisa e pergunta se quer substituí-lo. Cada ficheiro pode ter até 10 MB. Se o seu sistema não tiver cofre de credenciais, a aplicação avisa que terá de iniciar sessão sempre que a abrir.
 
+Com a conta ligada, o rodapé mostra, à esquerda do ícone da nuvem, quanto espaço usa na nuvem, em MB com duas casas decimais (por exemplo, `1.25 MB`). A conta soma todos os seus ficheiros na nuvem e os textos dos documentos ainda não guardados, que ficam guardados para continuar noutro computador. O valor muda a cada gravação ou eliminação.
+
 ## 12. Idiomas
 
 ![Bandeiras dos idiomas junto ao botão de pré-visualização](img/s08-flags.png)

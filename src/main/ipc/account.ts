@@ -1,7 +1,7 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { app, safeStorage } from 'electron'
+import { app, BrowserWindow, safeStorage } from 'electron'
 import log from 'electron-log/main'
 import { z } from 'zod'
 import {
@@ -115,6 +115,15 @@ class ApiError extends Error {
   }
 }
 
+const storageSchema = z.object({ storageBytes: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER) })
+
+/** Respostas que trazem o espaço usado na nuvem (salvar, excluir, sincronizar) atualizam o rodapé das janelas. */
+function reportStorage(json: unknown): void {
+  const parsed = storageSchema.safeParse(json)
+  if (!parsed.success) return
+  for (const win of BrowserWindow.getAllWindows()) win.webContents.send(IpcChannels.cloudStorageChanged, parsed.data.storageBytes)
+}
+
 /** Chama a API. Com auth=true envia o token; 401 encerra a sessão local. */
 async function api<T>(method: string, path: string, opts: { body?: unknown; auth?: boolean; allow?: number[] } = {}): Promise<T> {
   if (!serverUrl) throw new Error(tm('acct.needServer'))
@@ -142,7 +151,10 @@ async function api<T>(method: string, path: string, opts: { body?: unknown; auth
   } catch {
     /* resposta não-JSON */
   }
-  if (res.ok || opts.allow?.includes(res.status)) return json as T
+  if (res.ok || opts.allow?.includes(res.status)) {
+    reportStorage(json)
+    return json as T
+  }
 
   const error = (json as { error?: { code?: string; message?: string } } | null)?.error
   // Só mensagens conhecidas, traduzidas aqui: o texto vindo do servidor não aparece direto na interface.
@@ -278,6 +290,11 @@ export function registerAccountHandlers(): void {
 
   handle(IpcChannels.cloudCreateFolder, async (_e, raw: unknown) => {
     await api('POST', '/v1/folders', { auth: true, body: { path: cloudPathSchema.parse(raw) } })
+  })
+
+  handle(IpcChannels.cloudStorage, async (): Promise<number> => {
+    const res = await api<unknown>('GET', '/v1/me/storage', { auth: true })
+    return storageSchema.parse(res).storageBytes
   })
 
   handle(IpcChannels.cloudDeleteFolder, async (_e, raw: unknown) => {

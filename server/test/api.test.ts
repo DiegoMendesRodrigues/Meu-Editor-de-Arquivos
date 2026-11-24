@@ -145,7 +145,7 @@ describe('arquivos na nuvem', () => {
     const updated = await put(token, { path: 'notas/a.md', content: '# Olá 2', baseVersion: 1 })
     expect(updated.body.file.version).toBe(2)
 
-    expect((await ctx.call('DELETE', `/v1/files/${id}`, { token })).status).toBe(204)
+    expect((await ctx.call('DELETE', `/v1/files/${id}`, { token })).status).toBe(200)
     expect((await ctx.call('GET', `/v1/files/${id}`, { token })).status).toBe(404)
   })
 
@@ -240,5 +240,42 @@ describe('área de trabalho sincronizada', () => {
     const other = await ctx.register('bia@exemplo.com', 'Bia')
     expect((await ctx.call('GET', '/v1/workspace', { token: other })).body.version).toBe(0)
     expect((await ctx.call('GET', '/v1/workspace')).status).toBe(401)
+  })
+})
+
+describe('espaço usado na nuvem', () => {
+  it('soma os arquivos e os textos não salvos, por usuário, e acompanha cada gravação', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    const storage = async (t = token) => (await ctx.call('GET', '/v1/me/storage', { token: t })).body.storageBytes as number
+    expect(await storage()).toBe(0)
+
+    // "ç" tem 2 bytes em UTF-8: conta bytes, não caracteres.
+    const a = await ctx.call('PUT', '/v1/files', { token, body: { path: 'a.txt', content: 'açúcar', encoding: 'UTF-8', baseVersion: null, force: false } })
+    expect(a.body.storageBytes).toBe(8)
+    const b = await ctx.call('PUT', '/v1/files', { token, body: { path: 'b.txt', content: 'x'.repeat(100), encoding: 'UTF-8', baseVersion: null, force: false } })
+    expect(b.body.storageBytes).toBe(108)
+
+    const ws = await ctx.call('PUT', '/v1/workspace', { token, body: { data: '{"t":"não salvo"}', baseVersion: 0 } })
+    expect(ws.body.storageBytes).toBe(108 + Buffer.byteLength('{"t":"não salvo"}'))
+
+    // Regravar troca o tamanho antigo pelo novo; excluir tira o arquivo da soma.
+    await ctx.call('PUT', '/v1/files', { token, body: { path: 'a.txt', content: 'ab', encoding: 'UTF-8', baseVersion: 1, force: false } })
+    const del = await ctx.call('DELETE', `/v1/files/${b.body.file.id}`, { token })
+    expect(del.body.storageBytes).toBe(2 + Buffer.byteLength('{"t":"não salvo"}'))
+    expect(await storage()).toBe(del.body.storageBytes)
+
+    // Outro usuário não soma os arquivos do primeiro; sem sessão, não há resposta.
+    expect(await storage(await ctx.register('bia@exemplo.com', 'Bia'))).toBe(0)
+    expect((await ctx.call('GET', '/v1/me/storage')).status).toBe(401)
+  })
+
+  it('conflito não muda o espaço usado', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    await ctx.call('PUT', '/v1/files', { token, body: { path: 'a.txt', content: 'abc', encoding: 'UTF-8', baseVersion: null, force: false } })
+    const conflict = await ctx.call('PUT', '/v1/files', { token, body: { path: 'a.txt', content: 'muito maior', encoding: 'UTF-8', baseVersion: 7, force: false } })
+    expect(conflict.status).toBe(409)
+    expect((await ctx.call('GET', '/v1/me/storage', { token })).body.storageBytes).toBe(3)
   })
 })

@@ -3,6 +3,13 @@ import { randomUUID } from 'node:crypto'
 import mysql, { type Pool, type PoolConnection, type ResultSetHeader, type RowDataPacket } from 'mysql2/promise'
 import type { DeleteFolderResult, FileMeta, MoveResult, PutWorkspaceResult, RemoteFile, Store, UpsertResult, User, Workspace } from './store.js'
 
+/**
+ * Espaço usado por um usuário: tamanho dos arquivos (bytes UTF-8, coluna size) + área de trabalho
+ * (LENGTH conta bytes). Os "?" são o id do usuário (duas vezes).
+ */
+const STORAGE_SUM =
+  '(SELECT COALESCE(SUM(size), 0) FROM files WHERE user_id = ?) + COALESCE((SELECT LENGTH(data) FROM workspaces WHERE user_id = ?), 0)'
+
 /** Implementação para MySQL/MariaDB. Todas as consultas são parametrizadas. */
 export function createMysqlStore(uri: string): Store {
   const pool: Pool = mysql.createPool({ uri, connectionLimit: 10, charset: 'utf8mb4', timezone: 'Z', dateStrings: false })
@@ -188,17 +195,34 @@ export function createMysqlStore(uri: string): Store {
         return { ok: true, workspace: { data, version: baseVersion + 1, updatedAt: now } }
       })
     },
+    async getStorageBytes(userId) {
+      const [rows] = await pool.execute<RowDataPacket[]>('SELECT storage_bytes FROM users WHERE id = ?', [userId])
+      return Number(rows[0]?.storage_bytes ?? 0)
+    },
+    async refreshStorageBytes(userId) {
+      // Recalculado a partir dos dados (e não somado aos poucos): o total nunca se desencontra.
+      await pool.execute(`UPDATE users SET storage_bytes = ${STORAGE_SUM} WHERE id = ?`, [userId, userId, userId])
+      return this.getStorageBytes(userId)
+    },
     async close() {
       await pool.end()
     }
   }
 }
 
-/** Aplica o esquema (CREATE TABLE IF NOT EXISTS). */
+/**
+ * Aplica o esquema (CREATE TABLE IF NOT EXISTS) e as colunas novas em bancos já existentes
+ * (storage_bytes, da versão 1.1.0), recalculando o espaço usado de todos os usuários.
+ */
 export async function migrate(uri: string, sql: string): Promise<void> {
   const conn = await mysql.createConnection({ uri, multipleStatements: true })
   try {
     await conn.query(sql)
+    const [cols] = await conn.query<RowDataPacket[]>(
+      "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'storage_bytes'"
+    )
+    if (cols.length === 0) await conn.query('ALTER TABLE users ADD COLUMN storage_bytes BIGINT NOT NULL DEFAULT 0')
+    await conn.query(`UPDATE users u SET u.storage_bytes = ${STORAGE_SUM.replace(/\?/g, 'u.id')}`)
   } finally {
     await conn.end()
   }

@@ -361,6 +361,7 @@ export const ptBR = {
   "cloud.save.description": "Guarda este documento na sua conta, para abrir em outros computadores.",
   "cloud.save.sending": "Enviando…",
   "storage.cloud": "Armazenamento na nuvem (clique para usar o computador)",
+  "storage.used": "Espaço usado na nuvem: seus arquivos e os textos ainda não salvos",
   "storage.local": "Armazenamento no computador (entre na conta para usar a nuvem; com a conta, clique para usar a nuvem)",
   "sidebar.cloud": "Nuvem",
   "cloud.root": "Nuvem (raiz)",

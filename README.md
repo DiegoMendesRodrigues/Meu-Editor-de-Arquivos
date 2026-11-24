@@ -68,6 +68,7 @@ Current version: **1.1.0**.
 **Account and sync (optional)**
 - Sign-up, profile and password change
 - Saving files to a server to use the same files on several computers, through an API backed by MySQL or MariaDB
+- Cloud storage used by each user (files plus unsaved text), shown in MB in the status bar
 
 **Distribution**
 - Windows installer and portable version (no installation)

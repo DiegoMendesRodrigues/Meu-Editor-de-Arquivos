@@ -482,3 +482,43 @@ test.describe('menu Codificação', () => {
     }
   })
 })
+
+test.describe('espaço usado na nuvem', () => {
+  test('aparece no rodapé, ao lado do ícone da nuvem, e acompanha as gravações', async ({ page }) => {
+    // API de teste em memória (a mesma do servidor do projeto), numa porta livre.
+    const { buildApp } = await import('../server/src/app')
+    const { createMemoryStore } = await import('../server/src/db/memory')
+    const api = buildApp({ store: createMemoryStore(), mailer: { async sendPasswordReset() {} } })
+    const address = await api.listen({ port: 0, host: '127.0.0.1' })
+    const pt = (key: Parameters<typeof translate>[1]): string => translate('pt-BR', key)
+    try {
+      await page.getByRole('button', { name: pt('menu.account'), exact: true }).click()
+      await page.getByRole('menuitem', { name: pt('menu.account.signIn') }).click()
+      await page.getByLabel(pt('account.serverUrl'), { exact: true }).fill(address.replace('127.0.0.1', 'localhost'))
+      await page.getByRole('dialog').getByRole('button', { name: pt('account.submit.server') }).click()
+      await page.getByRole('button', { name: pt('account.link.register') }).click()
+      await page.getByLabel(pt('account.email'), { exact: true }).fill('ana@exemplo.com')
+      await page.getByLabel(pt('account.name'), { exact: true }).fill('Ana')
+      await page.getByLabel(pt('account.newPassword'), { exact: true }).fill('uma-senha-forte-123')
+      await page.getByLabel(pt('account.repeat'), { exact: true }).fill('uma-senha-forte-123')
+      await page.getByRole('dialog').getByRole('button', { name: pt('account.submit.register') }).click()
+      await page.getByRole('dialog').waitFor({ state: 'hidden' })
+
+      const used = page.getByTestId('cloud-storage')
+      await expect(used).toHaveText('0.00 MB')
+      await expect(used).toHaveAttribute('title', pt('storage.used'))
+      // Fica à esquerda do ícone da nuvem.
+      await expect(page.getByRole('contentinfo').locator('[data-testid=cloud-storage] + button[data-storage=cloud]')).toHaveCount(1)
+
+      // 1,25 MB salvos na nuvem: o rodapé muda sem precisar recarregar.
+      await page.evaluate(async () => {
+        const w = window as unknown as { api: { cloudSave(r: object): Promise<unknown> } }
+        await w.api.cloudSave({ path: 'grande.txt', content: 'x'.repeat(1310720), encoding: 'UTF-8', baseVersion: null, force: false })
+      })
+      await expect(used).toHaveText('1.25 MB')
+
+    } finally {
+      await api.close()
+    }
+  })
+})

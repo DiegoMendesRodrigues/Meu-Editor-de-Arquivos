@@ -46,6 +46,8 @@ export const IpcChannels = {
   cloudFolders: 'cloud:folders',
   cloudCreateFolder: 'cloud:create-folder',
   cloudDeleteFolder: 'cloud:delete-folder',
+  cloudStorage: 'cloud:storage',
+  cloudStorageChanged: 'cloud:storage-changed',
   libraryLoad: 'library:load',
   librarySave: 'library:save',
   appInfo: 'app:info',
@@ -350,6 +352,10 @@ export interface EditorApi {
   cloudCreateFolder(path: string): Promise<void>
   /** Exclui a pasta da nuvem; só funciona com a pasta vazia. */
   cloudDeleteFolder(path: string): Promise<void>
+  /** Espaço usado na nuvem, em bytes (arquivos + textos não salvos da área de trabalho). */
+  cloudStorage(): Promise<number>
+  /** O Main avisa quando o servidor informa um novo espaço usado (depois de salvar, excluir ou sincronizar). */
+  onCloudStorageChanged(listener: (bytes: number) => void): () => void
 
   /** Avisa o processo principal do idioma da interface (diálogos nativos e mensagens de erro). */
   setLocale(locale: Locale): Promise<void>

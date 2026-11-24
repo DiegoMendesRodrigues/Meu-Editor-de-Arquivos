@@ -362,6 +362,7 @@ export const ptPT: Messages = {
   "cloud.save.description": "Guarda este documento na sua conta, para o abrir noutros computadores.",
   "cloud.save.sending": "A enviar…",
   "storage.cloud": "Armazenamento na nuvem (clique para usar o computador)",
+  "storage.used": "Espaço usado na nuvem: os seus ficheiros e os textos ainda não guardados",
   "storage.local": "Armazenamento no computador (inicie sessão para usar a nuvem; com sessão iniciada, clique para usar a nuvem)",
   "sidebar.cloud": "Nuvem",
   "cloud.root": "Nuvem (raiz)",
