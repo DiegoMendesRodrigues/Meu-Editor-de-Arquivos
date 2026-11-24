@@ -16,6 +16,7 @@ import {
   apiRequestSchema,
   authSchema,
   environmentVariableSchema,
+  keyValueSchema,
   type ApiEnvironment,
   type ApiRequest,
   type KeyValue
@@ -59,7 +60,9 @@ export const sendInputSchema = z.object({
   /** O usuário confirmou o envio num ambiente de produção (POST, PUT, PATCH e DELETE). */
   productionConfirmed: z.boolean().default(false),
   /** O usuário confirmou enviar segredos para este host (igual ao host de destino). */
-  confirmSecretHost: z.string().max(255).optional()
+  confirmSecretHost: z.string().max(255).optional(),
+  /** Chave da confiança em scripts quando o documento ainda não tem caminho (id do documento). */
+  scriptKey: z.string().max(4096).optional()
 })
 export type ApiSendInput = z.input<typeof sendInputSchema>
 
@@ -113,6 +116,22 @@ export interface ExtractionResult {
   value?: string
 }
 
+/** Linha do console de um script (já sem segredos). */
+export interface ScriptLogLine {
+  level: 'log' | 'info' | 'warn' | 'error'
+  text: string
+  phase?: 'pre' | 'post'
+}
+
+/** Resultado de um test(nome, fn) de script. `error` é só a mensagem da falha (sem segredos). */
+export interface ScriptTestResult {
+  name: string
+  passed: boolean
+  error?: string
+  /** Código do problema do próprio script (scriptTimeout, scriptMemory, scriptError), quando o script não terminou. */
+  code?: 'scriptTimeout' | 'scriptMemory' | 'scriptError'
+}
+
 export interface ApiResponseResult {
   ok: true
   runId: string
@@ -137,6 +156,10 @@ export interface ApiResponseResult {
   sentRequest: { method: string; url: string; headers: KeyValue[] }
   redirects: { status: number; url: string }[]
   tests: AssertionResult[]
+  /** Testes feitos pelo script "depois" (fase 5). */
+  scriptTests?: ScriptTestResult[]
+  /** Console dos scripts "antes" e "depois" (fase 5). */
+  scriptLogs?: ScriptLogLine[]
   extracted: ExtractionResult[]
   /** Variáveis usadas na requisição que não existem em nenhum escopo. */
   missingVariables: string[]
@@ -170,6 +193,10 @@ export const API_ERROR_CODES = [
   'proxy',
   'clientCert',
   'saveCancelled',
+  'scriptsNotTrusted',
+  'scriptTimeout',
+  'scriptMemory',
+  'scriptError',
   'unknown'
 ] as const
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number]
@@ -181,6 +208,8 @@ export interface ApiSendError {
   missingVariables?: string[]
   /** Com secretHostNotConfirmed: o host que precisa de confirmação. */
   host?: string
+  /** Console do script "antes" quando ele falhou (fase 5). */
+  scriptLogs?: ScriptLogLine[]
 }
 
 export type ApiSendResult = ApiResponseResult | ApiSendError
@@ -210,7 +239,7 @@ export interface ApiCookieJarEntry extends ApiCookie {
 /* ------------------------------------------------------------------ arquivos anexados */
 
 /** Para que o arquivo será usado: define o filtro do diálogo nativo. O Main autoriza os escolhidos. */
-export const PICK_PURPOSES = ['body', 'certificate', 'privateKey', 'ca', 'pfx', 'data', 'import'] as const
+export const PICK_PURPOSES = ['body', 'certificate', 'privateKey', 'ca', 'pfx', 'data', 'import', 'proto'] as const
 export type ApiPickPurpose = (typeof PICK_PURPOSES)[number]
 
 /* ------------------------------------------------------------------ importar */
@@ -390,3 +419,127 @@ export interface ApiMockLogEntry {
   /** O servidor parou sozinho (inatividade): o Renderer tira o mock da lista de ativos. */
   stopped?: true
 }
+
+/* ------------------------------------------------------------------ gRPC (fase 5) */
+
+/** De onde vêm os serviços: arquivos .proto (escolhidos em diálogo) ou a reflexão do servidor. */
+export const grpcSourceSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('proto'), files: z.array(z.string().max(4096)).min(1).max(50), importPaths: z.array(z.string().max(4096)).max(20).default([]) }),
+  z.object({ type: z.literal('reflection') })
+])
+export type ApiGrpcSource = z.infer<typeof grpcSourceSchema>
+
+const grpcTargetFields = {
+  /** host:porta, sem esquema (pode ter {{variáveis}}). */
+  address: z.string().min(1).max(L.urlChars),
+  tls: z.boolean().default(false),
+  verifyTls: z.boolean().default(true),
+  metadata: z.array(keyValueSchema).max(L.keyValueRows).default([]),
+  environment: environmentPayloadSchema.nullable().default(null),
+  collection: collectionPayloadSchema.nullable().default(null),
+  /** Confirmação de envio de segredos para o host (como em api:send). */
+  confirmSecretHost: z.string().max(255).optional()
+}
+
+export const grpcLoadInputSchema = z.object({ source: grpcSourceSchema, ...grpcTargetFields })
+export type ApiGrpcLoadInput = z.input<typeof grpcLoadInputSchema>
+
+export type ApiGrpcMethodKind = 'unary' | 'server' | 'client' | 'bidi'
+export interface ApiGrpcMethod {
+  name: string
+  kind: ApiGrpcMethodKind
+  requestType: string
+  responseType: string
+  /** Mensagem de exemplo em JSON gerada a partir do proto. */
+  template: string
+}
+export interface ApiGrpcService {
+  /** Nome completo (pacote.Servico). */
+  name: string
+  methods: ApiGrpcMethod[]
+}
+export type ApiGrpcLoadResult =
+  | { ok: true; services: ApiGrpcService[] }
+  | { ok: false; code: ApiErrorCode | 'protoInvalid' | 'reflectionUnavailable'; host?: string }
+
+export const grpcStartInputSchema = z.object({
+  callId: z.string().uuid(),
+  source: grpcSourceSchema,
+  ...grpcTargetFields,
+  service: z.string().min(1).max(500),
+  method: z.string().min(1).max(200),
+  /** Primeira mensagem em JSON (unário e streaming do servidor; nas outras pode ficar vazia). */
+  message: z.string().max(L.bodyChars).default(''),
+  deadlineMs: z.number().int().min(0).max(3_600_000).default(0)
+})
+export type ApiGrpcStartInput = z.input<typeof grpcStartInputSchema>
+export type ApiGrpcStartResult =
+  | { ok: true }
+  | { ok: false; code: ApiErrorCode | 'protoInvalid' | 'reflectionUnavailable' | 'methodNotFound' | 'messageInvalid' | 'tooManyCalls'; host?: string }
+
+export interface ApiGrpcEvent {
+  callId: string
+  type: 'message' | 'metadata' | 'status' | 'error'
+  direction: 'in' | 'out'
+  /** JSON da mensagem, ou metadados como JSON. */
+  data: string
+  at: string
+  /** Status gRPC (0 = OK) e o nome dele (OK, NOT_FOUND...) no evento status. */
+  code?: number
+  codeName?: string
+  /** Detalhe do status vindo do servidor: o Renderer mostra só como texto, nunca como HTML. */
+  details?: string
+  truncated?: boolean
+}
+
+/* ------------------------------------------------------------------ monitoramento (fase 5) */
+
+export const monitorSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(L.nameChars),
+  /** Pasta da coleção (precisa estar autorizada quando o monitor é criado). */
+  collectionDir: z.string().min(1).max(4096),
+  /** Caminhos relativos das requisições; vazio = todas. */
+  requests: z.array(z.string().max(4096)).max(500).default([]),
+  environment: z.string().max(4096).optional(),
+  intervalMin: z.number().int().min(1).max(1440),
+  enabled: z.boolean().default(true),
+  notifyOnFailure: z.boolean().default(true)
+})
+export type ApiMonitor = z.infer<typeof monitorSchema>
+export type ApiMonitorInput = z.input<typeof monitorSchema>
+
+export interface ApiMonitorRun {
+  at: string
+  ok: boolean
+  passed: number
+  failed: number
+  /** Requisições com erro de rede. */
+  errors: number
+  totalMs: number
+  avgMs: number
+}
+export interface ApiMonitorState extends ApiMonitor {
+  /** Últimas execuções, da mais antiga para a mais nova (no máximo API_LIMITS.monitorRuns). */
+  runs: ApiMonitorRun[]
+  running: boolean
+  nextAt?: string
+}
+export type ApiMonitorSaveResult = { ok: true; monitor: ApiMonitorState } | { ok: false; code: 'notAuthorized' | 'tooManyMonitors' | 'invalid' }
+export interface ApiMonitorEvent {
+  monitor: ApiMonitorState
+}
+
+/* ------------------------------------------------------------------ scripts (fase 5) */
+
+/** Confiar nos scripts: da requisição atual (editados pelo usuário) ou de toda a coleção. */
+export const scriptTrustInputSchema = z.object({
+  /** Arquivo .apireq (ou id do documento ainda não salvo). */
+  requestKey: z.string().min(1).max(4096),
+  collectionDir: z.string().max(4096).optional(),
+  pre: z.string().max(L.bodyChars).default(''),
+  post: z.string().max(L.bodyChars).default(''),
+  /** true = confia em todos os scripts atuais da coleção (botão "Confiar nesta coleção"). */
+  wholeCollection: z.boolean().default(false)
+})
+export type ApiScriptTrustInput = z.input<typeof scriptTrustInputSchema>

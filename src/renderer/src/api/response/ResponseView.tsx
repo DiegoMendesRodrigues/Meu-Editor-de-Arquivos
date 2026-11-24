@@ -1,6 +1,7 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useMemo, useState } from 'react'
 import { BookmarkPlus, CheckCircle2, Copy, ExternalLink, Save, ShieldAlert, TriangleAlert, XCircle } from 'lucide-react'
+import type { ScriptLogLine } from '@shared/api/protocol'
 import type { Assertion } from '@shared/api/schema'
 import type { MessageKey } from '@shared/i18n'
 import { useT } from '@/i18n'
@@ -74,12 +75,44 @@ function CookiesTab({ res }: { res: ViewResponse }) {
   )
 }
 
+/** Console de um script: só texto (nunca HTML), uma linha por chamada. */
+export function ScriptConsole({ logs }: { logs: ScriptLogLine[] }) {
+  const t = useT()
+  if (logs.length === 0) return null
+  return (
+    <div className="px-3 pb-3" data-testid="api-script-console">
+      <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">{t('apiClient.scripts.console')}</h3>
+      <pre aria-label={t('apiClient.scripts.console')} className="max-h-64 select-text overflow-auto whitespace-pre-wrap break-all rounded border border-border bg-chrome p-2 font-mono text-[12px]">
+        {logs.map((l, i) => (
+          <span key={i} data-level={l.level} className={l.level === 'error' ? 'text-red-600' : l.level === 'warn' ? 'text-amber-700' : ''}>
+            {l.text}
+            {'\n'}
+          </span>
+        ))}
+      </pre>
+    </div>
+  )
+}
+
 function TestsTab({ res, assertions }: { res: ViewResponse; assertions: Assertion[] }) {
   const t = useT()
   const results = res.tests ?? []
-  if (results.length === 0) return <p className="p-4 text-zinc-500">{t('apiClient.response.noTests')}</p>
+  const scriptTests = res.scriptTests ?? []
+  const logs = res.scriptLogs ?? []
+  if (results.length === 0 && scriptTests.length === 0 && logs.length === 0) return <p className="p-4 text-zinc-500">{t('apiClient.response.noTests')}</p>
   return (
+    <>
     <ul className="p-3" data-testid="api-test-results">
+      {scriptTests.map((s, i) => (
+        <li key={`s${i}`} className="flex items-start gap-2 border-b border-border py-1.5" data-passed={String(s.passed)} data-testid="api-script-test">
+          {s.passed ? <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-700" /> : <XCircle size={15} className="mt-0.5 shrink-0 text-red-600" />}
+          <div className="min-w-0 flex-1">
+            <p className="select-text break-words">{s.code ? t('apiClient.scripts.didNotFinish') : s.name}</p>
+            {s.code && <p className="text-xs text-amber-700">{t(`apiClient.error.${s.code}` as MessageKey)}</p>}
+            {!s.passed && s.error && <p className="select-text break-all font-mono text-xs text-zinc-600">{s.error}</p>}
+          </div>
+        </li>
+      ))}
       {results.map((r) => {
         const a = assertions[r.index]
         const ignored = a && !a.enabled
@@ -104,6 +137,8 @@ function TestsTab({ res, assertions }: { res: ViewResponse; assertions: Assertio
         )
       })}
     </ul>
+    <ScriptConsole logs={logs} />
+    </>
   )
 }
 
@@ -199,8 +234,10 @@ export function ResponseView({
   const kind = bodyKind(res.body, forcedType)
   const text = useMemo(() => (kind === 'image' || kind === 'binary' ? '' : bodyText(res.body)), [res.body, kind])
   const results = res.tests ?? []
+  const scriptTests = res.scriptTests ?? []
   const active = results.filter((r) => !(assertions[r.index] && !assertions[r.index]!.enabled))
-  const failed = active.filter((r) => !r.passed).length
+  const total = active.length + scriptTests.length
+  const failed = active.filter((r) => !r.passed).length + scriptTests.filter((s) => !s.passed).length
   const showTests = !saved
   const tab2: Tab = !showTests && tab === 'tests' ? 'body' : tab
 
@@ -222,7 +259,7 @@ export function ResponseView({
     { id: 'body', label: t('apiClient.response.tab.body') },
     { id: 'headers', label: t('apiClient.response.tab.headers'), badge: res.headers.length },
     { id: 'cookies', label: t('apiClient.response.tab.cookies'), badge: res.cookies.length || undefined },
-    ...(showTests ? [{ id: 'tests' as Tab, label: t('apiClient.response.tab.tests'), badge: active.length ? `${active.length - failed}/${active.length}` : undefined }] : []),
+    ...(showTests ? [{ id: 'tests' as Tab, label: t('apiClient.response.tab.tests'), badge: total ? `${total - failed}/${total}` : undefined }] : []),
     { id: 'timings', label: t('apiClient.response.tab.timings') }
   ]
 

@@ -11,6 +11,9 @@ import { registerRunnerHandlers } from './runnerIpc'
 import { registerOAuthHandlers } from './oauthIpc'
 import { registerWsHandlers } from './wsIpc'
 import { registerMockHandlers } from './mockIpc'
+import { registerGrpcHandlers } from './grpcIpc'
+import { registerMonitorHandlers } from './monitorIpc'
+import { registerScriptHandlers } from './scriptIpc'
 
 /**
  * Canais do Cliente de API. Todos passam por handle() (confere o remetente) e validam a entrada com Zod.
@@ -45,4 +48,7 @@ export function registerApiHandlers(): void {
   registerOAuthHandlers()
   registerWsHandlers()
   registerMockHandlers()
+  registerGrpcHandlers()
+  registerMonitorHandlers()
+  registerScriptHandlers()
 }

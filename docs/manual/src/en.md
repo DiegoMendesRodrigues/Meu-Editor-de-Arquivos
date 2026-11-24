@@ -241,6 +241,20 @@ Use **{{menu.tools}} → {{menu.tools.apiWebSocket}}** to create a connection (a
 
 A mock server answers in place of the real API, with responses you already know. In the response of a saved request, click **{{apiClient.response.saveExample}}**: the app stores the example next to the request. Then right-click the collection and choose **{{apiClient.col.mock}}** (or **{{menu.tools}} → {{menu.tools.apiMock}}**). Routes come from the saved examples or from an OpenAPI file; adjust each one's status and delay and click **{{apiClient.mock.start}}**. The server only answers on this computer unless you tick **{{apiClient.mock.lan}}**, and it stops by itself after 8 hours without calls.
 
+### gRPC
+
+Use **{{menu.tools}} → {{menu.tools.apiGrpc}}** to create a call (a **.apigrpc** file). Enter the **{{apiClient.grpc.address}}**, tick **{{apiClient.grpc.tls}}** if the server requires it, and choose the **{{apiClient.grpc.source}}**: **{{apiClient.grpc.source.reflection}}** or **{{apiClient.grpc.source.proto}}**. Click **{{apiClient.grpc.load}}**, pick the service and method, and use **{{apiClient.grpc.useTemplate}}** to start the JSON message. Unary and server-streaming calls use **{{apiClient.grpc.invoke}}**; for client or bidirectional streaming, use **{{apiClient.grpc.start}}**, **{{apiClient.grpc.send}}** and **{{apiClient.grpc.end}}**. Messages, metadata and the status appear in the event list.
+
+### Monitors
+
+A monitor repeats a collection run every few minutes and sends a system notification when something fails (and again when it passes). Right-click the collection and choose **{{apiClient.col.monitor}}** (or **{{menu.tools}} → {{menu.tools.apiMonitor}}**), set the interval, environment and requests, and save. The chart shows each run's time, with failures in red; **{{apiClient.monitor.runNow}}** runs it right away. Monitors only run while the app is open and resume by themselves when you open it again.
+
+### Scripts
+
+In the **{{apiClient.tab.tests}}** tab, below the assertions, there are two optional JavaScript scripts: **{{apiClient.scripts.pre}}** (can change the URL, headers and body) and **{{apiClient.scripts.post}}** (can check the response with <code>test</code> and <code>expect</code> and keep values with <code>env.set</code>). The <code>pm</code> alias accepts the basics of Postman scripts. Scripts run isolated, with no network, files or access to the computer, and with time and memory limits; what they write with <code>console.log</code> appears in the response's **{{apiClient.scripts.console}}** block.
+
+Scripts you did not write (imported or received from someone else) don't run by themselves: the request shows a notice with **{{apiClient.scripts.trustCollection}}**. Trust applies only on this computer and is dropped if the scripts change.
+
 ### Security
 
 - Every request leaves from your own computer, through the app; nothing goes through our servers.

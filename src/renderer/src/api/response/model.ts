@@ -1,5 +1,5 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import type { ApiCookie, ApiResponseResult, ApiTimings, ApiTlsInfo, AssertionResult } from '@shared/api/protocol'
+import type { ApiCookie, ApiResponseResult, ApiTimings, ApiTlsInfo, AssertionResult, ScriptLogLine, ScriptTestResult } from '@shared/api/protocol'
 import { savedResponseSchema, type KeyValue, type SavedResponse } from '@shared/api/schema'
 
 /** O que o painel mostra: serve para a resposta recém-chegada e para o arquivo .apiresp. */
@@ -17,6 +17,9 @@ export interface ViewResponse {
   redirects: { status: number; url: string }[]
   /** Só na resposta recém-chegada (o arquivo salvo não guarda os testes). */
   tests?: AssertionResult[]
+  /** Testes e console dos scripts (fase 5), só na resposta recém-chegada. */
+  scriptTests?: ScriptTestResult[]
+  scriptLogs?: ScriptLogLine[]
   missingVariables: string[]
   sentAt?: string
   environment?: string
@@ -35,6 +38,8 @@ export const fromResult = (r: ApiResponseResult, sentAt?: string | null, environ
   sentRequest: r.sentRequest,
   redirects: r.redirects,
   tests: r.tests,
+  scriptTests: r.scriptTests,
+  scriptLogs: r.scriptLogs,
   missingVariables: r.missingVariables,
   sentAt: sentAt ?? undefined,
   environment: environment ?? undefined

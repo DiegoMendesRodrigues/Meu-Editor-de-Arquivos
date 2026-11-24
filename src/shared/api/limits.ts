@@ -62,6 +62,18 @@ export const API_LIMITS = {
   mockBodyBytes: 1024 * 1024,
   mockConnections: 100,
   /** O mock para sozinho depois deste tempo sem chamadas. */
+  /** gRPC: chamadas abertas por janela, tamanho de uma mensagem e arquivos .proto. */
+  grpcCalls: 10,
+  grpcMessageBytes: 4 * 1024 * 1024,
+  protoFileBytes: 2 * 1024 * 1024,
+  /** Monitores: quantos ao mesmo tempo e quantas execuções o gráfico guarda. */
+  monitors: 20,
+  monitorRuns: 100,
+  /** Scripts QuickJS: CPU padrão e máxima, memória, linhas do console. */
+  scriptCpuMs: 1000,
+  scriptCpuMaxMs: 10_000,
+  scriptMemoryBytes: 32 * 1024 * 1024,
+  scriptConsoleLines: 1000,
   mockIdleMs: 8 * 3600_000
 } as const
 

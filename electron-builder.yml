@@ -23,6 +23,8 @@ npmRebuild: false
 # no Linux), que não rodam de dentro do .asar.
 asarUnpack:
   - '**/node_modules/node-pty/**'
+  # WebAssembly do QuickJS (scripts do Cliente de API): lido do disco pela thread do script
+  - '**/node_modules/@jitl/quickjs-wasmfile-release-sync/**'
 win:
   target:
     - nsis

@@ -8,6 +8,7 @@ import { CookiesDialog } from './CookiesDialog'
 import { ExportDialog } from './ExportDialog'
 import { ImportDialog } from './ImportDialog'
 import { MockDialog } from './MockDialog'
+import { MonitorDialog } from './MonitorDialog'
 import { RunnerDialog } from './RunnerDialog'
 import { createCloudCollection, createFolderIn } from './collectionActions'
 
@@ -65,6 +66,8 @@ export function ApiDialogs() {
       return <RunnerDialog open onClose={close} dir={dialog.dir} />
     case 'mock':
       return <MockDialog onClose={close} dir={dialog.dir} />
+    case 'monitor':
+      return <MonitorDialog onClose={close} dir={dialog.dir} />
     case 'cookies':
       return <CookiesDialog onClose={close} />
     case 'newFolder':

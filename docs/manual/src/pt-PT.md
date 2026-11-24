@@ -241,6 +241,20 @@ Use **{{menu.tools}} → {{menu.tools.apiWebSocket}}** para criar uma ligação 
 
 Um servidor mock responde no lugar da API real, com respostas que já conhece. Na resposta de um pedido guardado, clique em **{{apiClient.response.saveExample}}**: a aplicação guarda o exemplo junto do pedido. Depois, no botão direito da coleção, escolha **{{apiClient.col.mock}}** (ou **{{menu.tools}} → {{menu.tools.apiMock}}**). As rotas vêm dos exemplos guardados ou de um ficheiro OpenAPI; ajuste o estado e o atraso de cada uma e clique em **{{apiClient.mock.start}}**. O servidor só atende neste computador, a menos que marque **{{apiClient.mock.lan}}**, e para sozinho ao fim de 8 horas sem chamadas.
 
+### gRPC
+
+Use **{{menu.tools}} → {{menu.tools.apiGrpc}}** para criar uma chamada (ficheiro **.apigrpc**). Indique o **{{apiClient.grpc.address}}**, marque **{{apiClient.grpc.tls}}** se o servidor o exigir e escolha a **{{apiClient.grpc.source}}**: **{{apiClient.grpc.source.reflection}}** ou **{{apiClient.grpc.source.proto}}**. Clique em **{{apiClient.grpc.load}}**, escolha o serviço e o método e use **{{apiClient.grpc.useTemplate}}** para começar a mensagem em JSON. Chamadas simples e com streaming do servidor usam **{{apiClient.grpc.invoke}}**; com streaming do cliente ou nos dois sentidos, use **{{apiClient.grpc.start}}**, **{{apiClient.grpc.send}}** e **{{apiClient.grpc.end}}**. As mensagens, os metadados e o estado aparecem na lista de eventos.
+
+### Monitores
+
+Um monitor repete a execução de uma coleção a cada tantos minutos e avisa por notificação do sistema quando algo falha (e de novo quando volta a passar). No botão direito da coleção, escolha **{{apiClient.col.monitor}}** (ou **{{menu.tools}} → {{menu.tools.apiMonitor}}**), defina o intervalo, o ambiente e os pedidos e guarde. O gráfico mostra o tempo de cada execução, com as falhas a vermelho; **{{apiClient.monitor.runNow}}** executa de imediato. Os monitores só funcionam com a aplicação aberta e retomam sozinhos quando a volta a abrir.
+
+### Scripts
+
+No separador **{{apiClient.tab.tests}}**, abaixo das asserções, há dois scripts opcionais em JavaScript: **{{apiClient.scripts.pre}}** (pode alterar o URL, os cabeçalhos e o corpo) e **{{apiClient.scripts.post}}** (pode verificar a resposta com <code>test</code> e <code>expect</code> e guardar valores com <code>env.set</code>). O alias <code>pm</code> aceita o básico dos scripts do Postman. Os scripts correm isolados, sem rede, ficheiros nem acesso ao computador, com limite de tempo e de memória; o que escrevem com <code>console.log</code> aparece no bloco **{{apiClient.scripts.console}}** da resposta.
+
+Scripts que não escreveu (importados ou recebidos de outra pessoa) não correm sozinhos: o pedido mostra um aviso com **{{apiClient.scripts.trustCollection}}**. A confiança vale só neste computador e cai se os scripts mudarem.
+
 ### Segurança
 
 - Todos os pedidos saem do próprio computador, pela aplicação; nada passa por servidores nossos.

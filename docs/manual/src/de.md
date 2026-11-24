@@ -241,6 +241,20 @@ Mit **{{menu.tools}} → {{menu.tools.apiWebSocket}}** legen Sie eine Verbindung
 
 Ein Mock-Server antwortet anstelle der echten API mit Antworten, die Sie bereits kennen. Klicken Sie in der Antwort einer gespeicherten Anfrage auf **{{apiClient.response.saveExample}}**: Die App legt das Beispiel neben der Anfrage ab. Wählen Sie dann per Rechtsklick auf die Sammlung **{{apiClient.col.mock}}** (oder **{{menu.tools}} → {{menu.tools.apiMock}}**). Die Routen stammen aus den gespeicherten Beispielen oder aus einer OpenAPI-Datei; passen Sie Status und Verzögerung jeder Route an und klicken Sie auf **{{apiClient.mock.start}}**. Der Server antwortet nur auf diesem Computer, außer Sie aktivieren **{{apiClient.mock.lan}}**, und beendet sich nach 8 Stunden ohne Aufrufe selbst.
 
+### gRPC
+
+Mit **{{menu.tools}} → {{menu.tools.apiGrpc}}** legen Sie einen Aufruf an (Datei **.apigrpc**). Geben Sie die **{{apiClient.grpc.address}}** ein, aktivieren Sie **{{apiClient.grpc.tls}}**, falls der Server es verlangt, und wählen Sie die **{{apiClient.grpc.source}}**: **{{apiClient.grpc.source.reflection}}** oder **{{apiClient.grpc.source.proto}}**. Klicken Sie auf **{{apiClient.grpc.load}}**, wählen Sie Dienst und Methode und beginnen Sie die JSON-Nachricht mit **{{apiClient.grpc.useTemplate}}**. Einfache Aufrufe und Server-Streaming verwenden **{{apiClient.grpc.invoke}}**; bei Client- oder bidirektionalem Streaming nutzen Sie **{{apiClient.grpc.start}}**, **{{apiClient.grpc.send}}** und **{{apiClient.grpc.end}}**. Nachrichten, Metadaten und Status erscheinen in der Ereignisliste.
+
+### Monitore
+
+Ein Monitor wiederholt die Ausführung einer Sammlung alle paar Minuten und meldet per Systembenachrichtigung, wenn etwas fehlschlägt (und erneut, wenn es wieder klappt). Wählen Sie per Rechtsklick auf die Sammlung **{{apiClient.col.monitor}}** (oder **{{menu.tools}} → {{menu.tools.apiMonitor}}**), legen Sie Intervall, Umgebung und Anfragen fest und speichern Sie. Das Diagramm zeigt die Dauer jeder Ausführung, Fehler in Rot; **{{apiClient.monitor.runNow}}** startet sofort. Monitore laufen nur bei geöffneter App und setzen beim nächsten Öffnen von selbst fort.
+
+### Skripte
+
+Auf der Registerkarte **{{apiClient.tab.tests}}** gibt es unter den Assertions zwei optionale JavaScript-Skripte: **{{apiClient.scripts.pre}}** (kann URL, Header und Body ändern) und **{{apiClient.scripts.post}}** (kann die Antwort mit <code>test</code> und <code>expect</code> prüfen und Werte mit <code>env.set</code> speichern). Der Alias <code>pm</code> unterstützt die Grundlagen von Postman-Skripten. Die Skripte laufen isoliert, ohne Netzwerk, Dateien oder Zugriff auf den Computer, mit Zeit- und Speicherlimit; was sie mit <code>console.log</code> ausgeben, erscheint im Block **{{apiClient.scripts.console}}** der Antwort.
+
+Skripte, die Sie nicht selbst geschrieben haben (importiert oder von anderen erhalten), laufen nicht von selbst: Die Anfrage zeigt einen Hinweis mit **{{apiClient.scripts.trustCollection}}**. Das Vertrauen gilt nur auf diesem Computer und entfällt, wenn sich die Skripte ändern.
+
 ### Sicherheit
 
 - Alle Anfragen gehen von Ihrem eigenen Computer aus, über die App; nichts läuft über unsere Server.

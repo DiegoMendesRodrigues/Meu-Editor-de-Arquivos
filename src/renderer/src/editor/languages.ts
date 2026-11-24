@@ -10,7 +10,7 @@ const BY_EXTENSION: Record<string, string> = {
   ps1: 'powershell', psm1: 'powershell', sh: 'shell', bash: 'shell', bat: 'bat', cmd: 'bat', lua: 'lua',
   html: 'html', htm: 'html', css: 'css', scss: 'scss', less: 'less', xml: 'xml', json: 'json',
   csv: 'plaintext', sql: 'sql', yaml: 'yaml', yml: 'yaml', toml: 'toml', ini: 'ini', conf: 'ini',
-  apireq: 'apireq', apienv: 'apienv', apiresp: 'apiresp', apirun: 'apirun', apicol: 'apicol', apiws: 'apiws'
+  apireq: 'apireq', apienv: 'apienv', apiresp: 'apiresp', apirun: 'apirun', apicol: 'apicol', apiws: 'apiws', apigrpc: 'apigrpc'
 }
 
 export function languageFromName(name: string): string {
@@ -28,7 +28,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
 }
 
 /** Arquivos do Cliente de API: JSON com construtor ou visualizador próprio (não entram no menu Linguagem). */
-export const API_LANGUAGES = ['apireq', 'apienv', 'apiresp', 'apirun', 'apicol', 'apiws'] as const
+export const API_LANGUAGES = ['apireq', 'apienv', 'apiresp', 'apirun', 'apicol', 'apiws', 'apigrpc'] as const
 export type ApiLanguage = (typeof API_LANGUAGES)[number]
 export const isApiLanguage = (id: string | undefined): id is ApiLanguage => (API_LANGUAGES as readonly string[]).includes(id ?? '')
 
@@ -38,7 +38,8 @@ const API_LANGUAGE_KEY = {
   apiresp: 'apiClient.languageName.apiresp',
   apirun: 'apiClient.languageName.apirun',
   apicol: 'apiClient.languageName.apicol',
-  apiws: 'apiClient.languageName.apiws'
+  apiws: 'apiClient.languageName.apiws',
+  apigrpc: 'apiClient.languageName.apigrpc'
 } as const
 
 export const languageLabel = (id: string): string =>

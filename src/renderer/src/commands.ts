@@ -61,6 +61,12 @@ export function newWebSocketDocument(): void {
   docs().newDocument('apiws')
 }
 
+/** Ferramentas → gRPC: uma nova chamada, aberta no construtor. */
+export function newGrpcDocument(): void {
+  useApiStore.getState().setSidebarOn(true)
+  docs().newDocument('apigrpc')
+}
+
 /** Ferramentas → Importar…: curl, Postman, OpenAPI, Insomnia, HAR e .http. */
 export function openApiImport(): void {
   useApiStore.getState().setSidebarOn(true)
@@ -70,6 +76,11 @@ export function openApiImport(): void {
 /** Ferramentas → Servidor mock: sem coleção de origem (escolhe um arquivo OpenAPI). */
 export function openApiMock(): void {
   useApiStore.getState().openDialog({ kind: 'mock' })
+}
+
+/** Ferramentas → Monitores de API: lista os monitores e cria novos (a pasta é escolhida no formulário). */
+export function openApiMonitor(): void {
+  useApiStore.getState().openDialog({ kind: 'monitor' })
 }
 
 /** Ferramentas → Cookies: os cookies guardados pelo Cliente de API. */

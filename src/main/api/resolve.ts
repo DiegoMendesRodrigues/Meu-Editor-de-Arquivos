@@ -24,6 +24,13 @@ export interface Resolver {
   addSecret(value: string): void
   /** Escopo do cofre para gravar extrações e tokens: o ambiente, ou "globals". */
   readonly scope: string
+  /**
+   * Foto dos valores que um script enxerga (escopos em camadas), sem marcar nenhum segredo como usado:
+   * quem usa o valor de um segredo chama lookup(nome) depois, e só então o escopo vira "usado".
+   */
+  snapshot(): { values: Record<string, string>; secretNames: string[] }
+  /** Define uma variável temporária (a mais forte), como as de um script ou do executor. */
+  setTemporary(name: string, value: string): void
 }
 
 const secretNames = (vars: EnvironmentVariable[]): string[] => vars.filter((v) => v.secret).map((v) => v.key)
@@ -93,6 +100,26 @@ export async function buildResolver(input: {
       // Os mais longos primeiro, para um segredo contido noutro não deixar sobras.
       for (const s of [...new Set(encoded())].filter((v) => v.length > 0).sort((a, b) => b.length - a.length)) out = out.split(s).join(MASK)
       return out
+    },
+    snapshot() {
+      const values: Record<string, string> = Object.create(null)
+      const secretNames = new Set<string>()
+      // Do escopo mais fraco para o mais forte (como em layeredLookup, ao contrário).
+      const put = (name: string, value: string, secret: boolean): void => {
+        values[name] = value
+        if (secret) secretNames.add(name)
+        else secretNames.delete(name)
+      }
+      for (const [n, v] of globalSecrets) put(n, v, true)
+      for (const [n, v] of colSecrets) put(n, v, true)
+      for (const [n, v] of colPlain) put(n, v, false)
+      for (const [n, v] of envSecrets) put(n, v, true)
+      for (const [n, v] of envPlain) put(n, v, false)
+      for (const [n, v] of tempMap) put(n, v, false)
+      return { values: { ...values }, secretNames: [...secretNames] }
+    },
+    setTemporary(name, value) {
+      tempMap.set(name, value)
     },
     addSecret(value) {
       if (!value) return

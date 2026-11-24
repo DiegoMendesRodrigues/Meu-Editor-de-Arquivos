@@ -10,9 +10,11 @@ import {
   type ApiSendResult,
   type AssertionResult,
   type ExtractionResult,
+  type ScriptLogLine,
+  type ScriptTestResult,
   type sendInputSchema
 } from '@shared/api/protocol'
-import type { Auth, KeyValue } from '@shared/api/schema'
+import type { ApiRequest, Auth, KeyValue } from '@shared/api/schema'
 import { evaluateResponse } from './assert'
 import { signOAuth1 } from './auth/oauth1'
 import { getOAuth2AccessToken } from './auth/oauth2'
@@ -23,6 +25,9 @@ import { readAuthorizedFile } from './files'
 import { sendHttp } from './http'
 import { chooseProxy } from './proxy'
 import { buildResolver, type Resolver } from './resolve'
+import { runScriptPhase } from './script/phase'
+import type { ScriptRequestView } from './script/types'
+import { collectionDirOf, isScriptTrusted } from './scriptTrust'
 import { loadTlsMaterial } from './tls'
 import { isHostTrusted, trustHost } from './trust'
 import { secretVault } from './vault'
@@ -36,6 +41,9 @@ export interface ExecuteOptions {
   /** Só para os testes: limites menores que os padrão. */
   limits?: { memoryBytes: number; displayBytes: number; fileBytes?: number }
 }
+
+/** Corpo da resposta entregue ao script "depois" (texto). */
+const SCRIPT_BODY_BYTES = 8 * 1024 * 1024
 
 const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
@@ -90,6 +98,25 @@ export function applyPathParams(text: string, pathParams: [string, string][], en
   return path + rest
 }
 
+/** Corpo em texto que o script enxerga e edita (só raw; os outros tipos não passam pelo script). */
+const scriptBodyText = (body: ApiRequest['body']): string => (body.type === 'raw' ? body.text : '')
+
+/** Aplica ao pedido só o que o script "antes" mudou (método, URL, cabeçalhos, corpo de texto). */
+function applyScriptRequest(request: ApiRequest, before: ScriptRequestView, after: ScriptRequestView): ApiRequest {
+  let next = request
+  if (after.method !== before.method && /^[A-Za-z]{1,32}$/.test(after.method)) next = { ...next, method: after.method.toUpperCase() }
+  if (after.url !== before.url) next = { ...next, url: after.url }
+  if (JSON.stringify(after.headers) !== JSON.stringify(before.headers)) {
+    const kept = next.headers.filter((h) => !h.enabled || h.key.trim() === '')
+    const edited = after.headers.filter(([k]) => k.trim() !== '').map(([key, value]): KeyValue => ({ key, value, enabled: true }))
+    next = { ...next, headers: [...edited, ...kept] }
+  }
+  if (after.body !== before.body && (next.body.type === 'raw' || next.body.type === 'none')) {
+    next = { ...next, body: next.body.type === 'raw' ? { ...next.body, text: after.body } : { type: 'raw', language: 'json', text: after.body } }
+  }
+  return next
+}
+
 const hasHeader = (list: [string, string][], name: string): boolean => list.some(([k]) => k.toLowerCase() === name)
 
 function displayHeader(key: string, value: string, r: Resolver): string {
@@ -127,18 +154,51 @@ function encodeBody(buf: Buffer, text: boolean, truncated: boolean): string {
  * autorização, envia, mede, avalia os testes e as extrações e devolve o resultado mascarado.
  */
 export async function executeRequest(input: ParsedSendInput, options: ExecuteOptions): Promise<ApiSendResult> {
-  const { runId, request, environment, collection } = input
+  const { runId, environment, collection } = input
+  let request = input.request
   let resolver: Resolver | null = null
+  // Scripts (fase 5): vazios não criam thread nenhuma.
+  const preCode = request.scripts?.pre.trim() ? request.scripts.pre : ''
+  const postCode = request.scripts?.post.trim() ? request.scripts.post : ''
+  const scriptLogs: ScriptLogLine[] = []
+  const scriptExtracted: ExtractionResult[] = []
   const fail = (code: ApiErrorCode, host?: string): ApiSendResult => {
     const missing = resolver ? [...resolver.missing] : []
-    return { ok: false, runId, code, ...(missing.length > 0 ? { missingVariables: missing } : {}), ...(host ? { host } : {}) }
+    return { ok: false, runId, code, ...(missing.length > 0 ? { missingVariables: missing } : {}), ...(host ? { host } : {}), ...(scriptLogs.length > 0 ? { scriptLogs } : {}) }
   }
   try {
     if (environment?.production && WRITE_METHODS.has(request.method) && !input.productionConfirmed) return fail('productionNotConfirmed')
     if (options.signal.aborted) return fail('cancelled')
 
+    // Scripts só rodam se o texto atual foi confiado neste computador; senão, nada é enviado.
+    if (preCode || postCode) {
+      const trusted = await isScriptTrusted({
+        pre: request.scripts?.pre ?? '',
+        post: request.scripts?.post ?? '',
+        keys: { dir: collectionDirOf(input.documentPath), request: [input.documentPath, input.scriptKey] }
+      })
+      if (!trusted) return fail('scriptsNotTrusted')
+    }
+
     resolver = await buildResolver({ environment, collection, temporary: input.temporary })
     const r = resolver
+
+    // Script "antes": enxerga a requisição com as variáveis resolvidas e pode mudá-la, além de env e vars.
+    if (preCode) {
+      const before: ScriptRequestView = {
+        method: request.method,
+        url: r.resolve(request.url),
+        headers: request.headers.filter((h) => h.enabled && h.key.trim() !== '').map((h): [string, string] => [r.resolve(h.key).trim(), r.resolve(h.value)]),
+        body: r.resolve(scriptBodyText(request.body))
+      }
+      const phase = await runScriptPhase({ phase: 'pre', code: preCode, r, req: before })
+      scriptLogs.push(...phase.logs)
+      scriptExtracted.push(...phase.extracted)
+      if (phase.error) return fail(phase.error)
+      if (phase.req) request = applyScriptRequest(request, before, phase.req)
+      // O script não escapa da confirmação de produção trocando o método.
+      if (environment?.production && WRITE_METHODS.has(request.method) && !input.productionConfirmed) return fail('productionNotConfirmed')
+    }
     const s = request.settings
     const docPath = input.documentPath
 
@@ -361,6 +421,35 @@ export async function executeRequest(input: ParsedSendInput, options: ExecuteOpt
       }
     }
 
+    // Script "depois": enxerga a resposta e a requisição enviada (com segredos mascarados); os testes dele
+    // entram no resultado junto com os declarativos.
+    let scriptTests: ScriptTestResult[] = []
+    if (postCode) {
+      const phase = await runScriptPhase({
+        phase: 'post',
+        code: postCode,
+        r,
+        req: {
+          method: request.method,
+          url: r.mask(hideUrlPassword(url.href)),
+          headers: headers.map(([key, value]): [string, string] => [key, displayHeader(key, value, r)]),
+          body: scriptBodyText(body)
+        },
+        res: {
+          status: result.status,
+          statusText: result.statusText,
+          headers: result.headers,
+          body: text ? result.body.subarray(0, SCRIPT_BODY_BYTES).toString('utf8') : '',
+          responseTime: result.timings.total
+        }
+      })
+      scriptLogs.push(...phase.logs)
+      scriptExtracted.push(...phase.extracted)
+      scriptTests = phase.tests
+      if (phase.error) scriptTests = [...scriptTests, { name: 'script', passed: false, code: phase.error }]
+    }
+    extracted = [...extracted, ...scriptExtracted]
+
     const response: ApiResponseResult = {
       ok: true,
       runId,
@@ -380,6 +469,8 @@ export async function executeRequest(input: ParsedSendInput, options: ExecuteOpt
       },
       redirects: result.redirects.map((x) => ({ status: x.status, url: r.mask(hideUrlPassword(x.url)) })),
       tests,
+      ...(scriptTests.length > 0 ? { scriptTests } : {}),
+      ...(scriptLogs.length > 0 ? { scriptLogs } : {}),
       extracted,
       missingVariables: [...r.missing]
     }

@@ -6,7 +6,7 @@ import type { MessageKey } from '@shared/i18n'
 import { useT } from '@/i18n'
 import { useDocResponse } from './responses'
 import { fromResult, type ViewResponse } from './response/model'
-import { ResponseView } from './response/ResponseView'
+import { ResponseView, ScriptConsole } from './response/ResponseView'
 
 /** Painel da resposta da requisição: vazio, enviando (com Cancelar), erro por código ou a resposta. */
 export function ResponsePanel({
@@ -50,6 +50,7 @@ export function ResponsePanel({
         {result.missingVariables && result.missingVariables.length > 0 && (
           <p className="mt-2 select-text text-amber-700">{t('apiClient.response.missingVars', { names: result.missingVariables.map((n) => `{{${n}}}`).join(', ') })}</p>
         )}
+        {result.scriptLogs && result.scriptLogs.length > 0 && <div className="-mx-3 mt-3"><ScriptConsole logs={result.scriptLogs} /></div>}
       </div>
     )
   } else if (view) {

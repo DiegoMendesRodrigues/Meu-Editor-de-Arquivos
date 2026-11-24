@@ -326,6 +326,38 @@ export function newApiWebSocket(name = ''): ApiWebSocket {
   return apiWebSocketSchema.parse({ $schema: 'meu-editor/api-ws@1', id: globalThis.crypto.randomUUID(), name })
 }
 
+/* ------------------------------------------------------------------ chamada gRPC (.apigrpc) */
+
+export const apiGrpcSchema = z.object({
+  $schema: z.literal('meu-editor/api-grpc@1'),
+  id: idSchema,
+  name: z.string().max(L.nameChars).default(''),
+  /** host:porta, sem esquema; pode ter {{variáveis}}. */
+  address: z.string().max(L.urlChars).default(''),
+  /** proto: caminhos dos arquivos .proto (relativos ao .apigrpc quando possível); reflection: pergunta ao servidor. */
+  source: z
+    .discriminatedUnion('type', [
+      z.object({ type: z.literal('proto'), files: z.array(z.string().max(4096)).max(50).default([]), importPaths: z.array(z.string().max(4096)).max(20).default([]) }),
+      z.object({ type: z.literal('reflection') })
+    ])
+    .default({ type: 'reflection' }),
+  service: z.string().max(500).default(''),
+  method: z.string().max(200).default(''),
+  metadata: keyValuesSchema,
+  /** Mensagem em JSON (pode ter {{variáveis}}). */
+  message: z.string().max(L.bodyChars).default('{}'),
+  settings: z
+    .object({ tls: z.boolean().default(false), verifyTls: z.boolean().default(true), deadlineMs: z.number().int().min(0).max(3_600_000).default(0) })
+    .prefault({}),
+  /** Mensagens salvas para reenviar nos streams do cliente. */
+  messages: z.array(z.object({ name: z.string().max(L.nameChars).default(''), data: z.string().max(L.bodyChars).default('') })).max(200).default([])
+})
+export type ApiGrpc = z.infer<typeof apiGrpcSchema>
+
+export function newApiGrpc(name = ''): ApiGrpc {
+  return apiGrpcSchema.parse({ $schema: 'meu-editor/api-grpc@1', id: globalThis.crypto.randomUUID(), name })
+}
+
 /* ------------------------------------------------------------------ leitura, migração e gravação */
 
 export type RequestParseError =

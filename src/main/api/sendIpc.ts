@@ -115,6 +115,7 @@ const FILTERS: Record<ApiPickPurpose, Electron.FileFilter[]> = {
   ca: [{ name: 'Certificado', extensions: ['pem', 'crt', 'cer'] }, { name: 'Todos os arquivos', extensions: ['*'] }],
   pfx: [{ name: 'PKCS#12', extensions: ['pfx', 'p12'] }, { name: 'Todos os arquivos', extensions: ['*'] }],
   data: [{ name: 'CSV / JSON', extensions: ['csv', 'json'] }, { name: 'Todos os arquivos', extensions: ['*'] }],
+  proto: [{ name: 'Protocol Buffers', extensions: ['proto'] }, { name: 'Todos os arquivos', extensions: ['*'] }],
   import: [
     { name: 'Coleções e requisições', extensions: ['json', 'yaml', 'yml', 'har', 'http', 'rest', 'txt', 'xml', 'wsdl'] },
     { name: 'Todos os arquivos', extensions: ['*'] }

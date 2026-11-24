@@ -14,6 +14,7 @@ export type ApiDialog =
   | { kind: 'runner'; dir: string }
   | { kind: 'cookies' }
   | { kind: 'mock'; dir?: string }
+  | { kind: 'monitor'; dir?: string }
   | { kind: 'newFolder'; dir: string }
   | { kind: 'newCollection' }
 

@@ -151,6 +151,27 @@ const api: EditorApi = {
     ipcRenderer.on(IpcChannels.apiMockLog, handler)
     return () => void ipcRenderer.off(IpcChannels.apiMockLog, handler)
   },
+  apiGrpcLoad: (input) => ipcRenderer.invoke(IpcChannels.apiGrpcLoad, input),
+  apiGrpcStart: (input) => ipcRenderer.invoke(IpcChannels.apiGrpcStart, input),
+  apiGrpcSend: (callId, message) => ipcRenderer.invoke(IpcChannels.apiGrpcSend, callId, message),
+  apiGrpcEnd: (callId) => ipcRenderer.invoke(IpcChannels.apiGrpcEnd, callId),
+  apiGrpcCancel: (callId) => ipcRenderer.invoke(IpcChannels.apiGrpcCancel, callId),
+  onApiGrpcEvent: (listener) => {
+    const handler = (_e: IpcRendererEvent, event: Parameters<typeof listener>[0]): void => listener(event)
+    ipcRenderer.on(IpcChannels.apiGrpcEvent, handler)
+    return () => void ipcRenderer.off(IpcChannels.apiGrpcEvent, handler)
+  },
+  apiMonitorList: () => ipcRenderer.invoke(IpcChannels.apiMonitorList),
+  apiMonitorSave: (input) => ipcRenderer.invoke(IpcChannels.apiMonitorSave, input),
+  apiMonitorDelete: (id) => ipcRenderer.invoke(IpcChannels.apiMonitorDelete, id),
+  apiMonitorRunNow: (id) => ipcRenderer.invoke(IpcChannels.apiMonitorRunNow, id),
+  onApiMonitorEvent: (listener) => {
+    const handler = (_e: IpcRendererEvent, event: Parameters<typeof listener>[0]): void => listener(event)
+    ipcRenderer.on(IpcChannels.apiMonitorEvent, handler)
+    return () => void ipcRenderer.off(IpcChannels.apiMonitorEvent, handler)
+  },
+  apiScriptTrust: (input) => ipcRenderer.invoke(IpcChannels.apiScriptTrust, input),
+  apiScriptIsTrusted: (input) => ipcRenderer.invoke(IpcChannels.apiScriptIsTrusted, input),
   onBeforeClose: (listener) => {
     const handler = () => listener()
     ipcRenderer.on(IpcChannels.beforeClose, handler)

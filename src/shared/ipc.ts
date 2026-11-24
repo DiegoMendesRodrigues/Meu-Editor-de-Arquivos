@@ -22,7 +22,17 @@ import type {
   ApiWsEvent,
   ApiMockStartInput,
   ApiMockStartResult,
-  ApiMockLogEntry
+  ApiMockLogEntry,
+  ApiGrpcLoadInput,
+  ApiGrpcLoadResult,
+  ApiGrpcStartInput,
+  ApiGrpcStartResult,
+  ApiGrpcEvent,
+  ApiMonitorInput,
+  ApiMonitorState,
+  ApiMonitorSaveResult,
+  ApiMonitorEvent,
+  ApiScriptTrustInput
 } from './api/protocol'
 export type { SearchMatch, SearchOptions } from './search'
 
@@ -124,7 +134,20 @@ export const IpcChannels = {
   apiWsEvent: 'api:ws-event',
   apiMockStart: 'api:mock-start',
   apiMockStop: 'api:mock-stop',
-  apiMockLog: 'api:mock-log'
+  apiMockLog: 'api:mock-log',
+  apiGrpcLoad: 'api:grpc-load',
+  apiGrpcStart: 'api:grpc-start',
+  apiGrpcSend: 'api:grpc-send',
+  apiGrpcEnd: 'api:grpc-end',
+  apiGrpcCancel: 'api:grpc-cancel',
+  apiGrpcEvent: 'api:grpc-event',
+  apiMonitorList: 'api:monitor-list',
+  apiMonitorSave: 'api:monitor-save',
+  apiMonitorDelete: 'api:monitor-delete',
+  apiMonitorRunNow: 'api:monitor-run-now',
+  apiMonitorEvent: 'api:monitor-event',
+  apiScriptTrust: 'api:script-trust',
+  apiScriptIsTrusted: 'api:script-is-trusted'
 } as const
 
 /** Cofre de segredos do Cliente de API: persistent = false quando o sistema não oferece cifra (só memória). */
@@ -509,6 +532,25 @@ export interface EditorApi {
   apiMockStart(input: ApiMockStartInput): Promise<ApiMockStartResult>
   apiMockStop(mockId: string): Promise<void>
   onApiMockLog(listener: (entry: ApiMockLogEntry) => void): () => void
+  /** gRPC: lê os serviços do .proto ou da reflexão do servidor. */
+  apiGrpcLoad(input: ApiGrpcLoadInput): Promise<ApiGrpcLoadResult>
+  /** Abre uma chamada gRPC; mensagens, metadados e status chegam por onApiGrpcEvent. */
+  apiGrpcStart(input: ApiGrpcStartInput): Promise<ApiGrpcStartResult>
+  /** Envia mais uma mensagem (JSON) nas chamadas com streaming do cliente. */
+  apiGrpcSend(callId: string, message: string): Promise<void>
+  /** Fecha o envio (half-close) do streaming do cliente. */
+  apiGrpcEnd(callId: string): Promise<void>
+  apiGrpcCancel(callId: string): Promise<void>
+  onApiGrpcEvent(listener: (event: ApiGrpcEvent) => void): () => void
+  /** Monitores (rodam só com o app aberto). */
+  apiMonitorList(): Promise<ApiMonitorState[]>
+  apiMonitorSave(input: ApiMonitorInput): Promise<ApiMonitorSaveResult>
+  apiMonitorDelete(id: string): Promise<void>
+  apiMonitorRunNow(id: string): Promise<void>
+  onApiMonitorEvent(listener: (event: ApiMonitorEvent) => void): () => void
+  /** Registra a confiança nos scripts (da requisição ou da coleção inteira). */
+  apiScriptTrust(input: ApiScriptTrustInput): Promise<void>
+  apiScriptIsTrusted(input: ApiScriptTrustInput): Promise<boolean>
   /** O Main avisa que o usuário quer fechar a janela; o Renderer decide e chama closeWindow(). */
   onBeforeClose(listener: () => void): () => void
   closeWindow(): Promise<void>

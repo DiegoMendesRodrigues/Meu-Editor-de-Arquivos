@@ -69,6 +69,8 @@ function toItemResult(
     ...(t.actual !== undefined ? { actual: t.actual } : {}),
     ...(t.error !== undefined ? { error: t.error } : {})
   }))
+  // Testes feitos pelo script "depois" entram no relatório junto com os declarativos.
+  for (const t of result.scriptTests ?? []) tests.push({ name: t.name, passed: t.passed, ...(t.error !== undefined || t.code !== undefined ? { error: t.error ?? t.code } : {}) })
   return { ...base, url: result.sentRequest.url, status: result.status, timeMs: Math.round(result.timings.total), tests }
 }
 

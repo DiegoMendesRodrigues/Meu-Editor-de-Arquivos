@@ -1,5 +1,5 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import * as Dropdown from '@radix-ui/react-dropdown-menu'
 import { ChevronDown, Code2, Pencil, Send, TriangleAlert } from 'lucide-react'
@@ -28,6 +28,8 @@ import { KeyValueTable } from './KeyValueTable'
 import { AuthEditor, BodyEditor, SettingsEditor } from './RequestSections'
 import { ResponsePanel } from './ResponsePanel'
 import { TestsEditor } from './TestsEditor'
+import { ScriptsEditor, ScriptTrustBanner, hasScripts, scriptsOf, type ScriptPair } from './ScriptsEditor'
+import { findCollection, isCloudDir } from './collections'
 import { useDocResponse, useResponses } from './responses'
 import { effectiveRequest, isPathParam, paramsFromUrl, urlFromParams, withPathParams } from '@shared/api/urlParams'
 
@@ -170,6 +172,18 @@ export function ApiRequestView({ doc }: { doc: EditorDocument }) {
   const [codeOpen, setCodeOpen] = useState(false)
   const { runId, result } = useDocResponse(doc.id)
   const parsed = useMemo(() => parseApiRequest(doc.content), [doc.content])
+  // Confiança nos scripts: pasta da coleção no disco (se houver) e um contador que refaz a consulta.
+  const [collectionDir, setCollectionDir] = useState<string | undefined>(undefined)
+  const [trustTick, setTrustTick] = useState(0)
+  useEffect(() => {
+    let alive = true
+    void findCollection(doc)
+      .then((c) => alive && setCollectionDir(c && !isCloudDir(c.dir) ? c.dir : undefined))
+      .catch(() => alive && setCollectionDir(undefined))
+    return () => {
+      alive = false
+    }
+  }, [doc.path, doc.cloud?.path]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!parsed.ok) return <InvalidRequest error={parsed.error} onEdit={() => setMode(doc.id, 'edit')} />
   const request = parsed.request
@@ -210,6 +224,7 @@ export function ApiRequestView({ doc }: { doc: EditorDocument }) {
         documentPath: doc.path,
         saveToFile: !!opts.saveToFile,
         productionConfirmed: !!opts.productionConfirmed,
+        scriptKey: doc.id,
         ...(opts.confirmSecretHost ? { confirmSecretHost: opts.confirmSecretHost } : {})
       })
     } catch {
@@ -225,6 +240,8 @@ export function ApiRequestView({ doc }: { doc: EditorDocument }) {
       setConfirmSecret({ saveToFile: !!opts.saveToFile, productionConfirmed: !!opts.productionConfirmed, host: outcome.host })
       return
     }
+    // Scripts ainda sem confiança: a faixa reaparece (e o erro traduzido fica no painel da resposta).
+    if (!outcome.ok && outcome.code === 'scriptsNotTrusted') setTrustTick((n) => n + 1)
     if (outcome.ok) {
       const values = outcome.extracted.filter((x) => x.ok && !x.secret && x.value !== undefined).map((x) => ({ key: x.to, value: x.value! }))
       if (values.length > 0) applyExtractedVariables(values)
@@ -259,6 +276,8 @@ export function ApiRequestView({ doc }: { doc: EditorDocument }) {
     headers: activeRows(request.headers),
     tests: request.tests.filter((a) => a.enabled).length + request.extract.filter((x) => x.enabled).length
   }
+  const scripts = scriptsOf(request)
+  const scriptTarget = { requestKey: doc.path ?? doc.id, collectionDir }
   const methods: string[] = HTTP_METHODS.includes(request.method as (typeof HTTP_METHODS)[number]) ? [...HTTP_METHODS] : [...HTTP_METHODS, request.method]
 
   return (
@@ -276,6 +295,7 @@ export function ApiRequestView({ doc }: { doc: EditorDocument }) {
         }
       }}
     >
+      <ScriptTrustBanner scripts={scripts} target={scriptTarget} tick={trustTick} onTrusted={() => setTrustTick((n) => n + 1)} onView={() => setTab('tests')} />
       {/* Barra da requisição: método, URL, ambiente e enviar. */}
       <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
         <select
@@ -418,7 +438,17 @@ export function ApiRequestView({ doc }: { doc: EditorDocument }) {
                 </>
               )}
               {tab === 'settings' && <SettingsEditor settings={request.settings} onChange={(settings) => update({ settings })} />}
-              {tab === 'tests' && <TestsEditor tests={request.tests} extract={request.extract} onChange={(patch) => update(patch)} />}
+              {tab === 'tests' && (
+                <div className="flex flex-col gap-5">
+                  <TestsEditor tests={request.tests} extract={request.extract} onChange={(patch) => update(patch)} />
+                  <ScriptsEditor
+                    scripts={scripts}
+                    target={scriptTarget}
+                    onChange={(next: ScriptPair) => update({ scripts: hasScripts(next) ? next : undefined })}
+                    onTrusted={() => setTrustTick((n) => n + 1)}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </Panel>
