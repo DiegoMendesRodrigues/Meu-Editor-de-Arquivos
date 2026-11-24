@@ -72,6 +72,20 @@ const api: EditorApi = {
   checkUpdate: () => ipcRenderer.invoke(IpcChannels.checkUpdate),
   setLocale: (locale) => ipcRenderer.invoke(IpcChannels.setLocale, locale),
   getAppInfo: () => ipcRenderer.invoke(IpcChannels.appInfo),
+  terminalCreate: (size) => ipcRenderer.invoke(IpcChannels.terminalCreate, size),
+  terminalWrite: (id, data) => ipcRenderer.invoke(IpcChannels.terminalWrite, id, data),
+  terminalResize: (id, size) => ipcRenderer.invoke(IpcChannels.terminalResize, id, size),
+  terminalKill: (id) => ipcRenderer.invoke(IpcChannels.terminalKill, id),
+  onTerminalData: (listener) => {
+    const handler = (_e: unknown, id: number, data: string) => listener(id, data)
+    ipcRenderer.on(IpcChannels.terminalData, handler)
+    return () => void ipcRenderer.off(IpcChannels.terminalData, handler)
+  },
+  onTerminalExit: (listener) => {
+    const handler = (_e: unknown, id: number, exitCode: number) => listener(id, exitCode)
+    ipcRenderer.on(IpcChannels.terminalExit, handler)
+    return () => void ipcRenderer.off(IpcChannels.terminalExit, handler)
+  },
   setTheme: (theme) => ipcRenderer.invoke(IpcChannels.setTheme, theme),
   setFullScreen: (on) => ipcRenderer.invoke(IpcChannels.setFullScreen, on),
   onFullScreenChanged: (listener) => {

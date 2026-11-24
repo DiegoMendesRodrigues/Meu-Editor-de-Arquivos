@@ -123,6 +123,7 @@ export const de: Messages = {
   "menu.tools.macroRecord": "Makro aufzeichnen",
   "menu.tools.macroRunLast": "Letztes Makro ausführen",
   "menu.tools.macros": "Makros...",
+  "menu.tools.openTerminal": "Terminal öffnen",
   "menu.tools.spellCheck": "Rechtschreibprüfung",
   "menu.tools.spellSubmenu": "Verwendete Rechtschreibung",
   "menu.tools.spellAuto": "Rechtschreibung: Sprache der Oberfläche",
@@ -252,6 +253,7 @@ export const de: Messages = {
   "err.saveFile": "Die Datei konnte nicht gespeichert werden.",
   "err.saveCloud": "Das Speichern in der Cloud ist fehlgeschlagen.",
   "err.openCloud": "Die Cloud-Datei konnte nicht geöffnet werden.",
+  "err.terminal": "Das Terminal konnte nicht geöffnet werden.",
   "err.hash": "Der Hash konnte nicht erzeugt werden.",
   "cloud.confirmOverwrite": "Die Datei „{path}“ existiert in der Cloud bereits in einer anderen Version (Version {version}).\n\nMit dem Text dieses Dokuments überschreiben? Die Cloud-Version wird ersetzt.",
   "common.close": "Schließen",
@@ -439,4 +441,7 @@ export const de: Messages = {
   "md.htmlReadOnly": "Dieses Dokument enthält HTML, das die Vorschau nicht beibehält. Zum Ändern verwenden Sie „{label}“.",
   "md.linkText": "Linktext",
   "md.column": "Spalte",
+  "terminal.panel": "Terminals",
+  "terminal.title": "Terminal {n}",
+  "terminal.close": "{name} schließen",
 }

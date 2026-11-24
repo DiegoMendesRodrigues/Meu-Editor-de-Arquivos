@@ -95,6 +95,15 @@ At the end of the **{{menu.tools}}** menu, each algorithm has two options:
 - **{{menu.tools.hashGenerate}}:** opens a window; type or paste the text and the result appears right away, just below. **{{hash.copy}}** puts the result on the clipboard.
 - **{{menu.tools.hashSelection}}:** computes the result from the text selected in the document and puts it on the clipboard, ready to paste. A notice appears in the status bar.
 
+### Terminal
+
+In **{{menu.tools}} → {{menu.tools.openTerminal}}**, a terminal opens right below the document, in your home folder: PowerShell on Windows and your shell (usually bash) on Linux. Type commands and see the results right there; the document stays open above, and you can drag the divider between them.
+
+- Each click opens another terminal in its own tab (Terminal 1, Terminal 2…). The tab's **×** closes the terminal; so does the `exit` command.
+- With text selected in the terminal, Ctrl+C copies it; with no selection, Ctrl+C interrupts the running command. Ctrl+V pastes.
+- While the cursor is in the terminal, keys go to it (Ctrl+W, Ctrl+R…) instead of the app's shortcuts.
+- Terminals do not come back the next time you open the app.
+
 ### Spell checker
 
 ![Underlined word and the suggested corrections](img/s11a-spelling.png)

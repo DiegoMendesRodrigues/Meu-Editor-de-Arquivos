@@ -122,6 +122,7 @@ export const ptBR = {
   "menu.tools.macroRecord": "Gravar macro",
   "menu.tools.macroRunLast": "Executar última macro",
   "menu.tools.macros": "Macros...",
+  "menu.tools.openTerminal": "Abrir o terminal",
   "menu.tools.spellCheck": "Verificar ortografia",
   "menu.tools.spellSubmenu": "Ortografia utilizada",
   "menu.tools.spellAuto": "Ortografia: idioma da interface",
@@ -251,6 +252,7 @@ export const ptBR = {
   "err.saveFile": "Não foi possível salvar o arquivo.",
   "err.saveCloud": "Não foi possível salvar na nuvem.",
   "err.openCloud": "Não foi possível abrir o arquivo da nuvem.",
+  "err.terminal": "Não foi possível abrir o terminal.",
   "err.hash": "Não foi possível gerar o resumo (hash).",
   "cloud.confirmOverwrite": "O arquivo \"{path}\" já existe na nuvem em outra versão (versão {version}).\n\nSobrescrever com o texto deste documento? A versão da nuvem será substituída.",
   "common.close": "Fechar",
@@ -438,6 +440,9 @@ export const ptBR = {
   "md.htmlReadOnly": "Este documento tem HTML, que a visualização não preserva. Para alterá-lo, use \"{label}\".",
   "md.linkText": "texto do link",
   "md.column": "Coluna",
+  "terminal.panel": "Terminais",
+  "terminal.title": "Terminal {n}",
+  "terminal.close": "Fechar {name}",
 }
 
 export type Messages = typeof ptBR

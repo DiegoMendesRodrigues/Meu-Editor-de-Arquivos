@@ -16,7 +16,13 @@ extraResources:
     filter:
       - '*/index.html'
       - '*/img/**'
-asarUnpack: []
+# Sem recompilar módulos nativos ao empacotar: o node-pty (N-API) já traz binários prontos para o
+# Windows. No Linux, que não tem binários prontos, o fluxo do GitHub Actions compila antes.
+npmRebuild: false
+# node-pty (terminal integrado) executa binários auxiliares (conpty/winpty no Windows, spawn-helper
+# no Linux), que não rodam de dentro do .asar.
+asarUnpack:
+  - '**/node_modules/node-pty/**'
 win:
   target:
     - nsis

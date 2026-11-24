@@ -12,6 +12,7 @@ import { setWatchTarget } from './watcher'
 import { loadAccount, registerAccountHandlers } from './ipc/account'
 import { registerLibraryHandlers } from './ipc/library'
 import { registerSessionHandlers } from './ipc/session'
+import { killAllTerminals, registerTerminalHandlers } from './ipc/terminal'
 
 log.initialize()
 
@@ -102,12 +103,16 @@ app.whenReady().then(async () => {
   registerLibraryHandlers()
   registerAccountHandlers()
   registerAppHandlers()
+  registerTerminalHandlers()
   createWindow()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+
+// Nenhum shell do terminal integrado fica rodando depois que o app fecha.
+app.on('will-quit', killAllTerminals)
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

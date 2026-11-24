@@ -27,6 +27,11 @@ jobs:
       - name: Testes
         run: npm test
 
+      # O node-pty (terminal integrado) não traz binário pronto para Linux: compila para o Electron.
+      # (O electron-builder.yml desliga a recompilação automática, que no Windows não é necessária.)
+      - name: Compilar o node-pty para o Electron
+        run: npx --yes @electron/rebuild --force --only node-pty
+
       # --publish never: em build de tag o electron-builder tenta publicar sozinho e falha sem GH_TOKEN;
       # quem anexa os arquivos ao release é o passo "Anexar ao release", mais abaixo.
       - name: Gerar .deb e AppImage

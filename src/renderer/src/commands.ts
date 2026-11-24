@@ -22,6 +22,7 @@ import { toStoredText } from '@shared/eol'
 import type { Eol, HashAlgorithm } from '@shared/ipc'
 import { useNotice } from '@/store/notice'
 import { selectedText } from '@/textCommands'
+import { createTerminal } from '@/terminal/terminalBus'
 export { collapseSpaces, convertCase, trimSpaces } from '@/textCommands'
 
 const docs = () => useDocuments.getState()
@@ -263,6 +264,9 @@ export async function hashSelection(algorithm: HashAlgorithm): Promise<void> {
 }
 
 export { toggleTheme } from '@/theme'
+
+/** Abre um terminal novo (o shell do usuário, na pasta pessoal) no painel abaixo do documento. */
+export const openTerminal = (): void => void createTerminal().catch((err) => reportError('err.terminal', err))
 
 export const zoomIn = (): void => useView.getState().zoomFont(1)
 export const zoomOut = (): void => useView.getState().zoomFont(-1)

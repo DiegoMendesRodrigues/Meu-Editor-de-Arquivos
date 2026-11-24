@@ -59,7 +59,13 @@ export const IpcChannels = {
   fullScreenChanged: 'app:full-screen-changed',
   hashText: 'tools:hash-text',
   copyText: 'tools:copy-text',
-  setTheme: 'app:set-theme'
+  setTheme: 'app:set-theme',
+  terminalCreate: 'terminal:create',
+  terminalWrite: 'terminal:write',
+  terminalResize: 'terminal:resize',
+  terminalKill: 'terminal:kill',
+  terminalData: 'terminal:data',
+  terminalExit: 'terminal:exit'
 } as const
 
 /** Algoritmos de resumo (hash) do menu Ferramentas. */
@@ -347,6 +353,17 @@ export interface EditorApi {
    * fixo, o prefers-color-scheme do Renderer também passa a ser esse.
    */
   setTheme(theme: Theme | 'system'): Promise<void>
+  /** Abre um terminal (o shell do usuário, na pasta pessoal) e devolve o seu número. */
+  terminalCreate(size: { cols: number; rows: number }): Promise<number>
+  /** Envia ao terminal o que foi digitado (ou colado). */
+  terminalWrite(id: number, data: string): Promise<void>
+  terminalResize(id: number, size: { cols: number; rows: number }): Promise<void>
+  /** Encerra o shell do terminal. */
+  terminalKill(id: number): Promise<void>
+  /** Saída dos terminais (todos chegam pelo mesmo canal, com o número). */
+  onTerminalData(listener: (id: number, data: string) => void): () => void
+  /** O shell terminou (comando exit, por exemplo). */
+  onTerminalExit(listener: (id: number, exitCode: number) => void): () => void
   /** Coloca a janela em tela inteira (ou a tira). */
   setFullScreen(on: boolean): Promise<void>
   /** O Main avisa quando a janela entra ou sai da tela inteira. */

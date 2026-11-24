@@ -95,6 +95,15 @@ No fim do menu **{{menu.tools}}**, cada algoritmo tem duas opções:
 - **{{menu.tools.hashGenerate}}:** abre uma janela; escreva ou cole o texto e o resultado aparece de imediato, logo abaixo. **{{hash.copy}}** leva o resultado para a área de transferência.
 - **{{menu.tools.hashSelection}}:** calcula o resultado a partir do texto selecionado no documento e deixa-o na área de transferência, pronto a colar. Aparece um aviso na barra de estado.
 
+### Terminal
+
+Em **{{menu.tools}} → {{menu.tools.openTerminal}}**, abre-se um terminal logo abaixo do documento, na sua pasta pessoal: o PowerShell no Windows e o seu shell (normalmente o bash) no Linux. Escreva os comandos e veja os resultados aí mesmo; o documento continua aberto acima, e o divisor entre os dois pode ser arrastado.
+
+- Cada clique abre mais um terminal, num separador próprio (Terminal 1, Terminal 2…). O **×** do separador fecha o terminal; o comando `exit` também.
+- Com texto selecionado no terminal, Ctrl+C copia; sem seleção, Ctrl+C interrompe o comando em execução. Ctrl+V cola.
+- Enquanto o cursor está no terminal, as teclas vão para ele (Ctrl+W, Ctrl+R…), e não para os atalhos da aplicação.
+- Os terminais não regressam na abertura seguinte da aplicação.
+
 ### Corretor ortográfico
 
 ![Palavra sublinhada e as sugestões de correção](img/s11a-spelling.png)

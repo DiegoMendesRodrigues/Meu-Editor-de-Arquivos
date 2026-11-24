@@ -28,20 +28,24 @@ import { applyLocale, useLocale, useT } from '@/i18n'
 import { useAccount } from '@/store/account'
 import { useLibrary } from '@/store/library'
 import { useApplyTheme } from '@/theme'
+import { TerminalPanel } from '@/terminal/TerminalPanel'
+import { useTerminals } from '@/store/terminals'
 
 /** Atalhos globais da aplicação (os de edição ficam com o próprio Monaco). */
 function useGlobalShortcuts(): void {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F7' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-        e.preventDefault()
-        useSpelling.getState().toggle()
-        return
-      }
       if (e.key === 'F11' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         e.preventDefault()
         e.stopPropagation()
         cmd.toggleFullScreen()
+        return
+      }
+      // No terminal, as teclas vão para o shell (Ctrl+W apaga palavra, Ctrl+R busca no histórico...).
+      if (e.target instanceof Element && e.target.closest('[data-terminal]')) return
+      if (e.key === 'F7' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        e.preventDefault()
+        useSpelling.getState().toggle()
         return
       }
       if (!e.ctrlKey || e.altKey) return
@@ -78,6 +82,7 @@ export function App() {
   const sidebarVisible = useView((s) => s.sidebarVisible)
   const bottomPanelVisible = useView((s) => s.bottomPanelVisible)
   const fullScreen = useView((s) => s.fullScreen)
+  const hasTerminals = useTerminals((s) => s.tabs.length > 0)
   const dialog = useDialogs((s) => s.open)
   useGlobalShortcuts()
   useApplyTheme()
@@ -176,6 +181,15 @@ export function App() {
                 </div>
               </div>
             </Panel>
+            {/* Terminais (Ferramentas → Abrir o terminal), logo abaixo do documento. */}
+            {hasTerminals && !fullScreen && (
+              <>
+                <Separator className={`h-px ${separatorClass}`} />
+                <Panel id="terminal" defaultSize={240} minSize={100}>
+                  <TerminalPanel />
+                </Panel>
+              </>
+            )}
             {bottomPanelVisible && !fullScreen && (
               <>
                 <Separator className={`h-px ${separatorClass}`} />

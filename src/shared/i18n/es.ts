@@ -123,6 +123,7 @@ export const es: Messages = {
   "menu.tools.macroRecord": "Grabar macro",
   "menu.tools.macroRunLast": "Ejecutar última macro",
   "menu.tools.macros": "Macros...",
+  "menu.tools.openTerminal": "Abrir el terminal",
   "menu.tools.spellCheck": "Revisar ortografía",
   "menu.tools.spellSubmenu": "Ortografía utilizada",
   "menu.tools.spellAuto": "Ortografía: idioma de la interfaz",
@@ -252,6 +253,7 @@ export const es: Messages = {
   "err.saveFile": "No se pudo guardar el archivo.",
   "err.saveCloud": "No se pudo guardar en la nube.",
   "err.openCloud": "No se pudo abrir el archivo de la nube.",
+  "err.terminal": "No se pudo abrir el terminal.",
   "err.hash": "No se pudo generar el hash.",
   "cloud.confirmOverwrite": "El archivo \"{path}\" ya existe en la nube en otra versión (versión {version}).\n\n¿Sobrescribirlo con el texto de este documento? Se reemplazará la versión de la nube.",
   "common.close": "Cerrar",
@@ -439,4 +441,7 @@ export const es: Messages = {
   "md.htmlReadOnly": "Este documento contiene HTML, que la vista previa no conserva. Para modificarlo, use \"{label}\".",
   "md.linkText": "texto del enlace",
   "md.column": "Columna",
+  "terminal.panel": "Terminales",
+  "terminal.title": "Terminal {n}",
+  "terminal.close": "Cerrar {name}",
 }

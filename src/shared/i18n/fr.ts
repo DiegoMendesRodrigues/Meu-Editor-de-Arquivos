@@ -123,6 +123,7 @@ export const fr: Messages = {
   "menu.tools.macroRecord": "Enregistrer une macro",
   "menu.tools.macroRunLast": "Exécuter la dernière macro",
   "menu.tools.macros": "Macros...",
+  "menu.tools.openTerminal": "Ouvrir le terminal",
   "menu.tools.spellCheck": "Vérifier l’orthographe",
   "menu.tools.spellSubmenu": "Orthographe utilisée",
   "menu.tools.spellAuto": "Orthographe : langue de l’interface",
@@ -252,6 +253,7 @@ export const fr: Messages = {
   "err.saveFile": "Impossible d'enregistrer le fichier.",
   "err.saveCloud": "Impossible d'enregistrer dans le cloud.",
   "err.openCloud": "Impossible d'ouvrir le fichier du cloud.",
+  "err.terminal": "Impossible d'ouvrir le terminal.",
   "err.hash": "Impossible de générer l'empreinte (hash).",
   "cloud.confirmOverwrite": "Le fichier « {path} » existe déjà dans le cloud dans une autre version (version {version}).\n\nLe remplacer par le texte de ce document ? La version du cloud sera remplacée.",
   "common.close": "Fermer",
@@ -439,4 +441,7 @@ export const fr: Messages = {
   "md.htmlReadOnly": "Ce document contient du HTML, que l’aperçu ne conserve pas. Pour le modifier, utilisez « {label} ».",
   "md.linkText": "texte du lien",
   "md.column": "Colonne",
+  "terminal.panel": "Terminaux",
+  "terminal.title": "Terminal {n}",
+  "terminal.close": "Fermer {name}",
 }

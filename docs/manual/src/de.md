@@ -95,6 +95,15 @@ Am Ende des Menüs **{{menu.tools}}** bietet jeder Algorithmus zwei Optionen:
 - **{{menu.tools.hashGenerate}}:** öffnet ein Fenster; geben Sie den Text ein oder fügen Sie ihn ein, und das Ergebnis erscheint sofort darunter. **{{hash.copy}}** legt das Ergebnis in die Zwischenablage.
 - **{{menu.tools.hashSelection}}:** berechnet das Ergebnis aus dem im Dokument markierten Text und legt es in die Zwischenablage, bereit zum Einfügen. In der Statusleiste erscheint ein Hinweis.
 
+### Terminal
+
+Unter **{{menu.tools}} → {{menu.tools.openTerminal}}** öffnet sich direkt unter dem Dokument ein Terminal in Ihrem persönlichen Ordner: PowerShell unter Windows und Ihre Shell (meist bash) unter Linux. Geben Sie Befehle ein und sehen Sie die Ergebnisse gleich dort; das Dokument bleibt darüber geöffnet, und die Trennlinie zwischen beiden lässt sich verschieben.
+
+- Jeder Klick öffnet ein weiteres Terminal in einem eigenen Tab (Terminal 1, Terminal 2 …). Das **×** des Tabs schließt das Terminal, ebenso der Befehl `exit`.
+- Mit markiertem Text im Terminal kopiert Ctrl+C; ohne Markierung bricht Ctrl+C den laufenden Befehl ab. Ctrl+V fügt ein.
+- Solange der Cursor im Terminal steht, gehen die Tasten an das Terminal (Ctrl+W, Ctrl+R …) statt an die Tastenkürzel der Anwendung.
+- Terminals werden beim nächsten Start der Anwendung nicht wiederhergestellt.
+
 ### Rechtschreibprüfung
 
 ![Unterstrichenes Wort und Korrekturvorschläge](img/s11a-spelling.png)

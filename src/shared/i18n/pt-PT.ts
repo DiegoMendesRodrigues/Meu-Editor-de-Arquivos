@@ -123,6 +123,7 @@ export const ptPT: Messages = {
   "menu.tools.macroRecord": "Gravar macro",
   "menu.tools.macroRunLast": "Executar última macro",
   "menu.tools.macros": "Macros...",
+  "menu.tools.openTerminal": "Abrir o terminal",
   "menu.tools.spellCheck": "Verificar ortografia",
   "menu.tools.spellSubmenu": "Ortografia utilizada",
   "menu.tools.spellAuto": "Ortografia: idioma da interface",
@@ -252,6 +253,7 @@ export const ptPT: Messages = {
   "err.saveFile": "Não foi possível guardar o ficheiro.",
   "err.saveCloud": "Não foi possível guardar na nuvem.",
   "err.openCloud": "Não foi possível abrir o ficheiro da nuvem.",
+  "err.terminal": "Não foi possível abrir o terminal.",
   "err.hash": "Não foi possível gerar o resumo (hash).",
   "cloud.confirmOverwrite": "O ficheiro \"{path}\" já existe na nuvem noutra versão (versão {version}).\n\nSobrescrever com o texto deste documento? A versão da nuvem será substituída.",
   "common.close": "Fechar",
@@ -439,4 +441,7 @@ export const ptPT: Messages = {
   "md.htmlReadOnly": "Este documento tem HTML, que a visualização não preserva. Para o alterar, use \"{label}\".",
   "md.linkText": "texto da ligação",
   "md.column": "Coluna",
+  "terminal.panel": "Terminais",
+  "terminal.title": "Terminal {n}",
+  "terminal.close": "Fechar {name}",
 }

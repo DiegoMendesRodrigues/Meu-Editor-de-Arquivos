@@ -47,7 +47,7 @@ Current version: **1.1.0**.
 
 **Languages and files**
 - Python, C, C++, C#, Java, JavaScript, TypeScript, PHP, Go, Rust, PowerShell, Bash, Batch, Lua, HTML, CSS, XML, JSON, YAML, TOML, INI, SQL, CSV, LaTeX, Markdown, logs and more
-- UTF-8 and UTF-8 with BOM, and conversion between Windows (CRLF) and Unix (LF) line endings
+- UTF-8 and UTF-8 with BOM, and conversion between Windows (CRLF), Unix (LF) and Mac (CR) line endings
 - Detects changes made to open files by other programs
 
 **Productivity**
@@ -55,12 +55,14 @@ Current version: **1.1.0**.
 - Spell checker in German, English, French, Brazilian Portuguese, European Portuguese and Spanish, working offline
 - Automatic session recovery: tabs, folder and unsaved text come back when the application reopens
 - Command palette and keyboard shortcuts
+- Uppercase, lowercase and sentence case, whitespace cleanup, and MD5, SHA-1, SHA-256 and SHA-512 hashes
+- Integrated terminal below the document (PowerShell on Windows, the user's shell on Linux)
 
 **Interface**
 - Six interface languages: German, Spanish, French, English, Brazilian Portuguese and European Portuguese
 - Built-in user manual in each language, with screenshots of the application
 - Resizable, hideable sidebar and bottom panel
-- Light and dark modes (follows the system until the user chooses)
+- Light and dark modes (follows the system until the user chooses) and full screen (F11)
 
 **Account and sync (optional)**
 - Sign-up, profile and password change
@@ -80,6 +82,7 @@ Current version: **1.1.0**.
 | Code editor | [Monaco Editor](https://microsoft.github.io/monaco-editor/) |
 | Formatted Markdown editor | [Tiptap](https://tiptap.dev/) (ProseMirror) |
 | Spell checker | [Hunspell](https://hunspell.github.io/) in WebAssembly ([hunspell-asm](https://github.com/kwonoj/hunspell-asm)) with the [wooorm/dictionaries](https://github.com/wooorm/dictionaries) dictionaries |
+| Terminal | [xterm.js](https://xtermjs.org/) with [node-pty](https://github.com/microsoft/node-pty) |
 | State | [Zustand](https://zustand.docs.pmnd.rs/) |
 | Panels | [react-resizable-panels](https://github.com/bvaughn/react-resizable-panels) |
 | Validation | [Zod](https://zod.dev/) |

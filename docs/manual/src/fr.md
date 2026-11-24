@@ -95,6 +95,15 @@ Vos préférences d'affichage sont conservées pour la prochaine fois. Les texte
 - **{{menu.tools.hashGenerate}} :** ouvre une fenêtre ; saisissez ou collez le texte et le résultat s’affiche aussitôt, juste en dessous. **{{hash.copy}}** place le résultat dans le presse-papiers.
 - **{{menu.tools.hashSelection}} :** calcule le résultat à partir du texte sélectionné dans le document et le place dans le presse-papiers, prêt à être collé. Un message s’affiche dans la barre d’état.
 
+### Terminal
+
+Dans **{{menu.tools}} → {{menu.tools.openTerminal}}**, un terminal s’ouvre juste sous le document, dans votre dossier personnel : PowerShell sous Windows et votre shell (généralement bash) sous Linux. Saisissez les commandes et voyez les résultats sur place ; le document reste ouvert au-dessus, et le séparateur entre les deux peut être déplacé.
+
+- Chaque clic ouvre un autre terminal, dans son propre onglet (Terminal 1, Terminal 2…). Le **×** de l’onglet ferme le terminal ; la commande `exit` aussi.
+- Avec du texte sélectionné dans le terminal, Ctrl+C le copie ; sans sélection, Ctrl+C interrompt la commande en cours. Ctrl+V colle.
+- Tant que le curseur est dans le terminal, les touches lui sont envoyées (Ctrl+W, Ctrl+R…) au lieu des raccourcis de l’application.
+- Les terminaux ne reviennent pas à la prochaine ouverture de l’application.
+
 ### Correcteur orthographique
 
 ![Mot souligné et suggestions de correction](img/s11a-spelling.png)

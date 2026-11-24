@@ -123,6 +123,7 @@ export const en: Messages = {
   "menu.tools.macroRecord": "Record Macro",
   "menu.tools.macroRunLast": "Run Last Macro",
   "menu.tools.macros": "Macros...",
+  "menu.tools.openTerminal": "Open Terminal",
   "menu.tools.spellCheck": "Check Spelling",
   "menu.tools.spellSubmenu": "Spelling Language",
   "menu.tools.spellAuto": "Spelling: interface language",
@@ -252,6 +253,7 @@ export const en: Messages = {
   "err.saveFile": "Could not save the file.",
   "err.saveCloud": "Could not save to the cloud.",
   "err.openCloud": "Could not open the cloud file.",
+  "err.terminal": "Could not open the terminal.",
   "err.hash": "Could not generate the hash.",
   "cloud.confirmOverwrite": "The file \"{path}\" already exists in the cloud in another version (version {version}).\n\nOverwrite it with this document's text? The cloud version will be replaced.",
   "common.close": "Close",
@@ -439,4 +441,7 @@ export const en: Messages = {
   "md.htmlReadOnly": "This document contains HTML, which the preview does not preserve. To change it, use \"{label}\".",
   "md.linkText": "link text",
   "md.column": "Column",
+  "terminal.panel": "Terminals",
+  "terminal.title": "Terminal {n}",
+  "terminal.close": "Close {name}",
 }

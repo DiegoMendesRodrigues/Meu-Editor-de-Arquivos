@@ -47,7 +47,7 @@ Versão atual: **1.1.0**.
 
 **Linguagens e arquivos**
 - Python, C, C++, C#, Java, JavaScript, TypeScript, PHP, Go, Rust, PowerShell, Bash, Batch, Lua, HTML, CSS, XML, JSON, YAML, TOML, INI, SQL, CSV, LaTeX, Markdown, logs e outros
-- UTF-8 e UTF-8 com BOM, e conversão entre quebras de linha Windows (CRLF) e Unix (LF)
+- UTF-8 e UTF-8 com BOM, e conversão entre quebras de linha Windows (CRLF), Unix (LF) e Mac (CR)
 - Percebe alterações feitas por outros programas nos arquivos abertos
 
 **Produtividade**
@@ -55,12 +55,14 @@ Versão atual: **1.1.0**.
 - Corretor ortográfico em alemão, espanhol, francês, inglês, português do Brasil e português de Portugal, sem internet
 - Recuperação automática da sessão: abas, pasta e texto não salvo voltam ao abrir o aplicativo de novo
 - Paleta de comandos e atalhos de teclado
+- Conversão para maiúsculas, minúsculas e modo Título, limpeza de espaços e geração de MD5, SHA-1, SHA-256 e SHA-512
+- Terminal integrado abaixo do documento (PowerShell no Windows, o shell do usuário no Linux)
 
 **Interface**
 - Seis idiomas: alemão, espanhol, francês, inglês, português do Brasil e português de Portugal
 - Manual do usuário em cada idioma, com telas do próprio aplicativo
 - Barra lateral e painel inferior redimensionáveis e ocultáveis
-- Modos claro e escuro (segue o sistema até o usuário escolher)
+- Modos claro e escuro (segue o sistema até o usuário escolher) e tela inteira (F11)
 
 **Conta e sincronização (opcional)**
 - Cadastro, perfil e troca de senha
@@ -80,6 +82,7 @@ Versão atual: **1.1.0**.
 | Editor de código | [Monaco Editor](https://microsoft.github.io/monaco-editor/) |
 | Editor de Markdown formatado | [Tiptap](https://tiptap.dev/) (ProseMirror) |
 | Corretor ortográfico | [Hunspell](https://hunspell.github.io/) em WebAssembly ([hunspell-asm](https://github.com/kwonoj/hunspell-asm)) com os dicionários [wooorm/dictionaries](https://github.com/wooorm/dictionaries) |
+| Terminal | [xterm.js](https://xtermjs.org/) com [node-pty](https://github.com/microsoft/node-pty) |
 | Estado | [Zustand](https://zustand.docs.pmnd.rs/) |
 | Painéis | [react-resizable-panels](https://github.com/bvaughn/react-resizable-panels) |
 | Validação | [Zod](https://zod.dev/) |

@@ -22,7 +22,7 @@ Quand vous fermez l’application, rien n’est perdu : vos documents reviennent
 
 ## Nouveautés de cette version
 
-Version 1.1.0 : conversion des fins de ligne (Windows, Unix et Mac), majuscules, minuscules et casse de phrase, nettoyage des espaces, plein écran (F11), mode sombre et empreintes MD5, SHA-1, SHA-256 et SHA-512.
+Version 1.1.0 : conversion des fins de ligne (Windows, Unix et Mac), majuscules, minuscules et casse de phrase, nettoyage des espaces, plein écran (F11), mode sombre, terminal intégré et empreintes MD5, SHA-1, SHA-256 et SHA-512.
 
 ## Fonctionnalités du produit
 

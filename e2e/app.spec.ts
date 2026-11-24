@@ -407,3 +407,21 @@ test.describe('corretor ortográfico', () => {
     await expect(page.locator('.monaco-editor .squiggly-info')).toHaveCount(0)
   })
 })
+
+test.describe('terminal', () => {
+  test('Ferramentas → Abrir o terminal executa comandos abaixo do documento e fecha pela aba', async ({ page }) => {
+    await page.getByRole('button', { name: 'Ferramentas' }).click()
+    await page.getByRole('menuitem', { name: 'Abrir o terminal' }).click()
+    const panel = page.getByRole('region', { name: 'Terminais' })
+    await expect(panel.getByRole('tab', { name: /Terminal 1/ })).toBeVisible()
+    // O documento continua aberto acima do terminal.
+    await expect(page.locator('.monaco-editor')).toBeVisible()
+    await panel.locator('.xterm').click()
+    await page.keyboard.type('echo terminal-ok-$((6*7))')
+    await page.keyboard.press('Enter')
+    // bash calcula 42; o PowerShell repete o texto: nos dois casos a saída aparece no terminal.
+    await expect(panel.locator('.xterm-rows')).toContainText(/terminal-ok-(42|\$\(\(6\*7\)\))/, { timeout: 20000 })
+    await panel.getByRole('button', { name: 'Fechar Terminal 1' }).click()
+    await expect(panel).toHaveCount(0)
+  })
+})

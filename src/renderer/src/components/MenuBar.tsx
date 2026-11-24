@@ -218,6 +218,7 @@ export function MenuBar() {
         { label: recording ? t('menu.tools.macroStop') : t('menu.tools.macroRecord'), shortcut: 'Ctrl+Shift+R', action: cmd.toggleMacroRecording },
         { label: t('menu.tools.macroRunLast'), shortcut: 'Ctrl+Shift+M', action: hasRecording && !recording ? cmd.playLastMacro : undefined },
         { label: t('menu.tools.macros'), action: cmd.openMacros },
+        { label: t('menu.tools.openTerminal'), action: cmd.openTerminal },
         'separator',
         { label: t('menu.tools.spellCheck'), shortcut: 'F7', checked: spelling.enabled, action: spelling.toggle },
         {

@@ -22,7 +22,7 @@ When you close the app, nothing is lost: your documents come back just as you le
 
 ## What's new in this version
 
-Version 1.1.0: line ending conversion (Windows, Unix and Mac), uppercase, lowercase and sentence case, whitespace cleanup, full screen mode (F11), dark mode, and MD5, SHA-1, SHA-256 and SHA-512 hashes.
+Version 1.1.0: line ending conversion (Windows, Unix and Mac), uppercase, lowercase and sentence case, whitespace cleanup, full screen mode (F11), dark mode, an integrated terminal, and MD5, SHA-1, SHA-256 and SHA-512 hashes.
 
 ## Product features
 
