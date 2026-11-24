@@ -128,7 +128,7 @@ export function TestsEditor({
                         value={usesName(a.target) ? (a.name ?? '') : usesPath(a.target) ? (a.path ?? '') : ''}
                         disabled={!usesName(a.target) && !usesPath(a.target)}
                         maxLength={API_LIMITS.valueChars}
-                        placeholder={a.target === 'jsonPath' ? '$.itens[0].id' : a.target === 'xPath' ? '//item/id' : ''}
+                        placeholder={a.target === 'jsonPath' ? '$.itens[0].id' : a.target === 'xPath' ? '//*[local-name()="id"]' : ''}
                         aria-label={`${t('apiClient.tests.pathOrName')} ${n}`}
                         spellCheck={false}
                         onChange={(e) => setTest(i, usesName(a.target) ? { name: e.target.value } : { path: e.target.value })}
@@ -202,7 +202,7 @@ export function TestsEditor({
                       </select>
                     </td>
                     <td className="border-b border-l border-border p-0">
-                      <input value={x.path} maxLength={API_LIMITS.valueChars} aria-label={`${t('apiClient.tests.extractPath')} ${n}`} placeholder={x.from === 'jsonPath' ? '$.token' : ''} spellCheck={false} onChange={(e) => setExtract(i, { path: e.target.value })} className={cell} />
+                      <input value={x.path} maxLength={API_LIMITS.valueChars} aria-label={`${t('apiClient.tests.extractPath')} ${n}`} placeholder={x.from === 'jsonPath' ? '$.token' : x.from === 'xPath' ? '//*[local-name()="token"]' : ''} spellCheck={false} onChange={(e) => setExtract(i, { path: e.target.value })} className={cell} />
                     </td>
                     <td className="border-b border-l border-border p-0">
                       <input value={x.to} maxLength={100} aria-label={`${t('apiClient.tests.to')} ${n}`} aria-invalid={badName} placeholder="token" spellCheck={false} onChange={(e) => setExtract(i, { to: e.target.value })} className={`${cell} ${badName ? 'text-red-600' : ''}`} />

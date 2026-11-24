@@ -13,6 +13,7 @@ export type ApiDialog =
   | { kind: 'export'; dir: string }
   | { kind: 'runner'; dir: string }
   | { kind: 'cookies' }
+  | { kind: 'mock'; dir?: string }
   | { kind: 'newFolder'; dir: string }
   | { kind: 'newCollection' }
 

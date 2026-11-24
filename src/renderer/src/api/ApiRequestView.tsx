@@ -22,6 +22,7 @@ import { useDocuments, type EditorDocument } from '@/store/documents'
 import { useNotice } from '@/store/notice'
 import { applyExtractedVariables, getSendContext, useApiStore } from '@/store/api'
 import { CodegenDialog } from './CodegenDialog'
+import { openExample, saveResponseExample } from './exampleActions'
 import { EnvironmentSelect } from './EnvironmentSelect'
 import { KeyValueTable } from './KeyValueTable'
 import { AuthEditor, BodyEditor, SettingsEditor } from './RequestSections'
@@ -393,7 +394,29 @@ export function ApiRequestView({ doc }: { doc: EditorDocument }) {
                 </>
               )}
               {tab === 'auth' && <AuthEditor auth={request.auth} onChange={(auth) => update({ auth })} docId={doc.id} />}
-              {tab === 'body' && <BodyEditor body={request.body} onChange={(body) => update({ body })} doc={doc} />}
+              {tab === 'body' && (
+                <>
+                  <BodyEditor body={request.body} onChange={(body) => update({ body })} doc={doc} />
+                  {request.examples.length > 0 && (
+                    <label className="mt-3 flex items-center gap-2 text-[12.5px] text-zinc-600" data-testid="api-examples">
+                      {t('apiClient.response.examples', { count: request.examples.length })}
+                      <select
+                        value=""
+                        aria-label={t('apiClient.response.openExample')}
+                        onChange={(e) => e.target.value && void openExample(doc, e.target.value, t)}
+                        className={selectClass}
+                      >
+                        <option value="">{t('apiClient.response.openExample')}</option>
+                        {request.examples.map((x) => (
+                          <option key={x} value={x}>
+                            {x.split('/').pop()}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                </>
+              )}
               {tab === 'settings' && <SettingsEditor settings={request.settings} onChange={(settings) => update({ settings })} />}
               {tab === 'tests' && <TestsEditor tests={request.tests} extract={request.extract} onChange={(patch) => update(patch)} />}
             </div>
@@ -401,7 +424,7 @@ export function ApiRequestView({ doc }: { doc: EditorDocument }) {
         </Panel>
         <Separator className="h-px bg-border transition-colors data-[separator]:hover:bg-accent" />
         <Panel id="api-response-panel" minSize={80}>
-          <ResponsePanel docId={doc.id} requestId={request.id} assertions={request.tests} forcedType={request.responseType} onCancel={cancel} />
+          <ResponsePanel docId={doc.id} requestId={request.id} assertions={request.tests} forcedType={request.responseType} onCancel={cancel} onSaveExample={(res) => void saveResponseExample(doc, request, res, t, write)} />
         </Panel>
       </Group>
 

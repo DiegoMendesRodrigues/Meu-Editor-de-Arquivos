@@ -227,6 +227,20 @@ In **{{apiClient.col.run}}**, choose the requests, the environment, the number o
 
 In **{{apiClient.body.type}}**, choose GraphQL to write the **{{apiClient.graphql.query}}** and the **{{apiClient.graphql.variables}}**. With **{{apiClient.graphql.loadSchema}}**, the app reads the server's schema, shows the documentation for the types and offers autocomplete.
 
+When the selected operation is a **subscription**, the **{{apiClient.graphql.subscribe}}** button appears: the app opens a WebSocket (graphql-transport-ws protocol) to the request address and lists the events it receives below the editor. Click **{{apiClient.mock.stop}}** to end it.
+
+### SOAP and WSDL
+
+In **{{apiClient.body.type}}**, choose SOAP, the **{{apiClient.soap.version}}** (1.1 or 1.2) and the SOAPAction; **{{apiClient.soap.template}}** fills in an empty envelope. To create requests from a service, use **{{menu.tools}} → {{menu.tools.apiImport}}** with the WSDL file: each operation becomes a request with a sample envelope. In tests and extractions, the XPath target reads XML responses (for example, <code>//*[local-name()='Result']</code>).
+
+### WebSocket
+
+Use **{{menu.tools}} → {{menu.tools.apiWebSocket}}** to create a connection (a **.apiws** file). Type the **{{apiClient.ws.url}}** (ws:// or wss://), the headers and the subprotocols, then click **{{apiClient.ws.connect}}**. Write the message (text, JSON or base64 binary) and send it with **Ctrl+Enter**. The **{{apiClient.ws.log}}** shows sent and received messages with time and size; you can filter, pause and clear it. Use **{{apiClient.ws.saveMessage}}** to keep messages you send often.
+
+### Mock server
+
+A mock server answers in place of the real API, with responses you already know. In the response of a saved request, click **{{apiClient.response.saveExample}}**: the app stores the example next to the request. Then right-click the collection and choose **{{apiClient.col.mock}}** (or **{{menu.tools}} → {{menu.tools.apiMock}}**). Routes come from the saved examples or from an OpenAPI file; adjust each one's status and delay and click **{{apiClient.mock.start}}**. The server only answers on this computer unless you tick **{{apiClient.mock.lan}}**, and it stops by itself after 8 hours without calls.
+
 ### Security
 
 - Every request leaves from your own computer, through the app; nothing goes through our servers.

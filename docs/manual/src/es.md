@@ -227,6 +227,20 @@ En **{{apiClient.col.run}}**, elige las solicitudes, el entorno, el número de i
 
 En **{{apiClient.body.type}}**, elige GraphQL para escribir la **{{apiClient.graphql.query}}** y las **{{apiClient.graphql.variables}}**. Con **{{apiClient.graphql.loadSchema}}**, la aplicación lee el schema del servidor, muestra la documentación de los tipos y ofrece autocompletado.
 
+Cuando la operación elegida es una **subscription**, aparece el botón **{{apiClient.graphql.subscribe}}**: la aplicación abre un WebSocket (protocolo graphql-transport-ws) en la dirección de la solicitud y muestra los eventos recibidos debajo del editor. Haga clic en **{{apiClient.mock.stop}}** para terminar.
+
+### SOAP y WSDL
+
+En **{{apiClient.body.type}}**, elija SOAP, la **{{apiClient.soap.version}}** (1.1 o 1.2) y la SOAPAction; **{{apiClient.soap.template}}** rellena un sobre vacío. Para crear las solicitudes a partir de un servicio, use **{{menu.tools}} → {{menu.tools.apiImport}}** con el archivo WSDL: cada operación se convierte en una solicitud, ya con el sobre de ejemplo. En las pruebas y extracciones, el destino XPath lee respuestas XML (por ejemplo, <code>//*[local-name()='Resultado']</code>).
+
+### WebSocket
+
+Use **{{menu.tools}} → {{menu.tools.apiWebSocket}}** para crear una conexión (archivo **.apiws**). Escriba la **{{apiClient.ws.url}}** (ws:// o wss://), los encabezados y los subprotocolos y haga clic en **{{apiClient.ws.connect}}**. Escriba el mensaje (texto, JSON o binario en base64) y envíelo con **Ctrl+Enter**. El **{{apiClient.ws.log}}** muestra los mensajes enviados y recibidos, con hora y tamaño; se puede filtrar, pausar y limpiar. Use **{{apiClient.ws.saveMessage}}** para guardar los mensajes que envía a menudo.
+
+### Servidor mock
+
+Un servidor mock responde en lugar de la API real, con respuestas que ya conoce. En la respuesta de una solicitud guardada, haga clic en **{{apiClient.response.saveExample}}**: la aplicación guarda el ejemplo junto a la solicitud. Después, con el botón derecho en la colección, elija **{{apiClient.col.mock}}** (o **{{menu.tools}} → {{menu.tools.apiMock}}**). Las rutas vienen de los ejemplos guardados o de un archivo OpenAPI; ajuste el estado y el retraso de cada una y haga clic en **{{apiClient.mock.start}}**. El servidor solo atiende en este equipo, salvo que marque **{{apiClient.mock.lan}}**, y se detiene solo tras 8 horas sin llamadas.
+
 ### Seguridad
 
 - Todas las solicitudes salen de tu propio equipo, a través de la aplicación; nada pasa por servidores nuestros.

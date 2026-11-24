@@ -7,6 +7,7 @@ import { Modal, buttonClass, fieldClass, primaryButtonClass } from '@/components
 import { CookiesDialog } from './CookiesDialog'
 import { ExportDialog } from './ExportDialog'
 import { ImportDialog } from './ImportDialog'
+import { MockDialog } from './MockDialog'
 import { RunnerDialog } from './RunnerDialog'
 import { createCloudCollection, createFolderIn } from './collectionActions'
 
@@ -62,6 +63,8 @@ export function ApiDialogs() {
       return <ExportDialog open onClose={close} dir={dialog.dir} />
     case 'runner':
       return <RunnerDialog open onClose={close} dir={dialog.dir} />
+    case 'mock':
+      return <MockDialog onClose={close} dir={dialog.dir} />
     case 'cookies':
       return <CookiesDialog onClose={close} />
     case 'newFolder':

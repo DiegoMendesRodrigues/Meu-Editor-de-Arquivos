@@ -12,6 +12,7 @@ import type { EditorDocument } from '@/store/documents'
 import { acquireGraphqlCompletion, ensureGraphqlLanguage, graphqlModelPath } from './graphql/completion'
 import { DocsExplorer } from './graphql/DocsExplorer'
 import { useGraphqlSchemas } from './graphql/schemaStore'
+import { SubscriptionPanel } from './graphql/SubscriptionPanel'
 
 type GraphqlBody = Extract<Body, { type: 'graphql' }>
 
@@ -53,6 +54,10 @@ export function GraphqlEditor({ body, onChange, doc }: { body: GraphqlBody; onCh
   )
 
   const operations = useMemo(() => extractOperations(body.query).filter((o) => o.name), [body.query])
+  // Operação escolhida (ou a única do documento) do tipo subscription: o envio normal não serve, vale "Assinar".
+  const allOperations = useMemo(() => extractOperations(body.query), [body.query])
+  const selectedOp = body.operationName ? allOperations.find((o) => o.name === body.operationName) : allOperations.length === 1 ? allOperations[0] : undefined
+  const isSubscription = selectedOp?.type === 'subscription'
   const variablesState = checkVariables(body.variables)
   const model = entry?.model ?? null
   const loading = entry?.status === 'loading'
@@ -155,6 +160,8 @@ export function GraphqlEditor({ body, onChange, doc }: { body: GraphqlBody; onCh
         </div>
       )}
       {!model && !errorText && !loading && <p className="text-[12.5px] text-zinc-500">{t('apiClient.graphql.noSchema')}</p>}
+
+      {isSubscription && <SubscriptionPanel body={body} doc={doc} />}
 
       <div className="flex gap-2">
         <div className="flex min-w-0 flex-1 flex-col gap-2">

@@ -5,7 +5,7 @@ import type { Assertion } from '@shared/api/schema'
 import type { MessageKey } from '@shared/i18n'
 import { useT } from '@/i18n'
 import { useDocResponse } from './responses'
-import { fromResult } from './response/model'
+import { fromResult, type ViewResponse } from './response/model'
 import { ResponseView } from './response/ResponseView'
 
 /** Painel da resposta da requisição: vazio, enviando (com Cancelar), erro por código ou a resposta. */
@@ -14,13 +14,15 @@ export function ResponsePanel({
   requestId,
   assertions,
   forcedType,
-  onCancel
+  onCancel,
+  onSaveExample
 }: {
   docId: string
   requestId: string
   assertions: Assertion[]
   forcedType: string
   onCancel: () => void
+  onSaveExample?: (res: ViewResponse) => void
 }) {
   const t = useT()
   const { runId, result, sentAt, environment } = useDocResponse(docId)
@@ -51,7 +53,7 @@ export function ResponsePanel({
       </div>
     )
   } else if (view) {
-    content = <ResponseView res={view} requestId={requestId} assertions={assertions} forcedType={forcedType} />
+    content = <ResponseView res={view} requestId={requestId} assertions={assertions} forcedType={forcedType} onSaveExample={onSaveExample} />
   } else {
     content = (
       <div className="grid h-full place-items-center p-6 text-center text-zinc-500">

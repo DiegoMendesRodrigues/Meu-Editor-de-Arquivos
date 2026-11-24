@@ -16,7 +16,13 @@ import type {
   ApiRunProgress,
   ApiSendInput,
   ApiSendResult,
-  ApiWriteFilesInput
+  ApiWriteFilesInput,
+  ApiWsConnectInput,
+  ApiWsConnectResult,
+  ApiWsEvent,
+  ApiMockStartInput,
+  ApiMockStartResult,
+  ApiMockLogEntry
 } from './api/protocol'
 export type { SearchMatch, SearchOptions } from './search'
 
@@ -111,7 +117,14 @@ export const IpcChannels = {
   apiOAuthCancel: 'api:oauth-cancel',
   apiOAuthProgress: 'api:oauth-progress',
   apiOAuthTokenInfo: 'api:oauth-token-info',
-  apiOAuthClear: 'api:oauth-clear'
+  apiOAuthClear: 'api:oauth-clear',
+  apiWsConnect: 'api:ws-connect',
+  apiWsSend: 'api:ws-send',
+  apiWsClose: 'api:ws-close',
+  apiWsEvent: 'api:ws-event',
+  apiMockStart: 'api:mock-start',
+  apiMockStop: 'api:mock-stop',
+  apiMockLog: 'api:mock-log'
 } as const
 
 /** Cofre de segredos do Cliente de API: persistent = false quando o sistema não oferece cifra (só memória). */
@@ -486,6 +499,16 @@ export interface EditorApi {
   onApiOAuthProgress(listener: (progress: ApiOAuthProgress) => void): () => void
   apiOAuthTokenInfo(scope: string, tokenVar: string): Promise<ApiOAuthTokenInfo>
   apiOAuthClear(scope: string, tokenVar: string): Promise<void>
+  /** Abre uma conexão WebSocket no Main (ws/wss); os eventos chegam por onApiWsEvent. */
+  apiWsConnect(input: ApiWsConnectInput): Promise<ApiWsConnectResult>
+  /** Envia uma mensagem (texto, ou binário em base64) por uma conexão aberta por esta janela. */
+  apiWsSend(connId: string, message: { data: string; binary?: boolean }): Promise<void>
+  apiWsClose(connId: string, code?: number): Promise<void>
+  onApiWsEvent(listener: (event: ApiWsEvent) => void): () => void
+  /** Sobe um servidor mock (127.0.0.1 por padrão) com as rotas dadas. */
+  apiMockStart(input: ApiMockStartInput): Promise<ApiMockStartResult>
+  apiMockStop(mockId: string): Promise<void>
+  onApiMockLog(listener: (entry: ApiMockLogEntry) => void): () => void
   /** O Main avisa que o usuário quer fechar a janela; o Renderer decide e chama closeWindow(). */
   onBeforeClose(listener: () => void): () => void
   closeWindow(): Promise<void>

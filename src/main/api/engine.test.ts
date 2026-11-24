@@ -127,6 +127,18 @@ describe('executeRequest', () => {
     expect(JSON.parse(last.body.toString())).toEqual({ query: '{ a }', variables: { x: 1 } })
   })
 
+  it('SOAP 1.1 usa text/xml e o cabeçalho SOAPAction; 1.2 põe a ação no Content-Type', async () => {
+    const env = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body/></soap:Envelope>'
+    await run(make({}, { method: 'POST', body: { type: 'soap', version: '1.1', action: 'http://exemplo.com.br/Op', envelope: env } }))
+    expect(last.headers['content-type']).toBe('text/xml; charset=utf-8')
+    expect(last.headers.soapaction).toBe('"http://exemplo.com.br/Op"')
+    expect(last.body.toString()).toBe(env)
+
+    await run(make({}, { method: 'POST', body: { type: 'soap', version: '1.2', action: 'http://exemplo.com.br/Op', envelope: env } }))
+    expect(last.headers['content-type']).toBe('application/soap+xml; charset=utf-8; action="http://exemplo.com.br/Op"')
+    expect(last.headers.soapaction).toBeUndefined()
+  })
+
   it('escopos: temporária > ambiente > coleção > globais, e variável que falta', async () => {
     h.store.set('globals', new Map([['g', 'GLOB'], ['v', 'glob-v']]))
     const r = await run(

@@ -13,6 +13,7 @@ import { parseHttp } from './http'
 import { parseInsomnia } from './insomnia'
 import { parseOpenApi } from './openapi'
 import { parsePostman } from './postman'
+import { parseWsdl } from './wsdl'
 import { urlFromParams } from '../urlParams'
 
 export { detectFormat } from './detect'
@@ -35,6 +36,7 @@ function run(text: string, format: DetectedFormat): ParsedImport {
     case 'openapi': return parseOpenApi(parseStructured(text, true))
     case 'insomnia': return parseInsomnia(parseStructured(text, false))
     case 'har': return parseHar(parseStructured(text, false))
+    case 'wsdl': return parseWsdl(text)
   }
 }
 

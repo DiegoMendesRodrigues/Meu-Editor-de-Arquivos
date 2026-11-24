@@ -55,10 +55,21 @@ export function newEnvironmentDocument(): void {
   docs().newDocument('apienv')
 }
 
+/** Ferramentas → WebSocket: uma nova conexão, aberta no construtor. */
+export function newWebSocketDocument(): void {
+  useApiStore.getState().setSidebarOn(true)
+  docs().newDocument('apiws')
+}
+
 /** Ferramentas → Importar…: curl, Postman, OpenAPI, Insomnia, HAR e .http. */
 export function openApiImport(): void {
   useApiStore.getState().setSidebarOn(true)
   useApiStore.getState().openDialog({ kind: 'import' })
+}
+
+/** Ferramentas → Servidor mock: sem coleção de origem (escolhe um arquivo OpenAPI). */
+export function openApiMock(): void {
+  useApiStore.getState().openDialog({ kind: 'mock' })
 }
 
 /** Ferramentas → Cookies: os cookies guardados pelo Cliente de API. */

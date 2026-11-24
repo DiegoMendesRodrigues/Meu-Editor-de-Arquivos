@@ -215,7 +215,7 @@ export type ApiPickPurpose = (typeof PICK_PURPOSES)[number]
 
 /* ------------------------------------------------------------------ importar */
 
-export const IMPORT_FORMATS = ['auto', 'curl', 'postman', 'openapi', 'insomnia', 'har', 'http'] as const
+export const IMPORT_FORMATS = ['auto', 'curl', 'postman', 'openapi', 'insomnia', 'har', 'http', 'wsdl'] as const
 export type ApiImportFormat = (typeof IMPORT_FORMATS)[number]
 
 export interface ApiImportItem {
@@ -315,4 +315,78 @@ export interface ApiOAuthTokenInfo {
   exists: boolean
   expiresAt?: string
   hasRefreshToken: boolean
+}
+
+/* ------------------------------------------------------------------ WebSocket (fase 4) */
+
+export const wsConnectInputSchema = z.object({
+  /** Id criado pelo Renderer (UUID) para enviar, fechar e receber os eventos da conexão. */
+  connId: z.string().uuid(),
+  /** ws:// ou wss://, com {{variáveis}} resolvidas no Main. */
+  url: z.string().max(L.urlChars),
+  headers: z.array(z.object({ key: z.string().max(L.keyChars), value: z.string().max(L.valueChars), enabled: z.boolean().default(true) })).max(L.keyValueRows).default([]),
+  protocols: z.array(z.string().max(100)).max(20).default([]),
+  environment: environmentPayloadSchema.nullable().default(null),
+  collection: collectionPayloadSchema.nullable().default(null),
+  verifyTls: z.boolean().default(true),
+  /** Confirmação de envio de segredos para o host (como em api:send). */
+  confirmSecretHost: z.string().max(255).optional()
+})
+export type ApiWsConnectInput = z.input<typeof wsConnectInputSchema>
+
+export type ApiWsConnectResult =
+  | { ok: true; protocol: string; url: string }
+  | { ok: false; code: ApiErrorCode | 'wsHandshake' | 'tooManyConnections'; status?: number; host?: string }
+
+/** Evento de uma conexão (mensagens com no máximo API_LIMITS.wsMessageBytes para exibir). */
+export interface ApiWsEvent {
+  connId: string
+  type: 'open' | 'message' | 'close' | 'error'
+  direction?: 'in' | 'out'
+  /** Texto, ou base64 quando binary. Segredos resolvidos aparecem mascarados nas mensagens enviadas. */
+  data?: string
+  binary?: boolean
+  size?: number
+  at: string
+  code?: number | string
+  truncated?: boolean
+}
+
+/* ------------------------------------------------------------------ servidor mock (fase 4) */
+
+export const mockRouteSchema = z.object({
+  method: z.string().max(20),
+  /** Caminho com :params (ex.: /produtos/:id). */
+  path: z.string().max(L.urlChars),
+  status: z.number().int().min(100).max(599).default(200),
+  headers: z.array(z.object({ key: z.string().max(L.keyChars), value: z.string().max(L.valueChars) })).max(L.keyValueRows).default([]),
+  body: z.string().max(L.bodyChars).default(''),
+  /** Nome do exemplo (escolhido pelo cabeçalho x-mock-example ou pela query ?__example=). */
+  example: z.string().max(L.nameChars).default(''),
+  delayMs: z.number().int().min(0).max(60_000).default(0)
+})
+export type ApiMockRoute = z.infer<typeof mockRouteSchema>
+
+export const mockStartInputSchema = z.object({
+  name: z.string().max(L.nameChars).default(''),
+  port: z.number().int().min(0).max(65535).default(4010),
+  /** Ouvir na rede local (0.0.0.0) exige marcar a opção com aviso; o padrão é só 127.0.0.1. */
+  lan: z.boolean().default(false),
+  routes: z.array(mockRouteSchema).max(2000)
+})
+export type ApiMockStartInput = z.input<typeof mockStartInputSchema>
+
+export type ApiMockStartResult = { ok: true; mockId: string; port: number; url: string } | { ok: false; code: 'portInUse' | 'tooManyMocks' | 'invalid' | 'unknown' }
+
+export interface ApiMockLogEntry {
+  mockId: string
+  at: string
+  method: string
+  path: string
+  status: number
+  /** Rota encontrada (índice) ou ausente (404). */
+  route?: number
+  timeMs: number
+  /** O servidor parou sozinho (inatividade): o Renderer tira o mock da lista de ativos. */
+  stopped?: true
 }

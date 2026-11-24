@@ -10,6 +10,7 @@ import { EnvironmentView } from '@/api/EnvironmentView'
 import { SavedResponseView } from '@/api/SavedResponseView'
 import { RunReportView } from '@/api/RunReportView'
 import { CollectionSettingsView } from '@/api/CollectionSettingsView'
+import { WebSocketView } from '@/api/WebSocketView'
 import { monacoLanguage } from '@/editor/languages'
 import { attachRecorder } from '@/editor/macros'
 import { registerMarkdownKeybindings } from '@/markdown/editorFormatting'
@@ -193,6 +194,7 @@ export function EditorPane() {
     if (doc.language === 'apiresp') return <SavedResponseView key={doc.id} doc={doc} />
     if (doc.language === 'apirun') return <RunReportView key={doc.id} doc={doc} />
     if (doc.language === 'apicol') return <CollectionSettingsView key={doc.id} doc={doc} />
+    if (doc.language === 'apiws') return <WebSocketView key={doc.id} doc={doc} />
     if (doc.language === 'json') {
       const edit = (line?: number, column?: number) => {
         if (line !== undefined) requestReveal(line, column ?? 1)

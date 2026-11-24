@@ -299,6 +299,33 @@ export const savedResponseSchema = z.object({
 })
 export type SavedResponse = z.infer<typeof savedResponseSchema>
 
+/* ------------------------------------------------------------------ conexão WebSocket (.apiws) */
+
+export const wsMessageTemplateSchema = z.object({
+  name: z.string().max(L.nameChars).default(''),
+  kind: z.enum(['text', 'json', 'binary']).default('text'),
+  /** Texto, JSON ou base64 (binary); pode ter {{variáveis}}. */
+  data: z.string().max(L.bodyChars).default('')
+})
+export type WsMessageTemplate = z.infer<typeof wsMessageTemplateSchema>
+
+export const apiWebSocketSchema = z.object({
+  $schema: z.literal('meu-editor/api-ws@1'),
+  id: idSchema,
+  name: z.string().max(L.nameChars).default(''),
+  url: z.string().max(L.urlChars).default(''),
+  headers: keyValuesSchema,
+  protocols: z.array(z.string().max(100)).max(20).default([]),
+  settings: z.object({ verifyTls: z.boolean().default(true) }).prefault({}),
+  /** Mensagens salvas para reenviar. */
+  messages: z.array(wsMessageTemplateSchema).max(200).default([])
+})
+export type ApiWebSocket = z.infer<typeof apiWebSocketSchema>
+
+export function newApiWebSocket(name = ''): ApiWebSocket {
+  return apiWebSocketSchema.parse({ $schema: 'meu-editor/api-ws@1', id: globalThis.crypto.randomUUID(), name })
+}
+
 /* ------------------------------------------------------------------ leitura, migração e gravação */
 
 export type RequestParseError =

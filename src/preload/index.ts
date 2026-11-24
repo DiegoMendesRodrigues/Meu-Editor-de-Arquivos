@@ -136,6 +136,21 @@ const api: EditorApi = {
   },
   apiOAuthTokenInfo: (scope, tokenVar) => ipcRenderer.invoke(IpcChannels.apiOAuthTokenInfo, scope, tokenVar),
   apiOAuthClear: (scope, tokenVar) => ipcRenderer.invoke(IpcChannels.apiOAuthClear, scope, tokenVar),
+  apiWsConnect: (input) => ipcRenderer.invoke(IpcChannels.apiWsConnect, input),
+  apiWsSend: (connId, message) => ipcRenderer.invoke(IpcChannels.apiWsSend, connId, message),
+  apiWsClose: (connId, code) => ipcRenderer.invoke(IpcChannels.apiWsClose, connId, code),
+  onApiWsEvent: (listener) => {
+    const handler = (_e: IpcRendererEvent, event: Parameters<typeof listener>[0]): void => listener(event)
+    ipcRenderer.on(IpcChannels.apiWsEvent, handler)
+    return () => void ipcRenderer.off(IpcChannels.apiWsEvent, handler)
+  },
+  apiMockStart: (input) => ipcRenderer.invoke(IpcChannels.apiMockStart, input),
+  apiMockStop: (mockId) => ipcRenderer.invoke(IpcChannels.apiMockStop, mockId),
+  onApiMockLog: (listener) => {
+    const handler = (_e: IpcRendererEvent, entry: Parameters<typeof listener>[0]): void => listener(entry)
+    ipcRenderer.on(IpcChannels.apiMockLog, handler)
+    return () => void ipcRenderer.off(IpcChannels.apiMockLog, handler)
+  },
   onBeforeClose: (listener) => {
     const handler = () => listener()
     ipcRenderer.on(IpcChannels.beforeClose, handler)

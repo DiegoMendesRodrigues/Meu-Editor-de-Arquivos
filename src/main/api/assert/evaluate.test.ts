@@ -45,8 +45,36 @@ describe('alvos', () => {
     expect(ok(A({ target: 'jsonPath', path: '$.nulo', op: 'exists' }))).toBe(true)
     expect(ok(A({ target: 'jsonPath', path: '$.nulo', op: 'isType', expected: 'null' }))).toBe(true)
   })
-  it('xPath fica para a fase 4', () => {
-    expect(run(A({ target: 'xPath', path: '//a', op: 'exists' })).error).toBe('xPathUnsupported')
+})
+
+describe('xPath', () => {
+  const soap =
+    '<?xml version="1.0"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:m="http://exemplo.com.br/m"><s:Body><m:Resp><m:Id>7</m:Id><m:Item>a</m:Item><m:Item>b</m:Item><m:Ativo>true</m:Ativo></m:Resp></s:Body></s:Envelope>'
+  const xr: ResponseForAssertions = { ...resp, body: soap, contentType: 'text/xml' }
+  const X = (path: string, op: Assertion['op'], expected?: Assertion['expected'], r = xr) => run(A({ target: 'xPath', path, op, expected }), r)
+  it('usa os prefixos declarados no documento', () => {
+    expect(X('//m:Id', 'eq', 7).passed).toBe(true)
+    expect(X('/s:Envelope/s:Body/m:Resp/m:Ativo', 'eq', 'true').passed).toBe(true)
+    expect(X('//m:Nada', 'notExists').passed).toBe(true)
+  })
+  it('local-name() funciona sem prefixo', () => {
+    expect(X("//*[local-name()='Id']", 'eq', '7').passed).toBe(true)
+  })
+  it('vários nós viram lista; funções devolvem número', () => {
+    expect(X('//m:Item', 'lengthEq', 2).passed).toBe(true)
+    expect(X('//m:Item', 'contains', 'b').passed).toBe(true)
+    expect(X('count(//m:Item)', 'eq', 2).passed).toBe(true)
+  })
+  it('atributo e texto', () => {
+    const r = { ...xr, body: '<a id="9"><b>oi</b></a>' }
+    expect(X('/a/@id', 'eq', 9, r).passed).toBe(true)
+    expect(X('//b/text()', 'eq', 'oi', r).passed).toBe(true)
+  })
+  it('XML inválido, DOCTYPE e XPath inválido têm código próprio', () => {
+    expect(X('//a', 'exists', undefined, { ...xr, body: '{"a":1}' }).error).toBe('notXml')
+    expect(X('//a', 'exists', undefined, { ...xr, body: '<a><b></a>' }).error).toBe('notXml')
+    expect(X('//a', 'exists', undefined, { ...xr, body: '<!DOCTYPE a [<!ENTITY x SYSTEM "file:///etc/passwd">]><a>&x;</a>' }).error).toBe('notXml')
+    expect(X('//[', 'exists').error).toBe('badXPath')
   })
 })
 
@@ -171,7 +199,10 @@ describe('extrações', () => {
     expect(ex({ from: 'regex', path: 'Ana' })).toBe('Ana')
     expect(ex({ from: 'regex', path: '/(/' })).toBeUndefined()
   })
-  it('xPath devolve undefined', () => {
+  it('xPath: primeiro valor, ou undefined se não achar ou não for XML', () => {
+    const r = { ...resp, body: '<r xmlns:m="urn:m"><m:t>tk</m:t><m:t>outro</m:t></r>' }
+    expect(evaluateAll([], [extractionSchema.parse({ from: 'xPath', path: '//m:t', to: 'v' })], r).extracted[0]).toBe('tk')
+    expect(evaluateAll([], [extractionSchema.parse({ from: 'xPath', path: '//m:x', to: 'v' })], r).extracted[0]).toBeUndefined()
     expect(ex({ from: 'xPath', path: '//a' })).toBeUndefined()
   })
 })

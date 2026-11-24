@@ -50,7 +50,19 @@ export const API_LIMITS = {
   importChars: 20 * 1024 * 1024,
   importTimeoutMs: 15_000,
   /** OAuth: tempo máximo esperando o navegador ou o Device Code. */
-  oauthTimeoutMs: 5 * 60_000
+  oauthTimeoutMs: 5 * 60_000,
+  /** WebSocket: conexões abertas por janela e tamanho exibido de cada mensagem. */
+  wsConnections: 10,
+  wsMessageBytes: 1024 * 1024,
+  /** Registro de mensagens do painel WebSocket. */
+  wsLogMessages: 5000,
+  wsLogBytes: 50 * 1024 * 1024,
+  /** Servidor mock: servidores abertos, corpo recebido e conexões simultâneas. */
+  mocks: 5,
+  mockBodyBytes: 1024 * 1024,
+  mockConnections: 100,
+  /** O mock para sozinho depois deste tempo sem chamadas. */
+  mockIdleMs: 8 * 3600_000
 } as const
 
 /** Métodos oferecidos no seletor (o arquivo aceita também um método personalizado). */

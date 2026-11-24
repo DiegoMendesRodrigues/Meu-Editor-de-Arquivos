@@ -5,7 +5,7 @@ import { untitledNumber } from '@shared/i18n'
 import { isApiLanguage, languageFromName } from '@/editor/languages'
 import { t } from '@/i18n'
 import { applyEol } from '@shared/eol'
-import { newApiRequest, serializeApiRequest } from '@shared/api/schema'
+import { newApiRequest, newApiWebSocket, serializeApiRequest } from '@shared/api/schema'
 import { newCollection, newEnvironment, serializeCollection, serializeEnvironment } from '@/api/environment'
 
 export interface EditorDocument {
@@ -124,7 +124,9 @@ export const useDocuments = create<DocumentsState>((set) => ({
           ? serializeApiRequest(newApiRequest())
           : language === 'apienv'
             ? serializeEnvironment(newEnvironment(t('apiClient.env.newName')))
-            : language === 'apicol'
+            : language === 'apiws'
+              ? JSON.stringify(newApiWebSocket(), null, 2) + '\n'
+              : language === 'apicol'
               ? serializeCollection(newCollection(t('apiClient.col.newName')))
               : null
       const isApi = apiText !== null

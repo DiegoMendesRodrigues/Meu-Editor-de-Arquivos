@@ -269,6 +269,41 @@ function MultipartEditor({ parts, onChange }: { parts: Part[]; onChange: (parts:
   )
 }
 
+const SOAP_NS = { '1.1': 'http://schemas.xmlsoap.org/soap/envelope/', '1.2': 'http://www.w3.org/2003/05/soap-envelope' } as const
+
+/** Envelope vazio da versão escolhida (o usuário preenche o conteúdo do Body). */
+const soapTemplate = (version: '1.1' | '1.2'): string => `<soap:Envelope xmlns:soap="${SOAP_NS[version]}">
+  <soap:Header/>
+  <soap:Body>
+    
+  </soap:Body>
+</soap:Envelope>`
+
+function SoapEditor({ body, onChange }: { body: Extract<Body, { type: 'soap' }>; onChange: (body: Body) => void }) {
+  const t = useT()
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-2" data-testid="api-soap">
+      <div className="grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1">
+        <Row label={t('apiClient.soap.version')}>
+          <select value={body.version} onChange={(e) => onChange({ ...body, version: e.target.value as '1.1' | '1.2' })} className={`${selectClass} w-24`}>
+            <option value="1.1">SOAP 1.1</option>
+            <option value="1.2">SOAP 1.2</option>
+          </select>
+        </Row>
+        <Row label="SOAPAction">
+          <input value={body.action} maxLength={API_LIMITS.valueChars} spellCheck={false} onChange={(e) => onChange({ ...body, action: e.target.value })} className={fieldClass} />
+        </Row>
+      </div>
+      <div>
+        <button type="button" onClick={() => onChange({ ...body, envelope: soapTemplate(body.version) })} className="rounded border border-border px-2 py-0.5 text-[12.5px] hover:bg-zinc-100">
+          {t('apiClient.soap.template')}
+        </button>
+      </div>
+      <BodyMonaco language="xml" value={body.envelope} onChange={(envelope) => onChange({ ...body, envelope })} label={t('apiClient.soap.envelope')} />
+    </div>
+  )
+}
+
 export function BodyEditor({ body, onChange, doc }: { body: Body; onChange: (body: Body) => void; doc: EditorDocument }) {
   const t = useT()
   const label = (l: string): string => (l.startsWith('apiClient.') ? t(l as MessageKey) : l)
@@ -294,7 +329,7 @@ export function BodyEditor({ body, onChange, doc }: { body: Body; onChange: (bod
         <FileRow path={body.path} label={t('apiClient.file.choose')} onPick={() => void pickFile('body').then((path) => path && onChange({ ...body, path }))} onClear={() => onChange({ ...body, path: '' })} />
       )}
       {body.type === 'graphql' && <GraphqlEditor body={body} onChange={onChange} doc={doc} />}
-      {body.type === 'soap' && <p className="text-zinc-500">{t('apiClient.soon')}</p>}
+      {body.type === 'soap' && <SoapEditor body={body} onChange={onChange} />}
     </div>
   )
 }

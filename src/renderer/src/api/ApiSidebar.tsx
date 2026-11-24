@@ -2,7 +2,7 @@
 /** Seções do Cliente de API na barra lateral: ambiente ativo, coleções e histórico. */
 import { useEffect, useMemo, useState } from 'react'
 import * as ContextMenu from '@radix-ui/react-context-menu'
-import { ChevronRight, Cloud, Cookie, FilePlus, FileText, FolderPlus, Layers, Library, Play, Plus, RefreshCw, Settings, Share, Trash2, X } from 'lucide-react'
+import { ChevronRight, Cloud, Cookie, FilePlus, FileText, FolderPlus, Layers, Library, Play, Plus, RefreshCw, Settings, Server, Share, Trash2, X } from 'lucide-react'
 import { useT } from '@/i18n'
 import { useCloud, joinPath } from '@/store/cloud'
 import { isDirty, useActiveDocument, useDocuments } from '@/store/documents'
@@ -42,6 +42,9 @@ function CollectionActions({ dir, root }: { dir: string; root?: string }) {
           <ContextMenu.Separator className="my-1 h-px bg-zinc-200" />
           <ContextMenu.Item onSelect={() => openDialog({ kind: 'runner', dir })} className={itemClass}>
             <Play size={14} /> {t('apiClient.col.run')}
+          </ContextMenu.Item>
+          <ContextMenu.Item onSelect={() => openDialog({ kind: 'mock', dir })} className={itemClass}>
+            <Server size={14} /> {t('apiClient.col.mock')}
           </ContextMenu.Item>
           <ContextMenu.Item onSelect={() => openDialog({ kind: 'export', dir })} className={itemClass}>
             <Share size={14} /> {t('apiClient.col.export')}

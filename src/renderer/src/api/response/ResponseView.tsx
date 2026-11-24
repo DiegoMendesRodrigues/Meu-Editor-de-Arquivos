@@ -1,6 +1,6 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useMemo, useState } from 'react'
-import { CheckCircle2, Copy, ExternalLink, Save, ShieldAlert, TriangleAlert, XCircle } from 'lucide-react'
+import { BookmarkPlus, CheckCircle2, Copy, ExternalLink, Save, ShieldAlert, TriangleAlert, XCircle } from 'lucide-react'
 import type { Assertion } from '@shared/api/schema'
 import type { MessageKey } from '@shared/i18n'
 import { useT } from '@/i18n'
@@ -182,7 +182,8 @@ export function ResponseView({
   requestId,
   assertions = [],
   forcedType,
-  saved = false
+  saved = false,
+  onSaveExample
 }: {
   res: ViewResponse
   requestId: string
@@ -190,6 +191,8 @@ export function ResponseView({
   forcedType?: string
   /** Veio de um .apiresp: sem os botões de salvar e sem a aba de testes. */
   saved?: boolean
+  /** Salvar como exemplo (para o servidor mock); só na resposta recém-chegada. */
+  onSaveExample?: (res: ViewResponse) => void
 }) {
   const t = useT()
   const [tab, setTab] = useState<Tab>('body')
@@ -247,6 +250,11 @@ export function ResponseView({
           {!saved && (
             <button type="button" onClick={saveResponse} title={t('apiClient.response.saveResponse')} aria-label={t('apiClient.response.saveResponse')} className="rounded p-1 hover:bg-zinc-200">
               <Save size={14} />
+            </button>
+          )}
+          {!saved && onSaveExample && (
+            <button type="button" onClick={() => onSaveExample(res)} title={t('apiClient.response.saveExample')} aria-label={t('apiClient.response.saveExample')} data-testid="api-save-example" className="rounded p-1 hover:bg-zinc-200">
+              <BookmarkPlus size={14} />
             </button>
           )}
           <button type="button" disabled={!textual} onClick={openBody} title={t('apiClient.response.openBody')} aria-label={t('apiClient.response.openBody')} className="rounded p-1 hover:bg-zinc-200 disabled:opacity-40">

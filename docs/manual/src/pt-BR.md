@@ -227,6 +227,20 @@ Em **{{apiClient.col.run}}**, escolha as requisições, o ambiente, o número de
 
 Em **{{apiClient.body.type}}**, escolha GraphQL para escrever a **{{apiClient.graphql.query}}** e as **{{apiClient.graphql.variables}}**. Com **{{apiClient.graphql.loadSchema}}**, o aplicativo lê o schema do servidor, mostra a documentação dos tipos e oferece o autocompletar.
 
+Quando a operação escolhida é uma **subscription**, aparece o botão **{{apiClient.graphql.subscribe}}**: o aplicativo abre um WebSocket (protocolo graphql-transport-ws) no endereço da requisição e mostra os eventos recebidos logo abaixo do editor. Clique em **{{apiClient.mock.stop}}** para encerrar.
+
+### SOAP e WSDL
+
+Em **{{apiClient.body.type}}**, escolha SOAP, a **{{apiClient.soap.version}}** (1.1 ou 1.2) e a SOAPAction; **{{apiClient.soap.template}}** preenche um envelope vazio. Para criar as requisições a partir de um serviço, use **{{menu.tools}} → {{menu.tools.apiImport}}** com o arquivo WSDL: cada operação vira uma requisição, já com o envelope de exemplo. Nos testes e extrações, o alvo XPath lê respostas XML (por exemplo, <code>//*[local-name()='Resultado']</code>).
+
+### WebSocket
+
+Use **{{menu.tools}} → {{menu.tools.apiWebSocket}}** para criar uma conexão (arquivo **.apiws**). Digite a **{{apiClient.ws.url}}** (ws:// ou wss://), os cabeçalhos e os subprotocolos e clique em **{{apiClient.ws.connect}}**. Escreva a mensagem (texto, JSON ou binário em base64) e envie com **Ctrl+Enter**. O **{{apiClient.ws.log}}** mostra as mensagens enviadas e recebidas, com hora e tamanho; dá para filtrar, pausar e limpar. Use **{{apiClient.ws.saveMessage}}** para guardar mensagens que você envia sempre.
+
+### Servidor mock
+
+Um servidor mock responde no lugar da API real, com respostas que você já conhece. Na resposta de uma requisição salva, clique em **{{apiClient.response.saveExample}}**: o aplicativo guarda o exemplo junto da requisição. Depois, no botão direito da coleção, escolha **{{apiClient.col.mock}}** (ou **{{menu.tools}} → {{menu.tools.apiMock}}**). As rotas vêm dos exemplos salvos ou de um arquivo OpenAPI; ajuste o status e o atraso de cada uma e clique em **{{apiClient.mock.start}}**. O servidor atende só neste computador, a menos que você marque **{{apiClient.mock.lan}}**, e para sozinho depois de 8 horas sem chamadas.
+
 ### Segurança
 
 - Todas as requisições saem do próprio computador, pelo aplicativo; nada passa por servidores nossos.

@@ -10,6 +10,10 @@ export function detectFormat(text: string): DetectedFormat | null {
   const t = text.replace(/^\uFEFF/, '').trim()
   if (t === '') return null
   if (/^(?:[$>]\s*)?curl(?:\.exe)?\s/.test(t)) return 'curl'
+  if (t.startsWith('<')) {
+    const head = t.slice(0, 4000)
+    return /<(?:[\w.-]+:)?definitions[\s>]/.test(head) && /schemas\.xmlsoap\.org\/wsdl/.test(head) ? 'wsdl' : null
+  }
   if (t.startsWith('{')) {
     try {
       const data: unknown = JSON.parse(t)

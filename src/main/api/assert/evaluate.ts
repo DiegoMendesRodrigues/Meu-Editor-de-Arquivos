@@ -2,11 +2,13 @@
 /**
  * Lógica pura dos testes e extrações da resposta (sem thread, sem Electron).
  * Códigos de erro: badJsonPath, badRegex, notJson, badSchema, schemaFileUnsupported,
- * xPathUnsupported, badExpected, evalFailed (e timeout, aplicado pelo runner).
+ * badXPath, notXml, badExpected, evalFailed (e timeout, aplicado pelo runner).
  */
 import Ajv from 'ajv'
 import type { Assertion, Extraction } from '@shared/api/schema'
 import type { AssertionResult } from '@shared/api/protocol'
+import xpath from 'xpath'
+import { parseXmlSafe, XmlError } from '@shared/api/xmlSafe'
 import { evalJsonPath, JsonPathError } from './jsonPath'
 
 /** O que os testes e as extrações enxergam da resposta (corpo como texto UTF-8). */
@@ -32,6 +34,7 @@ const ACTUAL_MAX = 200
 interface Ctx {
   response: ResponseForAssertions
   json?: { ok: true; value: unknown } | { ok: false }
+  xml?: { ok: true; doc: Document; ns: Record<string, string> } | { ok: false }
 }
 
 const makeCtx = (response: ResponseForAssertions): Ctx => ({ response })
@@ -46,6 +49,51 @@ function bodyJson(ctx: Ctx): unknown {
   }
   if (!ctx.json.ok) throw new EvalError('notJson')
   return ctx.json.value
+}
+
+const XML_BODY_MAX = 5 * 1024 * 1024
+
+/** Documento XML do corpo (analisado uma vez) e os prefixos de namespace declarados nele. */
+function bodyXml(ctx: Ctx): { doc: Document; ns: Record<string, string> } {
+  if (!ctx.xml) {
+    try {
+      const doc = parseXmlSafe(ctx.response.body, XML_BODY_MAX)
+      const ns: Record<string, string> = {}
+      const walk = (el: Element, depth: number): void => {
+        for (let i = 0; i < el.attributes.length; i++) {
+          const at = el.attributes[i]!
+          if (at.name.startsWith('xmlns:') && !(at.name.slice(6) in ns)) ns[at.name.slice(6)] = at.value
+        }
+        if (depth > 50) return
+        for (let n = el.firstChild; n; n = n.nextSibling) if (n.nodeType === 1) walk(n as Element, depth + 1)
+      }
+      walk(doc.documentElement, 0)
+      ctx.xml = { ok: true, doc, ns }
+    } catch {
+      ctx.xml = { ok: false }
+    }
+  }
+  if (!ctx.xml.ok) throw new EvalError('notXml')
+  return ctx.xml
+}
+
+const nodeText = (n: Node): string => (n.nodeType === 2 || n.nodeType === 3 || n.nodeType === 4 ? (n.nodeValue ?? '') : (n.textContent ?? ''))
+
+/** XPath: nó único vira texto, vários viram lista; número, texto e booleano voltam como estão. */
+function evalXPath(ctx: Ctx, path: string): { values: unknown[]; value: unknown } {
+  const { doc, ns } = bodyXml(ctx)
+  let result: xpath.SelectReturnType
+  try {
+    result = xpath.useNamespaces(ns)(path, doc as unknown as Node)
+  } catch (e) {
+    if (e instanceof XmlError) throw new EvalError('notXml')
+    throw new EvalError('badXPath')
+  }
+  if (Array.isArray(result)) {
+    const values = result.map((n) => nodeText(n as Node))
+    return { values, value: values.length <= 1 ? values[0] : values }
+  }
+  return { values: [result], value: result }
 }
 
 export function summarize(v: unknown): string {
@@ -177,7 +225,7 @@ function targetValue(a: Assertion, ctx: Ctx): unknown {
     case 'jsonSchema':
       return bodyJson(ctx)
     case 'xPath':
-      throw new EvalError('xPathUnsupported')
+      return evalXPath(ctx, a.path ?? '').value
   }
 }
 
@@ -292,8 +340,10 @@ export function evaluateExtraction(e: Extraction, ctx: Ctx): string | undefined 
         if (!m) return undefined
         return m[1] ?? m[0]
       }
-      case 'xPath':
-        return undefined
+      case 'xPath': {
+        const v = evalXPath(ctx, e.path).values[0]
+        return v === undefined ? undefined : String(v)
+      }
     }
   } catch {
     return undefined
