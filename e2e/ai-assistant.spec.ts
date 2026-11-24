@@ -104,8 +104,8 @@ test.describe('Assistente de IA (Ollama)', () => {
     await expect(page.getByTestId('ai-panel')).toBeVisible()
     await expect(page.getByTestId('ai-status')).toHaveAttribute('data-state', 'down')
     const help = page.getByTestId('ai-install-help')
-    await expect(help).toContainText('ollama pull')
-    await expect(help.getByRole('button', { name: 'Abrir ollama.com' })).toBeVisible()
+    await expect(help).toContainText('Ollama')
+    await expect(help.getByText('Prefiro instalar pelo navegador')).toBeVisible() // alternativa em texto, com o link para ollama.com
     await page.getByRole('button', { name: 'Fechar o assistente' }).click()
     await expect(page.getByTestId('ai-panel')).toHaveCount(0)
   })

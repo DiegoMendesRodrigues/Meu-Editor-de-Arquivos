@@ -133,7 +133,7 @@ Die Wörterbücher sind im Programm enthalten: Die Prüfung funktioniert ohne In
 
 ### KI-Assistent (Ollama)
 
-Der **{{ai.title}}** verwendet ein KI-Modell, das über Ollama (ollama.com) auf Ihrem eigenen Computer läuft: Nichts geht ins Internet. Installieren Sie Ollama, laden Sie ein Modell herunter (zum Beispiel <code>ollama pull llama3.2</code>) und öffnen Sie das Fenster über **{{menu.tools}} → {{menu.tools.ai}}** oder mit **Strg+Umschalt+I**.
+Der **{{ai.title}}** verwendet ein KI-Modell, das über Ollama (ollama.com) auf Ihrem eigenen Computer läuft: Nichts geht ins Internet. Öffnen Sie das Fenster über **{{menu.tools}} → {{menu.tools.ai}}** oder mit **Strg+Umschalt+I**. Ist Ollama noch nicht auf dem Computer, führt das Fenster durch die Installation: Unter Windows lädt **{{ai.install.button}}** das offizielle Installationsprogramm herunter, prüft die digitale Signatur und öffnet dessen Fenster, in dem Sie die Installation abschließen; unter Linux tippt **{{ai.install.openTerminal}}** den offiziellen Befehl in das Terminal der App, damit Sie ihn prüfen und bestätigen (er benötigt sudo). Ist Ollama gestoppt, verwenden Sie **{{ai.install.start}}**. Wählen Sie anschließend unter **{{ai.install.pullTitle}}** ein Modell und verfolgen Sie den Download; **{{ai.install.delete}}** gibt Speicherplatz frei.
 
 - Wählen Sie das Modell, geben Sie Ihre Frage ein und verfolgen Sie die Antwort, während sie entsteht; **{{ai.stop}}** bricht ab, **{{ai.newChat}}** beginnt neu.
 - Die **{{ai.quick.label}}** wirken auf die Auswahl (oder das ganze Dokument): **{{ai.quick.explain}}**, **{{ai.quick.improve}}**, **{{ai.quick.fix}}**, **{{ai.quick.summarize}}**, **{{ai.quick.translate}}**, **{{ai.quick.document}}** und **{{ai.quick.tests}}**.

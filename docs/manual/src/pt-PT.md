@@ -133,7 +133,7 @@ Os dicionários vêm com a aplicação: o corretor funciona sem internet.
 
 ### Assistente de IA (Ollama)
 
-O **{{ai.title}}** usa um modelo de IA que corre no seu próprio computador, através do Ollama (ollama.com): nada sai para a internet. Instale o Ollama, transfira um modelo (por exemplo, <code>ollama pull llama3.2</code>) e abra o painel em **{{menu.tools}} → {{menu.tools.ai}}** ou com **Ctrl+Shift+I**.
+O **{{ai.title}}** usa um modelo de IA que corre no seu próprio computador, através do Ollama (ollama.com): nada sai para a internet. Abra o painel em **{{menu.tools}} → {{menu.tools.ai}}** ou com **Ctrl+Shift+I**. Se o Ollama ainda não estiver no computador, o próprio painel guia a instalação: no Windows, **{{ai.install.button}}** transfere o instalador oficial, verifica a assinatura digital e abre a janela dele para concluir; no Linux, **{{ai.install.openTerminal}}** escreve o comando oficial no terminal da aplicação para o rever e confirmar (precisa de sudo). Com o Ollama parado, use **{{ai.install.start}}**. Depois, escolha um modelo em **{{ai.install.pullTitle}}** e acompanhe a transferência; **{{ai.install.delete}}** liberta espaço.
 
 - Escolha o modelo, escreva a pergunta e acompanhe a resposta enquanto é gerada; **{{ai.stop}}** interrompe e **{{ai.newChat}}** começa do zero.
 - As **{{ai.quick.label}}** trabalham sobre a seleção (ou o documento inteiro): **{{ai.quick.explain}}**, **{{ai.quick.improve}}**, **{{ai.quick.fix}}**, **{{ai.quick.summarize}}**, **{{ai.quick.translate}}**, **{{ai.quick.document}}** e **{{ai.quick.tests}}**.

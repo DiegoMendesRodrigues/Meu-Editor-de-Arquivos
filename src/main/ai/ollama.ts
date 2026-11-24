@@ -40,13 +40,13 @@ export function checkHost(raw: string, allowRemote: boolean): HostCheck {
   return { ok: true, origin: url.origin }
 }
 
-class OllamaError extends Error {
+export class OllamaError extends Error {
   constructor(readonly code: AiErrorCode) {
     super(code)
   }
 }
 
-interface Ctl {
+export interface Ctl {
   controller: AbortController
   timedOut: () => boolean
   fireTimeout: () => void
@@ -54,7 +54,7 @@ interface Ctl {
 }
 
 /** Liga o sinal do chamador a um controlador próprio e lembra se o aborto foi por tempo esgotado. */
-function makeController(outer?: AbortSignal): Ctl {
+export function makeController(outer?: AbortSignal): Ctl {
   const controller = new AbortController()
   let timedOut = false
   const onAbort = (): void => controller.abort()
@@ -73,7 +73,7 @@ function makeController(outer?: AbortSignal): Ctl {
   }
 }
 
-async function open(
+export async function open(
   origin: string,
   path: string,
   init: RequestInit,
@@ -112,7 +112,7 @@ async function getJson(origin: string, path: string, timeouts: OllamaTimeouts): 
   }
 }
 
-const asRecord = (v: unknown): Record<string, unknown> => (typeof v === 'object' && v !== null ? (v as Record<string, unknown>) : {})
+export const asRecord = (v: unknown): Record<string, unknown> => (typeof v === 'object' && v !== null ? (v as Record<string, unknown>) : {})
 
 /** O Ollama responde? Versão (GET /api/version) e modelos instalados (GET /api/tags). */
 export async function getStatus(settings: AiSettings, timeouts: OllamaTimeouts = DEFAULT_TIMEOUTS): Promise<AiStatus> {

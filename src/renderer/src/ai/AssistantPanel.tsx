@@ -1,12 +1,13 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useEffect, useRef, useState } from 'react'
-import { Bot, Check, ClipboardCopy, ExternalLink, FileInput, Replace, RefreshCw, Send, Settings, SquarePen, Square, TriangleAlert, X } from 'lucide-react'
+import { Bot, Check, ClipboardCopy, FileInput, Replace, RefreshCw, Send, Settings, SquarePen, Square, TriangleAlert, X } from 'lucide-react'
 import { AI_DEFAULT_HOST, type AiErrorCode } from '@shared/ai'
 import type { MessageKey } from '@shared/i18n'
 import { useLocale, useT } from '@/i18n'
 import { buttonClass, fieldClass, primaryButtonClass } from '@/components/Modal'
 import { useDocuments } from '@/store/documents'
 import { useNotice } from '@/store/notice'
+import { InstalledModels, ModelPicker, SetupWizard } from './InstallSteps'
 import { canWriteToDocument, getDocContext, writeToDocument } from './editorBridge'
 import { splitBlocks, splitInline } from './markdown'
 import { buildQuickPrompt, QUICK_ACTIONS, QUICK_CONTEXT_CHARS, type QuickAction } from './prompts'
@@ -15,57 +16,24 @@ import { useAi, type ChatMessage } from './store'
 const OLLAMA_URL = 'https://ollama.com/download'
 const PULL_EXAMPLE = 'ollama pull llama3.2'
 
-/** Comando para copiar (nunca executado pelo app). */
-function CommandLine({ text }: { text: string }) {
-  const t = useT()
-  const [copied, setCopied] = useState(false)
-  return (
-    <div className="my-1 flex items-center gap-2 rounded border border-border bg-chrome px-2 py-1">
-      <code className="min-w-0 flex-1 select-text break-all font-mono text-[12px]">{text}</code>
-      <button
-        type="button"
-        title={t('ai.code.copy')}
-        aria-label={t('ai.code.copy')}
-        onClick={() => {
-          void window.api.copyText(text)
-          setCopied(true)
-          setTimeout(() => setCopied(false), 1500)
-        }}
-        className="rounded p-1 text-zinc-600 hover:bg-zinc-200"
-      >
-        {copied ? <Check size={14} /> : <ClipboardCopy size={14} />}
-      </button>
-    </div>
-  )
-}
-
-function InstallHelp() {
-  const t = useT()
-  return (
-    <div className="m-3 rounded border border-amber-300 bg-amber-50 p-3 text-[12.5px]" data-testid="ai-install-help">
-      <p className="mb-1 flex items-center gap-2 font-semibold text-amber-700">
-        <TriangleAlert size={15} /> {t('ai.install.title')}
-      </p>
-      <p className="mb-2">{t('ai.install.intro')}</p>
-      <p>{t('ai.install.step1')}</p>
-      <button type="button" onClick={() => window.open(OLLAMA_URL, '_blank', 'noopener')} className={`${buttonClass} my-1 inline-flex items-center gap-1`}>
-        <ExternalLink size={13} /> {t('ai.install.link')}
-      </button>
-      <p>{t('ai.install.step2')}</p>
-      <CommandLine text={PULL_EXAMPLE} />
-      <p>{t('ai.install.step3')}</p>
-      <p className="mt-1 text-zinc-500">{t('ai.install.note')}</p>
-    </div>
-  )
-}
-
 function NoModelHelp() {
   const t = useT()
   return (
     <div className="m-3 rounded border border-amber-300 bg-amber-50 p-3 text-[12.5px]" data-testid="ai-no-model">
       <p className="mb-1 font-semibold text-amber-700">{t('ai.noModel.title')}</p>
-      <p>{t('ai.noModel.text')}</p>
-      <CommandLine text={PULL_EXAMPLE} />
+      <p className="mb-2">{t('ai.noModel.text')}</p>
+      <ModelPicker />
+    </div>
+  )
+}
+
+/** Modelos nas configurações: baixar outro ou excluir um instalado. */
+function ModelsSection({ models }: { models: string[] }) {
+  const t = useT()
+  return (
+    <div className="space-y-2 border-b border-border bg-chrome px-3 pb-3 text-[12.5px]" data-testid="ai-models-section">
+      <ModelPicker title={t('ai.install.pullTitle')} />
+      <InstalledModels models={models} />
     </div>
   )
 }
@@ -310,11 +278,12 @@ export function AssistantPanel() {
       </div>
 
       {showSettings && <SettingsForm key="settings" onDone={() => setShowSettings(false)} />}
+      {showSettings && ok && <ModelsSection models={models} />}
 
       <QuickActions disabled={!ready || busy} />
 
       <div ref={listRef} className="min-h-0 flex-1 overflow-auto p-3" aria-live="polite">
-        {connection.state === 'down' && <InstallHelp />}
+        {connection.state === 'down' && <SetupWizard />}
         {ok && models.length === 0 && <NoModelHelp />}
         {messages.length === 0 && connection.state !== 'down' && <p className="text-zinc-500">{t('ai.empty')}</p>}
         {messages.map((m) => (

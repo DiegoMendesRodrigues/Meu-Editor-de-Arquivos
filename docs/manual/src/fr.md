@@ -133,7 +133,7 @@ Les dictionnaires sont fournis avec l’application : le correcteur fonctionne s
 
 ### Assistant IA (Ollama)
 
-L'**{{ai.title}}** utilise un modèle d'IA qui tourne sur votre propre ordinateur grâce à Ollama (ollama.com) : rien ne part sur internet. Installez Ollama, téléchargez un modèle (par exemple <code>ollama pull llama3.2</code>) et ouvrez le panneau avec **{{menu.tools}} → {{menu.tools.ai}}** ou **Ctrl+Maj+I**.
+L'**{{ai.title}}** utilise un modèle d'IA qui tourne sur votre propre ordinateur grâce à Ollama (ollama.com) : rien ne part sur internet. Ouvrez le panneau avec **{{menu.tools}} → {{menu.tools.ai}}** ou **Ctrl+Maj+I**. Si Ollama n'est pas encore sur l'ordinateur, le panneau guide l'installation : sous Windows, **{{ai.install.button}}** télécharge l'installateur officiel, vérifie sa signature numérique et ouvre sa fenêtre pour que vous terminiez ; sous Linux, **{{ai.install.openTerminal}}** saisit la commande officielle dans le terminal de l'application pour que vous la vérifiiez et la confirmiez (elle nécessite sudo). Si Ollama est arrêté, utilisez **{{ai.install.start}}**. Choisissez ensuite un modèle dans **{{ai.install.pullTitle}}** et suivez le téléchargement ; **{{ai.install.delete}}** libère de l'espace.
 
 - Choisissez le modèle, saisissez votre question et suivez la réponse pendant sa génération ; **{{ai.stop}}** l'interrompt et **{{ai.newChat}}** repart de zéro.
 - Les **{{ai.quick.label}}** portent sur la sélection (ou le document entier) : **{{ai.quick.explain}}**, **{{ai.quick.improve}}**, **{{ai.quick.fix}}**, **{{ai.quick.summarize}}**, **{{ai.quick.translate}}**, **{{ai.quick.document}}** et **{{ai.quick.tests}}**.

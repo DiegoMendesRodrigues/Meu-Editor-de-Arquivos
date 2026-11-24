@@ -133,7 +133,7 @@ The dictionaries ship with the application, so the checker works offline.
 
 ### AI assistant (Ollama)
 
-The **{{ai.title}}** uses an AI model that runs on your own computer through Ollama (ollama.com): nothing goes out to the internet. Install Ollama, download a model (for example, <code>ollama pull llama3.2</code>) and open the panel with **{{menu.tools}} → {{menu.tools.ai}}** or **Ctrl+Shift+I**.
+The **{{ai.title}}** uses an AI model that runs on your own computer through Ollama (ollama.com): nothing goes out to the internet. Open the panel with **{{menu.tools}} → {{menu.tools.ai}}** or **Ctrl+Shift+I**. If Ollama is not on the computer yet, the panel guides the installation: on Windows, **{{ai.install.button}}** downloads the official installer, checks its digital signature and opens its window for you to finish; on Linux, **{{ai.install.openTerminal}}** types the official command in the app's terminal for you to review and confirm (it needs sudo). If Ollama is stopped, use **{{ai.install.start}}**. Then pick a model in **{{ai.install.pullTitle}}** and follow the download; **{{ai.install.delete}}** frees up space.
 
 - Pick the model, type your question and watch the answer as it is generated; **{{ai.stop}}** interrupts it and **{{ai.newChat}}** starts over.
 - The **{{ai.quick.label}}** work on the selection (or the whole document): **{{ai.quick.explain}}**, **{{ai.quick.improve}}**, **{{ai.quick.fix}}**, **{{ai.quick.summarize}}**, **{{ai.quick.translate}}**, **{{ai.quick.document}}** and **{{ai.quick.tests}}**.

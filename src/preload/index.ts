@@ -182,6 +182,18 @@ const api: EditorApi = {
     ipcRenderer.on(IpcChannels.aiChunk, handler)
     return () => void ipcRenderer.off(IpcChannels.aiChunk, handler)
   },
+  aiInstallInfo: () => ipcRenderer.invoke(IpcChannels.aiInstallInfo),
+  aiInstallStart: () => ipcRenderer.invoke(IpcChannels.aiInstallStart),
+  aiInstallCancel: () => ipcRenderer.invoke(IpcChannels.aiInstallCancel),
+  aiStartServer: () => ipcRenderer.invoke(IpcChannels.aiStartServer),
+  aiPull: (model) => ipcRenderer.invoke(IpcChannels.aiPull, model),
+  aiPullCancel: () => ipcRenderer.invoke(IpcChannels.aiPullCancel),
+  aiDeleteModel: (model) => ipcRenderer.invoke(IpcChannels.aiDeleteModel, model),
+  onAiInstallProgress: (listener) => {
+    const handler = (_e: IpcRendererEvent, progress: Parameters<typeof listener>[0]): void => listener(progress)
+    ipcRenderer.on(IpcChannels.aiInstallProgress, handler)
+    return () => void ipcRenderer.off(IpcChannels.aiInstallProgress, handler)
+  },
   onBeforeClose: (listener) => {
     const handler = () => listener()
     ipcRenderer.on(IpcChannels.beforeClose, handler)

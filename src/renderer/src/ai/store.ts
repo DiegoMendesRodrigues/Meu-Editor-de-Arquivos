@@ -1,6 +1,6 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { create } from 'zustand'
-import { AI_LIMITS, DEFAULT_AI_SETTINGS, type AiChunk, type AiErrorCode, type AiMessage, type AiSettings, type AiStatus } from '@shared/ai'
+import { AI_LIMITS, DEFAULT_AI_SETTINGS, type AiChunk, type AiErrorCode, type AiInstallInfo, type AiInstallProgress, type AiMessage, type AiOpResult, type AiSettings, type AiStatus } from '@shared/ai'
 import { useLocale } from '@/i18n'
 import { systemPrompt } from './prompts'
 
@@ -24,8 +24,17 @@ export interface ChatMessage {
 
 export type Connection = { state: 'unknown' } | { state: 'checking' } | { state: 'ok'; version?: string; models: string[] } | { state: 'down'; code: AiErrorCode }
 
+/** Operação longa em andamento (instalar o Ollama ou baixar um modelo). */
+export type AiProgress = Pick<AiInstallProgress, 'op' | 'stage' | 'completed' | 'total' | 'status' | 'model'>
+
 interface AiState {
   open: boolean
+  /** Instalado/parado/plataforma; vem do Main (sem caminhos). */
+  info: AiInstallInfo | null
+  progress: AiProgress | null
+  /** Erro da última operação de instalação, início ou download (código traduzido). */
+  opError: AiErrorCode | null
+  starting: boolean
   settings: AiSettings
   settingsLoaded: boolean
   connection: Connection
@@ -46,6 +55,14 @@ interface AiState {
   stop(): void
   newChat(): void
   handleChunk(chunk: AiChunk): void
+  loadInfo(): Promise<void>
+  installOllama(): Promise<void>
+  cancelInstall(): void
+  startOllama(): Promise<void>
+  pullModel(name: string): Promise<void>
+  cancelPull(): void
+  deleteModel(name: string): Promise<void>
+  handleProgress(p: AiInstallProgress): void
 }
 
 let counter = 0
@@ -63,6 +80,10 @@ export function buildConversation(history: ChatMessage[], system: string): AiMes
 
 export const useAi = create<AiState>((set, get) => ({
   open: false,
+  info: null,
+  progress: null,
+  opError: null,
+  starting: false,
   settings: { ...DEFAULT_AI_SETTINGS },
   settingsLoaded: false,
   connection: { state: 'unknown' },
@@ -82,7 +103,10 @@ export const useAi = create<AiState>((set, get) => ({
       const settings = await window.api.aiGetSettings()
       set({ settings, settingsLoaded: true })
       const status: AiStatus = await window.api.aiStatus()
-      if (!status.ok) return set({ connection: { state: 'down', code: status.code ?? 'unknown' } })
+      if (!status.ok) {
+        set({ connection: { state: 'down', code: status.code ?? 'unknown' } })
+        return get().loadInfo()
+      }
       set({ connection: { state: 'ok', version: status.version, models: status.models } })
       // Modelo ainda não escolhido (ou removido): usa o primeiro instalado.
       if (status.models.length > 0 && !status.models.includes(settings.model)) await get().chooseModel(status.models[0]!)
@@ -156,6 +180,61 @@ export const useAi = create<AiState>((set, get) => ({
     set({ messages: [], generationId: null })
   },
 
+  loadInfo: async () => {
+    try {
+      set({ info: await window.api.aiInstallInfo() })
+    } catch {
+      set({ info: null })
+    }
+  },
+
+  installOllama: async () => {
+    if (get().progress) return
+    set({ progress: { op: 'install', stage: 'download', completed: 0, total: 0 }, opError: null })
+    const result = await runOp(() => window.api.aiInstallStart())
+    if (!result.ok) set({ progress: null, opError: result.code })
+  },
+
+  cancelInstall: () => void window.api.aiInstallCancel().catch(() => undefined),
+
+  startOllama: async () => {
+    if (get().starting) return
+    set({ starting: true, opError: null })
+    const result = await runOp(() => window.api.aiStartServer())
+    set({ starting: false, ...(result.ok || result.code === 'cancelled' ? {} : { opError: result.code }) })
+    if (result.ok) await get().refresh()
+  },
+
+  pullModel: async (name) => {
+    if (get().progress) return
+    set({ progress: { op: 'pull', stage: 'pull', completed: 0, total: 0, model: name, status: '' }, opError: null })
+    const result = await runOp(() => window.api.aiPull(name))
+    if (!result.ok) set({ progress: null, opError: result.code })
+  },
+
+  cancelPull: () => void window.api.aiPullCancel().catch(() => undefined),
+
+  deleteModel: async (name) => {
+    set({ opError: null })
+    const result = await runOp(() => window.api.aiDeleteModel(name))
+    if (!result.ok) set({ opError: result.code })
+    else await get().refresh()
+  },
+
+  handleProgress: (p) => {
+    if (!p.done) return set({ progress: { op: p.op, stage: p.stage, completed: p.completed, total: p.total, status: p.status, model: p.model } })
+    set({ progress: null, opError: p.code && p.code !== 'cancelled' ? p.code : null })
+    // Terminou (ou foi cancelada): relê o estado e, se baixou um modelo, seleciona-o.
+    void get()
+      .refresh()
+      .then(() => {
+        const c = get().connection
+        if (p.op !== 'pull' || p.code || !p.model || c.state !== 'ok') return
+        const installed = c.models.find((m) => m === p.model || m === `${p.model}:latest`)
+        if (installed) return get().chooseModel(installed)
+      })
+  },
+
   handleChunk: (chunk) => {
     set((s) => ({
       messages: s.messages.map((m) =>
@@ -166,7 +245,21 @@ export const useAi = create<AiState>((set, get) => ({
   }
 }))
 
-/** Liga os pedaços vindos do Main ao estado. Chamado uma vez, na abertura do app. */
+/** Chamada ao Main que nunca lança: uma falha inesperada vira o código 'unknown'. */
+async function runOp(call: () => Promise<AiOpResult>): Promise<AiOpResult> {
+  try {
+    return await call()
+  } catch {
+    return { ok: false, code: 'unknown' }
+  }
+}
+
+/** Liga os pedaços e o andamento vindos do Main ao estado. Chamado uma vez, na abertura do app. */
 export function startAiBridge(): () => void {
-  return window.api.onAiChunk((chunk) => useAi.getState().handleChunk(chunk))
+  const offChunk = window.api.onAiChunk((chunk) => useAi.getState().handleChunk(chunk))
+  const offProgress = window.api.onAiInstallProgress((p) => useAi.getState().handleProgress(p))
+  return () => {
+    offChunk()
+    offProgress()
+  }
 }

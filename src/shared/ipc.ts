@@ -2,7 +2,7 @@
 import type { FolderColor } from './folderColors'
 import type { Locale } from './i18n'
 import type { SearchMatch, SearchOptions } from './search'
-import type { AiChatInput, AiChatResult, AiChunk, AiSetSettingsResult, AiSettings, AiStatus } from './ai'
+import type { AiChatInput, AiChatResult, AiChunk, AiInstallInfo, AiInstallProgress, AiOpResult, AiSetSettingsResult, AiSettings, AiStatus } from './ai'
 import type {
   ApiCookieJarEntry,
   ApiHistoryEntry,
@@ -154,7 +154,15 @@ export const IpcChannels = {
   aiSetSettings: 'ai:set-settings',
   aiChat: 'ai:chat',
   aiCancel: 'ai:cancel',
-  aiChunk: 'ai:chunk'
+  aiChunk: 'ai:chunk',
+  aiInstallInfo: 'ai:install-info',
+  aiInstallStart: 'ai:install-start',
+  aiInstallCancel: 'ai:install-cancel',
+  aiStartServer: 'ai:start-server',
+  aiPull: 'ai:pull',
+  aiPullCancel: 'ai:pull-cancel',
+  aiDeleteModel: 'ai:delete-model',
+  aiInstallProgress: 'ai:install-progress'
 } as const
 
 /** Cofre de segredos do Cliente de API: persistent = false quando o sistema não oferece cifra (só memória). */
@@ -565,6 +573,15 @@ export interface EditorApi {
   aiChat(input: AiChatInput): Promise<AiChatResult>
   aiCancel(id: string): Promise<void>
   onAiChunk(listener: (chunk: AiChunk) => void): () => void
+  /** Instalar o Ollama e baixar modelos sem sair do app. URLs e executáveis são fixos no Main. */
+  aiInstallInfo(): Promise<AiInstallInfo>
+  aiInstallStart(): Promise<AiOpResult>
+  aiInstallCancel(): Promise<void>
+  aiStartServer(): Promise<AiOpResult>
+  aiPull(model: string): Promise<AiOpResult>
+  aiPullCancel(): Promise<void>
+  aiDeleteModel(model: string): Promise<AiOpResult>
+  onAiInstallProgress(listener: (progress: AiInstallProgress) => void): () => void
   /** O Main avisa que o usuário quer fechar a janela; o Renderer decide e chama closeWindow(). */
   onBeforeClose(listener: () => void): () => void
   closeWindow(): Promise<void>
