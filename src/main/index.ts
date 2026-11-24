@@ -13,6 +13,7 @@ import { loadAccount, registerAccountHandlers } from './ipc/account'
 import { registerLibraryHandlers } from './ipc/library'
 import { registerSessionHandlers } from './ipc/session'
 import { killAllTerminals, registerTerminalHandlers } from './ipc/terminal'
+import { registerFormatHandlers } from './ipc/format'
 
 log.initialize()
 
@@ -104,6 +105,7 @@ app.whenReady().then(async () => {
   registerAccountHandlers()
   registerAppHandlers()
   registerTerminalHandlers()
+  registerFormatHandlers()
   createWindow()
 
   app.on('activate', () => {

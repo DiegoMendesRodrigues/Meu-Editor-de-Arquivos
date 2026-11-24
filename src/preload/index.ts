@@ -94,6 +94,7 @@ const api: EditorApi = {
     return () => void ipcRenderer.off(IpcChannels.fullScreenChanged, handler)
   },
   hashText: (algorithm, text) => ipcRenderer.invoke(IpcChannels.hashText, algorithm, text),
+  formatCode: (language, extension, text) => ipcRenderer.invoke(IpcChannels.formatCode, language, extension, text),
   copyText: (text) => ipcRenderer.invoke(IpcChannels.copyText, text),
   onBeforeClose: (listener) => {
     const handler = () => listener()

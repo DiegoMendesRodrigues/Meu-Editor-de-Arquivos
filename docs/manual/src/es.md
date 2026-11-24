@@ -163,6 +163,9 @@ La búsqueda no entra en carpetas como `node_modules` y `.git`, ni en archivos b
 ![Menú Lenguaje](img/s10-menu-language.png)
 
 - **{{menu.encoding}}:** convierte el documento a **UTF-8** o **UTF-8 con BOM**, y elige el fin de línea de **Windows (CRLF)**, de **Unix (LF)** o de **Mac (CR)**. La conversión marca el documento como modificado; basta con guardar para que surta efecto.
+  - **{{menu.encoding.autoFormat}}** elimina los espacios dobles del documento (la sangría de las líneas se mantiene) y lo formatea según el estándar del lenguaje: Python como Python (PEP 8), C y C++ en estilo LLVM, Java en estilo Google, C# en estilo Microsoft, Go con gofmt, y JavaScript, TypeScript, JSON, CSS, HTML, Markdown, YAML, PHP y XML con Prettier; también Lua, Shell y SQL. Funciona sin internet. En los lenguajes sin formateador (Rust, PowerShell, Batch, LaTeX, INI, TOML y texto), solo se eliminan los espacios dobles, y la barra de estado lo indica. Si el código tiene un error de sintaxis, una ventana muestra la línea del error.
+  - En Python, si falta la sangría, se deduce: después de una línea que termina en `:` el bloque abre un nivel; los bloques `if`, `for`, `while`, `try` y `with` se quedan con la línea siguiente; el cuerpo de un `def` llega hasta una línea en blanco o un `return`. Revise el resultado, porque en Python la sangría cambia lo que hace el programa. Las comillas quedan como las escribió. Atención: también se eliminan los espacios dobles dentro de textos entre comillas. Ctrl+Z lo deshace todo de una vez.
+  - **{{menu.encoding.url}}** codifica el texto seleccionado en formato de direcciones web (`mi página` se convierte en `mi%20p%C3%A1gina`); si el texto ya está codificado, lo decodifica. En una dirección completa (`https://…`), se mantienen los separadores `: / ? & = #`.
 
 La codificación y el fin de línea actuales aparecen en la barra de estado.
 

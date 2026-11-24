@@ -156,7 +156,12 @@ strong{font-weight:650}
 <li><strong><span class="ui">Language</span>:</strong> the application picks the language from the file extension and uses colors to make reading easier. To change a document&#39;s language, open the menu and choose another one.</li>
 </ul>
 <figure><img src="img/s10-menu-language.png" alt="Language menu"><figcaption>Language menu</figcaption></figure><ul>
-<li><strong><span class="ui">Encoding</span>:</strong> convert the document to <strong>UTF-8</strong> or <strong>UTF-8 with BOM</strong>, and choose <strong>Windows (CRLF)</strong>, <strong>Unix (LF)</strong> or <strong>Mac (CR)</strong> line endings. A conversion marks the document as changed; just save for it to take effect.</li>
+<li><strong><span class="ui">Encoding</span>:</strong> convert the document to <strong>UTF-8</strong> or <strong>UTF-8 with BOM</strong>, and choose <strong>Windows (CRLF)</strong>, <strong>Unix (LF)</strong> or <strong>Mac (CR)</strong> line endings. A conversion marks the document as changed; just save for it to take effect.<ul>
+<li><strong><span class="ui">Auto Format</span></strong> removes double spaces from the document (line indentation is kept) and formats it in the language&#39;s standard style: Python as Python (PEP 8), C and C++ in LLVM style, Java in Google style, C# in Microsoft style, Go with gofmt, and JavaScript, TypeScript, JSON, CSS, HTML, Markdown, YAML, PHP and XML with Prettier; Lua, Shell and SQL too. It works offline. For languages without a formatter (Rust, PowerShell, Batch, LaTeX, INI, TOML and text), only the double spaces are removed, and the status bar says so. If the code has a syntax error, a window shows the line of the error.</li>
+<li>In Python, if the indentation is missing, it is guessed: after a line ending in <code>:</code> the block opens one level; <code>if</code>, <code>for</code>, <code>while</code>, <code>try</code> and <code>with</code> blocks take the next line; a <code>def</code> body runs until a blank line or a <code>return</code>. Check the result, because in Python indentation changes what the program does. Quotes stay as you wrote them. Note: double spaces inside quoted strings are removed too. Ctrl+Z undoes it all at once.</li>
+<li><strong><span class="ui">Encode/Decode URL</span></strong> encodes the selected text in web address (URL) format (<code>my page</code> becomes <code>my%20page</code>); if the text is already encoded, it decodes it. In a full address (<code>https://…</code>), the <code>: / ? &amp; = #</code> separators are kept.</li>
+</ul>
+</li>
 </ul>
 <p>The current encoding and line ending appear in the status bar.</p>
 <h2 id="10-snippets-and-macros">10. Snippets and macros</h2>

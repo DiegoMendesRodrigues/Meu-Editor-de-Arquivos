@@ -163,6 +163,9 @@ La recherche n'entre pas dans des dossiers comme `node_modules` et `.git`, ni da
 ![Menu Langage](img/s10-menu-language.png)
 
 - **{{menu.encoding}} :** convertissez le document en **UTF-8** ou en **UTF-8 avec BOM**, et choisissez les fins de ligne **Windows (CRLF)**, **Unix (LF)** ou **Mac (CR)**. Une conversion marque le document comme modifié ; il suffit d'enregistrer pour qu'elle soit effective.
+  - **{{menu.encoding.autoFormat}}** supprime les espaces doubles du document (l'indentation des lignes est conservée) et le met en forme selon le standard du langage : Python comme Python (PEP 8), C et C++ en style LLVM, Java en style Google, C# en style Microsoft, Go avec gofmt, et JavaScript, TypeScript, JSON, CSS, HTML, Markdown, YAML, PHP et XML avec Prettier ; Lua, Shell et SQL aussi. Fonctionne sans internet. Pour les langages sans outil de mise en forme (Rust, PowerShell, Batch, LaTeX, INI, TOML et texte), seuls les espaces doubles sont supprimés, et la barre d'état l'indique. Si le code contient une erreur de syntaxe, une fenêtre indique la ligne de l'erreur.
+  - En Python, si l'indentation manque, elle est déduite : après une ligne terminée par `:` le bloc ouvre un niveau ; les blocs `if`, `for`, `while`, `try` et `with` prennent la ligne suivante ; le corps d'un `def` va jusqu'à une ligne vide ou un `return`. Vérifiez le résultat, car en Python l'indentation change ce que fait le programme. Les guillemets restent tels que vous les avez écrits. Attention : les espaces doubles à l'intérieur des textes entre guillemets sont aussi supprimés. Ctrl+Z annule tout d'un coup.
+  - **{{menu.encoding.url}}** encode le texte sélectionné au format des adresses web (`ma page` devient `ma%20page`) ; si le texte est déjà encodé, il le décode. Dans une adresse complète (`https://…`), les séparateurs `: / ? & = #` sont conservés.
 
 L'encodage et la fin de ligne actuels s'affichent dans la barre d'état.
 

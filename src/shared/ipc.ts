@@ -59,6 +59,7 @@ export const IpcChannels = {
   fullScreenChanged: 'app:full-screen-changed',
   hashText: 'tools:hash-text',
   copyText: 'tools:copy-text',
+  formatCode: 'tools:format-code',
   setTheme: 'app:set-theme',
   terminalCreate: 'terminal:create',
   terminalWrite: 'terminal:write',
@@ -71,6 +72,18 @@ export const IpcChannels = {
 /** Algoritmos de resumo (hash) do menu Ferramentas. */
 export const HASH_ALGORITHMS = ['MD5', 'SHA-1', 'SHA-256', 'SHA-512'] as const
 export type HashAlgorithm = (typeof HASH_ALGORITHMS)[number]
+
+/**
+ * Resultado da auto formatação: texto formatado (guessedIndent: a indentação do Python faltava e foi
+ * deduzida), linguagem sem formatador ou código que o formatador não entendeu (com a linha, se souber).
+ */
+export type FormatResult =
+  | { status: 'ok'; text: string; guessedIndent?: boolean }
+  | { status: 'unsupported' }
+  | { status: 'invalid'; line?: number }
+
+/** Limite de texto aceito pela auto formatação. */
+export const FORMAT_MAX_CHARS = 5 * 1024 * 1024
 
 /** Tema da interface. */
 export type Theme = 'light' | 'dark'
@@ -372,6 +385,8 @@ export interface EditorApi {
   hashText(algorithm: HashAlgorithm, text: string): Promise<string>
   /** Copia o texto para a área de transferência do sistema. */
   copyText(text: string): Promise<void>
+  /** Formata o código no padrão da linguagem (id do Monaco); a extensão distingue casos como .tsx. */
+  formatCode(language: string, extension: string, text: string): Promise<FormatResult>
   /** O Main avisa que o usuário quer fechar a janela; o Renderer decide e chama closeWindow(). */
   onBeforeClose(listener: () => void): () => void
   closeWindow(): Promise<void>

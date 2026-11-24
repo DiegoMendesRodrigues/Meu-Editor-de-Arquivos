@@ -163,6 +163,9 @@ The search does not enter folders such as `node_modules` and `.git`, nor binary 
 ![Language menu](img/s10-menu-language.png)
 
 - **{{menu.encoding}}:** convert the document to **UTF-8** or **UTF-8 with BOM**, and choose **Windows (CRLF)**, **Unix (LF)** or **Mac (CR)** line endings. A conversion marks the document as changed; just save for it to take effect.
+  - **{{menu.encoding.autoFormat}}** removes double spaces from the document (line indentation is kept) and formats it in the language's standard style: Python as Python (PEP 8), C and C++ in LLVM style, Java in Google style, C# in Microsoft style, Go with gofmt, and JavaScript, TypeScript, JSON, CSS, HTML, Markdown, YAML, PHP and XML with Prettier; Lua, Shell and SQL too. It works offline. For languages without a formatter (Rust, PowerShell, Batch, LaTeX, INI, TOML and text), only the double spaces are removed, and the status bar says so. If the code has a syntax error, a window shows the line of the error.
+  - In Python, if the indentation is missing, it is guessed: after a line ending in `:` the block opens one level; `if`, `for`, `while`, `try` and `with` blocks take the next line; a `def` body runs until a blank line or a `return`. Check the result, because in Python indentation changes what the program does. Quotes stay as you wrote them. Note: double spaces inside quoted strings are removed too. Ctrl+Z undoes it all at once.
+  - **{{menu.encoding.url}}** encodes the selected text in web address (URL) format (`my page` becomes `my%20page`); if the text is already encoded, it decodes it. In a full address (`https://…`), the `: / ? & = #` separators are kept.
 
 The current encoding and line ending appear in the status bar.
 

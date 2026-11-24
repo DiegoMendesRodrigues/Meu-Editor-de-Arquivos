@@ -48,6 +48,7 @@ Versão atual: **1.1.0**.
 **Linguagens e arquivos**
 - Python, C, C++, C#, Java, JavaScript, TypeScript, PHP, Go, Rust, PowerShell, Bash, Batch, Lua, HTML, CSS, XML, JSON, YAML, TOML, INI, SQL, CSV, LaTeX, Markdown, logs e outros
 - UTF-8 e UTF-8 com BOM, e conversão entre quebras de linha Windows (CRLF), Unix (LF) e Mac (CR)
+- Auto formatação sem internet no padrão de cada linguagem (Prettier, clang-format, Ruff, gofmt e outros) e codificação/decodificação de URL
 - Percebe alterações feitas por outros programas nos arquivos abertos
 
 **Produtividade**

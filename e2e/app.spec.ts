@@ -1,5 +1,5 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { _electron as electron } from '@playwright/test'
@@ -423,5 +423,62 @@ test.describe('terminal', () => {
     await expect(panel.locator('.xterm-rows')).toContainText(/terminal-ok-(42|\$\(\(6\*7\)\))/, { timeout: 20000 })
     await panel.getByRole('button', { name: 'Fechar Terminal 1' }).click()
     await expect(panel).toHaveCount(0)
+  })
+})
+
+test.describe('menu Codificação', () => {
+  test('Auto formatação remove os espaços duplos e formata no padrão da linguagem', async ({ app, page, workspace }) => {
+    writeFileSync(workspace.file('soma.py'), 'def soma( a,b ):\n  return  a+b\n')
+    await stubOpenDialog(app, [workspace.file('soma.py')])
+    await page.keyboard.press('Control+O')
+    await expect(page.getByRole('tab', { selected: true })).toContainText('soma.py')
+    await page.getByRole('button', { name: 'Codificação' }).click()
+    await page.getByRole('menuitem', { name: 'Auto formatação' }).click()
+    await expect(page.getByRole('contentinfo')).toContainText('Documento formatado no padrão Python.')
+    await page.locator('.monaco-editor').click()
+    await page.keyboard.press('Control+S')
+    await expect(page.getByRole('tab', { selected: true })).not.toContainText('●')
+    expect(readFileSync(workspace.file('soma.py'), 'utf8')).toBe('def soma(a, b):\n    return a + b\n')
+  })
+
+  test('Auto formatação deduz a indentação que falta no Python', async ({ app, page, workspace }) => {
+    writeFileSync(workspace.file('exibir.py'), "def exibir(nome):\nif nome == 'ana':\nprint('Ops')\nprint(nome)\n\n    exibir('Diego')\n")
+    await stubOpenDialog(app, [workspace.file('exibir.py')])
+    await page.keyboard.press('Control+O')
+    await expect(page.getByRole('tab', { selected: true })).toContainText('exibir.py')
+    await page.getByRole('button', { name: 'Codificação' }).click()
+    await page.getByRole('menuitem', { name: 'Auto formatação' }).click()
+    await expect(page.getByRole('contentinfo')).toContainText('A indentação estava faltando e foi deduzida')
+    await page.locator('.monaco-editor').click()
+    await page.keyboard.press('Control+S')
+    await expect(page.getByRole('tab', { selected: true })).not.toContainText('●')
+    expect(readFileSync(workspace.file('exibir.py'), 'utf8')).toBe(
+      "def exibir(nome):\n    if nome == 'ana':\n        print('Ops')\n    print(nome)\n\n\nexibir('Diego')\n"
+    )
+  })
+
+  test('Auto formatação mostra a linha do erro de sintaxe numa janela', async ({ app, page, workspace }) => {
+    writeFileSync(workspace.file('erro.py'), 'x = 1\ny = (\n')
+    await stubOpenDialog(app, [workspace.file('erro.py')])
+    await page.keyboard.press('Control+O')
+    await expect(page.getByRole('tab', { selected: true })).toContainText('erro.py')
+    const dialog = page.waitForEvent('dialog')
+    await page.getByRole('button', { name: 'Codificação' }).click()
+    await page.getByRole('menuitem', { name: 'Auto formatação' }).click()
+    const shown = await dialog
+    expect(shown.message()).toContain('erro de sintaxe na linha 3')
+    await shown.dismiss()
+  })
+
+  test('Codificar/Decodificar URL alterna o texto selecionado', async ({ page }) => {
+    await page.locator('.monaco-editor').click()
+    await page.keyboard.type('a b&c=ç')
+    for (const [esperado, aviso] of [['a%20b%26c%3D%C3%A7', 'URL codificada.'], ['a b&c=ç', 'URL decodificada.']]) {
+      await page.keyboard.press('Control+A')
+      await page.getByRole('button', { name: 'Codificação' }).click()
+      await page.getByRole('menuitem', { name: 'Codificar/Decodificar URL' }).click()
+      await expect(page.getByRole('contentinfo')).toContainText(aviso)
+      await expect(page.locator('.view-lines')).toHaveText(esperado)
+    }
   })
 })

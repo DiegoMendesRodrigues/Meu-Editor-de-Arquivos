@@ -163,6 +163,9 @@ A busca não entra em pastas como `node_modules` e `.git`, nem em arquivos biná
 ![Menu Linguagem](img/s10-menu-language.png)
 
 - **{{menu.encoding}}:** converta o documento para **UTF-8** ou **UTF-8 com BOM**, e escolha a quebra de linha do **Windows (CRLF)**, do **Unix (LF)** ou do **Mac (CR)**. A conversão marca o documento como alterado; basta salvar para valer.
+  - **{{menu.encoding.autoFormat}}** remove os espaços duplos do documento (a indentação das linhas fica) e o formata no padrão da linguagem: Python como Python (PEP 8), C e C++ no estilo LLVM, Java no estilo Google, C# no estilo Microsoft, Go com o gofmt, e JavaScript, TypeScript, JSON, CSS, HTML, Markdown, YAML, PHP e XML com o Prettier; também Lua, Shell e SQL. Funciona sem internet. Nas linguagens sem formatador (Rust, PowerShell, Batch, LaTeX, INI, TOML e texto), só os espaços duplos são removidos, e a barra de status avisa. Se o código tiver erro de sintaxe, uma janela informa a linha do erro.
+  - No Python, se a indentação estiver faltando, ela é deduzida: depois de uma linha terminada em `:` o bloco abre um nível; blocos de `if`, `for`, `while`, `try` e `with` ficam com a linha seguinte; o corpo de um `def` vai até uma linha em branco ou um `return`. Confira o resultado, porque em Python a indentação muda o que o programa faz. As aspas ficam como você escreveu. Atenção: espaços duplos dentro de textos entre aspas também são removidos. Ctrl+Z desfaz tudo de uma vez.
+  - **{{menu.encoding.url}}** codifica o texto selecionado no formato de endereços web (`minha página` vira `minha%20p%C3%A1gina`); se o texto já estiver codificado, decodifica. Num endereço completo (`https://…`), os separadores `: / ? & = #` são mantidos.
 
 A codificação e a quebra de linha atuais aparecem na barra de status.
 

@@ -23,7 +23,7 @@ import type { Eol, HashAlgorithm } from '@shared/ipc'
 import { useNotice } from '@/store/notice'
 import { selectedText } from '@/textCommands'
 import { createTerminal } from '@/terminal/terminalBus'
-export { collapseSpaces, convertCase, trimSpaces } from '@/textCommands'
+export { autoFormat, collapseSpaces, convertCase, trimSpaces, urlEncodeDecode } from '@/textCommands'
 
 const docs = () => useDocuments.getState()
 const active = (): EditorDocument | undefined => {

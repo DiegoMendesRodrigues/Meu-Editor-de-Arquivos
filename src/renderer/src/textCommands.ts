@@ -1,13 +1,20 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 /**
- * Comandos de texto do menu Editar (letras e espaços). Funcionam no editor de texto (Monaco)
- * e na visualização editável do Markdown (Tiptap), conforme o que estiver aberto.
+ * Comandos de texto dos menus Editar (letras e espaços) e Codificação (auto formatação e URL).
+ * Funcionam no editor de texto (Monaco) e na visualização editável do Markdown (Tiptap),
+ * conforme o que estiver aberto.
  */
 import type { editor, Selection } from 'monaco-editor'
 import type { Editor } from '@tiptap/react'
 import { getActiveEditor } from '@/editor/editorRef'
 import { getActiveWysiwyg } from '@/markdown/wysiwygRef'
-import { collapseDoubleSpaces, convertCaseText, sentenceCaser, trimLine, type CaseMode, type TrimMode } from '@/editor/textOps'
+import { collapseDoubleSpaces, convertCaseText, sentenceCaser, toggleUrlEncoding, trimLine, type CaseMode, type TrimMode } from '@/editor/textOps'
+import { languageLabel } from '@/editor/languages'
+import { t } from '@/i18n'
+import { useDocuments } from '@/store/documents'
+import { useNotice } from '@/store/notice'
+import { applyEol } from '@shared/eol'
+import { FORMAT_MAX_CHARS } from '@shared/ipc'
 
 interface Edit {
   range: { startLineNumber: number; startColumn: number; endLineNumber: number; endColumn: number }
@@ -169,4 +176,102 @@ export function selectedText(): string {
     .filter((s) => !s.isEmpty())
     .map((s) => model.getValueInRange(s))
     .join('\n')
+}
+
+// ---------------------------------------------------------------- Auto formatação
+
+/**
+ * Remove os espaços duplos do documento inteiro (mantendo a indentação) e o formata no padrão da
+ * linguagem (Python como Python, C como C…). Sem formatador para a linguagem, ou com erro de sintaxe,
+ * só os espaços duplos são removidos. Tudo vira um único passo de desfazer no editor de texto.
+ */
+export async function autoFormat(): Promise<void> {
+  const { documents, activeId, updateContent } = useDocuments.getState()
+  const doc = documents.find((d) => d.id === activeId)
+  if (!doc) return
+  const ed = getActiveEditor()
+  const model = ed?.getModel()
+  const monaco = ed && model && model.uri.path.startsWith(`/${doc.id}/`) ? { ed, model } : null
+  const original = monaco ? monaco.model.getValue() : doc.content
+  // Linha a linha, para os espaços duplos sumirem sem mexer na quebra de linha (CRLF, LF).
+  const collapsed = original.split(/(\r\n|\n|\r)/).map((part, i) => (i % 2 ? part : collapseDoubleSpaces(part))).join('')
+  const language = languageLabel(doc.language)
+
+  let formatted = collapsed
+  let notice = t('format.done', { language })
+  /** Problemas que o usuário precisa ver (erro de sintaxe, tempo esgotado) vão numa janela, não só na barra de status. */
+  let problem: string | null = null
+  if (collapsed.length > FORMAT_MAX_CHARS) {
+    notice = t('format.tooLarge')
+  } else {
+    try {
+      const extension = doc.name.includes('.') ? doc.name.split('.').pop()!.toLowerCase() : ''
+      const result = await window.api.formatCode(doc.language, /^[a-z0-9]{0,10}$/.test(extension) ? extension : '', collapsed)
+      if (result.status === 'ok') {
+        formatted = result.text
+        if (result.guessedIndent) notice = t('format.guessedIndent', { language })
+      } else if (result.status === 'unsupported') {
+        notice = t('format.unsupported', { language })
+      } else {
+        notice = problem = result.line ? t('format.invalidLine', { language, line: result.line }) : t('format.invalid', { language })
+      }
+    } catch (err) {
+      notice = problem = err instanceof Error ? err.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '') : String(err)
+    }
+  }
+
+  // O documento pode ter mudado (ou sido fechado) enquanto o formatador trabalhava.
+  const current = useDocuments.getState().documents.find((d) => d.id === doc.id)
+  const stillSame = monaco ? !monaco.model.isDisposed() && monaco.model.getValue() === original : current?.content === original
+  if (!current || !stillSame) return
+  if (formatted !== original) {
+    if (monaco) {
+      applyMonaco(monaco.ed, 'autoFormat', [{ range: monaco.model.getFullModelRange(), text: formatted }])
+    } else {
+      updateContent(doc.id, applyEol(formatted, doc.eol))
+    }
+  }
+  useNotice.getState().show(notice)
+  if (problem) window.alert(problem)
+}
+
+// ---------------------------------------------------------------- URL
+
+/** Codifica (ou decodifica, se já estiver codificado) o texto selecionado no formato de URL. */
+export function urlEncodeDecode(): void {
+  const wys = getActiveWysiwyg()
+  if (wys) return urlEncodeDecodeWysiwyg(wys)
+  const ed = getActiveEditor()
+  const model = ed?.getModel()
+  if (!ed || !model) return
+  const selections = (ed.getSelections() ?? []).filter((s) => !s.isEmpty())
+  if (selections.length === 0) return window.alert(t('url.noSelection'))
+  // A decisão (codificar ou decodificar) vale para todas as seleções, pela primeira.
+  const mode = toggleUrlEncoding(model.getValueInRange(selections[0])).mode
+  const edits = selections.map((range) => {
+    const text = model.getValueInRange(range)
+    const result = toggleUrlEncoding(text)
+    return { range, text: result.mode === mode ? result.text : text }
+  })
+  applyMonaco(ed, 'urlEncodeDecode', edits)
+  useNotice.getState().show(t(mode === 'encoded' ? 'url.encoded' : 'url.decoded'))
+}
+
+function urlEncodeDecodeWysiwyg(ed: Editor): void {
+  const { from, to, empty } = ed.state.selection
+  if (empty) return void window.alert(t('url.noSelection'))
+  const mode = toggleUrlEncoding(ed.state.doc.textBetween(from, to, '\n')).mode
+  // Trecho a trecho (como em convertCase), para manter as marcas (negrito, link…) e os parágrafos.
+  const changes: { from: number; to: number; text: string }[] = []
+  ed.state.doc.nodesBetween(from, to, (node, pos) => {
+    if (!node.isText || !node.text) return true
+    const start = Math.max(from, pos)
+    const end = Math.min(to, pos + node.nodeSize)
+    const text = node.text.slice(start - pos, end - pos)
+    const result = toggleUrlEncoding(text)
+    if (result.mode === mode && result.text !== text) changes.push({ from: start, to: end, text: result.text })
+    return false
+  })
+  applyWysiwyg(ed, changes)
+  useNotice.getState().show(t(mode === 'encoded' ? 'url.encoded' : 'url.decoded'))
 }

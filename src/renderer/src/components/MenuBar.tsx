@@ -198,7 +198,10 @@ export function MenuBar() {
         'separator',
         { label: t('menu.encoding.crlf'), checked: doc?.eol === 'CRLF', action: withDoc(() => cmd.convertEol('CRLF')) },
         { label: t('menu.encoding.lf'), checked: doc?.eol === 'LF', action: withDoc(() => cmd.convertEol('LF')) },
-        { label: t('menu.encoding.cr'), checked: doc?.eol === 'CR', action: withDoc(() => cmd.convertEol('CR')) }
+        { label: t('menu.encoding.cr'), checked: doc?.eol === 'CR', action: withDoc(() => cmd.convertEol('CR')) },
+        'separator',
+        { label: t('menu.encoding.autoFormat'), action: withDoc(() => void cmd.autoFormat()) },
+        { label: t('menu.encoding.url'), action: withDoc(cmd.urlEncodeDecode) }
       ]
     },
     {

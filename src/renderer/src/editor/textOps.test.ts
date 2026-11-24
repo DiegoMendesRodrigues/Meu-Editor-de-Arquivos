@@ -1,6 +1,6 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { describe, expect, it } from 'vitest'
-import { collapseDoubleSpaces, convertCaseText, sentenceCaser, trimLine } from './textOps'
+import { collapseDoubleSpaces, convertCaseText, sentenceCaser, toggleUrlEncoding, trimLine } from './textOps'
 
 describe('conversão de letras', () => {
   it('maiúsculas e minúsculas, com acentos', () => {
@@ -33,5 +33,25 @@ describe('operações com espaços', () => {
   it('troca espaços duplos por um, preservando a indentação', () => {
     expect(collapseDoubleSpaces('um  dois   três')).toBe('um dois três')
     expect(collapseDoubleSpaces('    if (a  ==  b)\n  - item  um')).toBe('    if (a == b)\n  - item um')
+  })
+})
+
+describe('codificar/decodificar URL', () => {
+  it('codifica trechos soltos por completo e endereços mantendo a estrutura', () => {
+    expect(toggleUrlEncoding('a b&c=ç')).toEqual({ text: 'a%20b%26c%3D%C3%A7', mode: 'encoded' })
+    expect(toggleUrlEncoding('https://exemplo.com/minha página?q=ação&x=1')).toEqual({
+      text: 'https://exemplo.com/minha%20p%C3%A1gina?q=a%C3%A7%C3%A3o&x=1',
+      mode: 'encoded'
+    })
+  })
+
+  it('decodifica o que já está codificado', () => {
+    expect(toggleUrlEncoding('a%20b%26c%3D%C3%A7')).toEqual({ text: 'a b&c=ç', mode: 'decoded' })
+    expect(toggleUrlEncoding('https://exemplo.com/minha%20p%C3%A1gina')).toEqual({ text: 'https://exemplo.com/minha página', mode: 'decoded' })
+  })
+
+  it('codifica o "%" solto em vez de falhar', () => {
+    expect(toggleUrlEncoding('100% certo')).toEqual({ text: '100%25%20certo', mode: 'encoded' })
+    expect(toggleUrlEncoding('%E0%A4%A')).toEqual({ text: '%25E0%25A4%25A', mode: 'encoded' })
   })
 })

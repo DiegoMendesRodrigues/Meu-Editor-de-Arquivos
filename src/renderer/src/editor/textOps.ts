@@ -62,3 +62,20 @@ export function trimLine(line: string, mode: TrimMode): string {
 export function collapseDoubleSpaces(text: string): string {
   return text.replace(/^([ \t]*)(.*)$/gm, (_m, indent: string, rest: string) => indent + rest.replace(/ {2,}/g, ' '))
 }
+
+/**
+ * Codifica ou decodifica o texto no formato de endereços web (URL). Texto com sequências %XX válidas é
+ * decodificado; os demais são codificados. Um endereço completo (https://…) mantém a estrutura
+ * (: / ? & = #); um trecho solto tem todos os caracteres especiais codificados.
+ */
+export function toggleUrlEncoding(text: string): { text: string; mode: 'encoded' | 'decoded' } {
+  if (/%[0-9a-f]{2}/i.test(text)) {
+    try {
+      return { text: decodeURIComponent(text), mode: 'decoded' }
+    } catch {
+      // "%" solto ou sequência UTF-8 inválida: trata como texto comum e codifica.
+    }
+  }
+  const encoded = /^[a-z][a-z0-9+.-]*:\/\//i.test(text.trim()) ? encodeURI(text) : encodeURIComponent(text)
+  return { text: encoded, mode: 'encoded' }
+}

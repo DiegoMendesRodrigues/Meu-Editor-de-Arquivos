@@ -163,6 +163,9 @@ Die Suche durchsucht keine Ordner wie `node_modules` und `.git` und auch keine B
 ![Menü Sprache](img/s10-menu-language.png)
 
 - **{{menu.encoding}}:** Wandeln Sie das Dokument in **UTF-8** oder **UTF-8 mit BOM** um und wählen Sie Zeilenenden nach **Windows (CRLF)**, **Unix (LF)** oder **Mac (CR)**. Eine Umwandlung markiert das Dokument als geändert; zum Wirksamwerden genügt Speichern.
+  - **{{menu.encoding.autoFormat}}** entfernt doppelte Leerzeichen aus dem Dokument (die Einrückung der Zeilen bleibt) und formatiert es im Standardstil der Sprache: Python wie Python (PEP 8), C und C++ im LLVM-Stil, Java im Google-Stil, C# im Microsoft-Stil, Go mit gofmt sowie JavaScript, TypeScript, JSON, CSS, HTML, Markdown, YAML, PHP und XML mit Prettier; außerdem Lua, Shell und SQL. Funktioniert ohne Internet. Bei Sprachen ohne Formatierer (Rust, PowerShell, Batch, LaTeX, INI, TOML und Text) werden nur die doppelten Leerzeichen entfernt; die Statusleiste weist darauf hin. Bei einem Syntaxfehler zeigt ein Fenster die betroffene Zeile.
+  - Fehlt in Python die Einrückung, wird sie abgeleitet: Nach einer Zeile, die mit `:` endet, öffnet der Block eine Ebene; `if`-, `for`-, `while`-, `try`- und `with`-Blöcke umfassen die nächste Zeile; der Rumpf eines `def` reicht bis zu einer Leerzeile oder einem `return`. Prüfen Sie das Ergebnis, denn in Python ändert die Einrückung, was das Programm tut. Anführungszeichen bleiben, wie Sie sie geschrieben haben. Achtung: Auch doppelte Leerzeichen in Texten zwischen Anführungszeichen werden entfernt. Ctrl+Z macht alles auf einmal rückgängig.
+  - **{{menu.encoding.url}}** kodiert den markierten Text im Format von Webadressen (`meine Seite` wird zu `meine%20Seite`); ist der Text bereits kodiert, wird er dekodiert. Bei einer vollständigen Adresse (`https://…`) bleiben die Trennzeichen `: / ? & = #` erhalten.
 
 Kodierung und Zeilenenden werden in der Statusleiste angezeigt.
 
