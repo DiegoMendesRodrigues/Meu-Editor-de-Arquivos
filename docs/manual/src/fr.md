@@ -101,7 +101,7 @@ Dans les documents Markdown, texte (.txt) et LaTeX, les mots absents du dictionn
 - Placez le curseur sur le mot et appuyez sur **Ctrl+.** (ou faites un clic droit et choisissez **{{spell.suggestions}}**) pour voir les suggestions. Choisissez-en une pour remplacer le mot.
 - **{{spell.addToDictionary}}** fait accepter le mot désormais, dans toutes les langues.
 - **{{menu.tools}} → {{menu.tools.spellCheck}}** (ou **F7**) active et désactive la vérification.
-- Le correcteur utilise la langue de l’interface. Pour vérifier dans une autre langue, choisissez dans **{{menu.tools}}** l’une des options **{{spell.source}} : Deutsch**, **{{spell.source}} : English**… : il existe des dictionnaires allemand, espagnol, français, anglais, portugais du Brésil et portugais du Portugal. **{{menu.tools.spellAuto}}** revient à la langue de l’interface.
+- Le correcteur utilise la langue de l’interface. Pour vérifier dans une autre langue, choisissez dans **{{menu.tools}} → {{menu.tools.spellSubmenu}}** l’une des options **{{spell.source}} : Deutsch**, **{{spell.source}} : English**… : il existe des dictionnaires allemand, espagnol, français, anglais, portugais du Brésil et portugais du Portugal. **{{menu.tools.spellAuto}}** revient à la langue de l’interface.
 
 Les dictionnaires sont fournis avec l’application : le correcteur fonctionne sans Internet.
 

@@ -101,7 +101,7 @@ In Markdown, text (.txt) and LaTeX documents, words that are not in the dictiona
 - Place the cursor on the word and press **Ctrl+.** (or right-click and choose **{{spell.suggestions}}**) to see the suggestions. Pick one to replace the word.
 - **{{spell.addToDictionary}}** makes the word accepted from then on, in every language.
 - **{{menu.tools}} → {{menu.tools.spellCheck}}** (or **F7**) turns checking on and off.
-- The checker uses the interface language. To check in another language, choose one of the **{{spell.source}}: Deutsch**, **{{spell.source}}: English**… options in **{{menu.tools}}** — there are German, Spanish, French, English, Brazilian Portuguese and European Portuguese dictionaries. **{{menu.tools.spellAuto}}** goes back to following the interface.
+- The checker uses the interface language. To check in another language, choose one of the **{{spell.source}}: Deutsch**, **{{spell.source}}: English**… options in **{{menu.tools}} → {{menu.tools.spellSubmenu}}** — there are German, Spanish, French, English, Brazilian Portuguese and European Portuguese dictionaries. **{{menu.tools.spellAuto}}** goes back to following the interface.
 
 The dictionaries ship with the application, so the checker works offline.
 

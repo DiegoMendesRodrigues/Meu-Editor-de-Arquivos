@@ -123,6 +123,7 @@ export const ptPT: Messages = {
   "menu.tools.macroRunLast": "Executar última macro",
   "menu.tools.macros": "Macros...",
   "menu.tools.spellCheck": "Verificar ortografia",
+  "menu.tools.spellSubmenu": "Ortografia utilizada",
   "menu.tools.spellAuto": "Ortografia: idioma da interface",
   "menu.tools.spellLanguage": "Ortografia: {name}",
   "spell.unknownWord": "«{word}»: palavra desconhecida",

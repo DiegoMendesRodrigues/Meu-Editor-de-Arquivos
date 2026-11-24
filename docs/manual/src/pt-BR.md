@@ -101,7 +101,7 @@ Em documentos Markdown, de texto (.txt) e LaTeX, as palavras que não estão no 
 - Coloque o cursor na palavra e aperte **Ctrl+.** (ou clique com o botão direito e escolha **{{spell.suggestions}}**) para ver as sugestões. Escolha uma para trocar a palavra.
 - **{{spell.addToDictionary}}** faz a palavra ser aceita dali em diante, em qualquer idioma.
 - **{{menu.tools}} → {{menu.tools.spellCheck}}** (ou **F7**) liga e desliga a verificação.
-- O corretor usa o idioma da interface. Para verificar em outro idioma, escolha em **{{menu.tools}}** uma das opções **{{spell.source}}: Deutsch**, **{{spell.source}}: English**… — há dicionários de alemão, espanhol, francês, inglês, português do Brasil e português de Portugal. **{{menu.tools.spellAuto}}** volta a seguir a interface.
+- O corretor usa o idioma da interface. Para verificar em outro idioma, escolha em **{{menu.tools}} → {{menu.tools.spellSubmenu}}** uma das opções **{{spell.source}}: Deutsch**, **{{spell.source}}: English**… — há dicionários de alemão, espanhol, francês, inglês, português do Brasil e português de Portugal. **{{menu.tools.spellAuto}}** volta a seguir a interface.
 
 Os dicionários vêm com o aplicativo: o corretor funciona sem internet.
 

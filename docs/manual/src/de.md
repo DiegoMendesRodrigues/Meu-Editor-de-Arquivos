@@ -101,7 +101,7 @@ In Markdown-, Text- (.txt) und LaTeX-Dokumenten werden Wörter, die nicht im Wö
 - Setzen Sie den Cursor auf das Wort und drücken Sie **Strg+.** (oder Rechtsklick und **{{spell.suggestions}}**), um die Vorschläge zu sehen. Wählen Sie einen aus, um das Wort zu ersetzen.
 - **{{spell.addToDictionary}}** lässt das Wort ab sofort in allen Sprachen gelten.
 - **{{menu.tools}} → {{menu.tools.spellCheck}}** (oder **F7**) schaltet die Prüfung ein und aus.
-- Die Prüfung verwendet die Sprache der Oberfläche. Für eine andere Sprache wählen Sie in **{{menu.tools}}** eine der Optionen **{{spell.source}}: Deutsch**, **{{spell.source}}: English**… — es gibt Wörterbücher für Deutsch, Spanisch, Französisch, Englisch, brasilianisches und europäisches Portugiesisch. **{{menu.tools.spellAuto}}** folgt wieder der Oberfläche.
+- Die Prüfung verwendet die Sprache der Oberfläche. Für eine andere Sprache wählen Sie in **{{menu.tools}} → {{menu.tools.spellSubmenu}}** eine der Optionen **{{spell.source}}: Deutsch**, **{{spell.source}}: English**… — es gibt Wörterbücher für Deutsch, Spanisch, Französisch, Englisch, brasilianisches und europäisches Portugiesisch. **{{menu.tools.spellAuto}}** folgt wieder der Oberfläche.
 
 Die Wörterbücher sind im Programm enthalten: Die Prüfung funktioniert ohne Internet.
 

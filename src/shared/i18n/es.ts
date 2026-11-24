@@ -123,6 +123,7 @@ export const es: Messages = {
   "menu.tools.macroRunLast": "Ejecutar última macro",
   "menu.tools.macros": "Macros...",
   "menu.tools.spellCheck": "Revisar ortografía",
+  "menu.tools.spellSubmenu": "Ortografía utilizada",
   "menu.tools.spellAuto": "Ortografía: idioma de la interfaz",
   "menu.tools.spellLanguage": "Ortografía: {name}",
   "spell.unknownWord": "«{word}»: palabra desconocida",

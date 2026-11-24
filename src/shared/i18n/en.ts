@@ -123,6 +123,7 @@ export const en: Messages = {
   "menu.tools.macroRunLast": "Run Last Macro",
   "menu.tools.macros": "Macros...",
   "menu.tools.spellCheck": "Check Spelling",
+  "menu.tools.spellSubmenu": "Spelling Language",
   "menu.tools.spellAuto": "Spelling: interface language",
   "menu.tools.spellLanguage": "Spelling: {name}",
   "spell.unknownWord": "“{word}”: unknown word",

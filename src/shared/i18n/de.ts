@@ -123,6 +123,7 @@ export const de: Messages = {
   "menu.tools.macroRunLast": "Letztes Makro ausführen",
   "menu.tools.macros": "Makros...",
   "menu.tools.spellCheck": "Rechtschreibprüfung",
+  "menu.tools.spellSubmenu": "Verwendete Rechtschreibung",
   "menu.tools.spellAuto": "Rechtschreibung: Sprache der Oberfläche",
   "menu.tools.spellLanguage": "Rechtschreibung: {name}",
   "spell.unknownWord": "„{word}“: unbekanntes Wort",

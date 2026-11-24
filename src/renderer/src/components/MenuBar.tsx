@@ -218,8 +218,13 @@ export function MenuBar() {
         { label: t('menu.tools.macros'), action: cmd.openMacros },
         'separator',
         { label: t('menu.tools.spellCheck'), shortcut: 'F7', checked: spelling.enabled, action: spelling.toggle },
-        { label: t('menu.tools.spellAuto'), checked: spelling.locale === null, action: () => spelling.setLocale(null) },
-        ...LOCALES.map((l) => ({ label: t('menu.tools.spellLanguage', { name: l.name }), checked: spelling.locale === l.code, action: () => spelling.setLocale(l.code) })),
+        {
+          label: t('menu.tools.spellSubmenu'),
+          items: [
+            { label: t('menu.tools.spellAuto'), checked: spelling.locale === null, action: () => spelling.setLocale(null) },
+            ...LOCALES.map((l) => ({ label: t('menu.tools.spellLanguage', { name: l.name }), checked: spelling.locale === l.code, action: () => spelling.setLocale(l.code) }))
+          ]
+        },
         'separator',
         { label: t('menu.tools.compare') },
         { label: t('menu.tools.ai') },

@@ -123,6 +123,7 @@ export const fr: Messages = {
   "menu.tools.macroRunLast": "Exécuter la dernière macro",
   "menu.tools.macros": "Macros...",
   "menu.tools.spellCheck": "Vérifier l’orthographe",
+  "menu.tools.spellSubmenu": "Orthographe utilisée",
   "menu.tools.spellAuto": "Orthographe : langue de l’interface",
   "menu.tools.spellLanguage": "Orthographe : {name}",
   "spell.unknownWord": "« {word} » : mot inconnu",

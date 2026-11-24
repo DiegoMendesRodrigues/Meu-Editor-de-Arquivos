@@ -101,7 +101,7 @@ En los documentos Markdown, de texto (.txt) y LaTeX, las palabras que no están 
 - Coloque el cursor en la palabra y pulse **Ctrl+.** (o haga clic derecho y elija **{{spell.suggestions}}**) para ver las sugerencias. Elija una para reemplazar la palabra.
 - **{{spell.addToDictionary}}** hace que la palabra se acepte a partir de entonces, en cualquier idioma.
 - **{{menu.tools}} → {{menu.tools.spellCheck}}** (o **F7**) activa y desactiva la revisión.
-- El corrector usa el idioma de la interfaz. Para revisar en otro idioma, elija en **{{menu.tools}}** una de las opciones **{{spell.source}}: Deutsch**, **{{spell.source}}: English**…: hay diccionarios de alemán, español, francés, inglés, portugués de Brasil y portugués de Portugal. **{{menu.tools.spellAuto}}** vuelve a seguir la interfaz.
+- El corrector usa el idioma de la interfaz. Para revisar en otro idioma, elija en **{{menu.tools}} → {{menu.tools.spellSubmenu}}** una de las opciones **{{spell.source}}: Deutsch**, **{{spell.source}}: English**…: hay diccionarios de alemán, español, francés, inglés, portugués de Brasil y portugués de Portugal. **{{menu.tools.spellAuto}}** vuelve a seguir la interfaz.
 
 Los diccionarios vienen con la aplicación: el corrector funciona sin internet.
 
