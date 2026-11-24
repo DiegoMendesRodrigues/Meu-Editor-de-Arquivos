@@ -279,3 +279,24 @@ describe('espaço usado na nuvem', () => {
     expect((await ctx.call('GET', '/v1/me/storage', { token })).body.storageBytes).toBe(3)
   })
 })
+
+describe('espaço usado na nuvem com falha no banco', () => {
+  it('a gravação continua valendo mesmo se o recálculo falhar', async () => {
+    const store = createMemoryStore()
+    store.refreshStorageBytes = async () => {
+      throw new Error('coluna storage_bytes ausente')
+    }
+    const app = buildApp({ store, mailer: { async sendPasswordReset() {} } })
+    const reg = await app.inject({ method: 'POST', url: '/v1/auth/register', payload: { email: 'ana@exemplo.com', name: 'Ana', password: PASSWORD } })
+    const token = reg.json().token as string
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/v1/files',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { path: 'a.txt', content: 'abc', encoding: 'UTF-8', baseVersion: null, force: false }
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().file.version).toBe(1)
+    expect(res.json().storageBytes).toBeUndefined()
+  })
+})
