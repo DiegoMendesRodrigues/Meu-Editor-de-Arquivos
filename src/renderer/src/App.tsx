@@ -27,6 +27,7 @@ import { useDialogs } from '@/store/dialogs'
 import { applyLocale, useLocale, useT } from '@/i18n'
 import { useAccount } from '@/store/account'
 import { useLibrary } from '@/store/library'
+import { useApplyTheme } from '@/theme'
 
 /** Atalhos globais da aplicação (os de edição ficam com o próprio Monaco). */
 function useGlobalShortcuts(): void {
@@ -79,6 +80,7 @@ export function App() {
   const fullScreen = useView((s) => s.fullScreen)
   const dialog = useDialogs((s) => s.open)
   useGlobalShortcuts()
+  useApplyTheme()
 
   // A janela também pode sair da tela inteira por fora do app; o estado acompanha.
   useEffect(() => window.api.onFullScreenChanged((on) => useView.getState().setFullScreen(on)), [])
@@ -192,7 +194,7 @@ export function App() {
           onClick={cmd.toggleFullScreen}
           title={t('fullScreen.exit')}
           aria-label={t('fullScreen.exit')}
-          className="absolute right-5 top-2 z-40 rounded border border-border bg-white/80 p-1 text-zinc-600 opacity-40 shadow-sm transition-opacity hover:opacity-100 focus-visible:opacity-100"
+          className="absolute right-5 top-2 z-40 rounded border border-border bg-surface/80 p-1 text-zinc-600 opacity-40 shadow-sm transition-opacity hover:opacity-100 focus-visible:opacity-100"
         >
           <Minimize2 size={16} />
         </button>

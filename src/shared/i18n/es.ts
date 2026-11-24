@@ -111,6 +111,7 @@ export const es: Messages = {
   "menu.view.fontReset": "Tamaño de fuente predeterminado",
   "menu.view.foldAll": "Contraer todo",
   "menu.view.unfoldAll": "Expandir todo",
+  "menu.view.toggleTheme": "Alternar entre el modo claro y oscuro",
   "menu.encoding.utf8": "UTF-8",
   "menu.encoding.utf8bom": "UTF-8 con BOM",
   "menu.encoding.crlf": "Fin de línea de Windows (CRLF)",

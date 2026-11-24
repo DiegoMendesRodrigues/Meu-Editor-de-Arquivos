@@ -189,7 +189,7 @@ export function Sidebar() {
             <button
               type="button"
               onClick={() => void openFolder()}
-              className="flex items-center gap-1.5 rounded border border-border bg-white px-2.5 py-1 hover:bg-zinc-100"
+              className="flex items-center gap-1.5 rounded border border-border bg-surface px-2.5 py-1 hover:bg-zinc-100"
             >
               <FolderPlus size={14} /> {t('sidebar.openFolder')}
             </button>

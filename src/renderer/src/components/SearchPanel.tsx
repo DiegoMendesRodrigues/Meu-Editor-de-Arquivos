@@ -21,7 +21,7 @@ function Toggle({ icon: Icon, label, on, onClick }: { icon: typeof Search; label
   )
 }
 
-const inputClass = 'min-w-0 rounded border border-border bg-white px-2 py-1 text-xs outline-none focus:border-accent'
+const inputClass = 'min-w-0 rounded border border-border bg-surface px-2 py-1 text-xs outline-none focus:border-accent'
 
 /** Texto do trecho com a ocorrência destacada. */
 function Preview({ text, start, length }: { text: string; start: number; length: number }) {

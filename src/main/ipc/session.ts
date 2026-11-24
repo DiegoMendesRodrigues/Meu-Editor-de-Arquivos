@@ -41,7 +41,8 @@ export const sessionSchema = z.object({
     insertSpaces: z.boolean().optional(),
     fontSize: z.number().int().min(8).max(40).optional(),
     tabSize: z.number().int().min(1).max(16).optional(),
-    locale: z.enum(LOCALES.map((l) => l.code) as [Locale, ...Locale[]]).optional()
+    locale: z.enum(LOCALES.map((l) => l.code) as [Locale, ...Locale[]]).optional(),
+    theme: z.enum(['light', 'dark']).optional()
   }),
   spelling: z
     .object({

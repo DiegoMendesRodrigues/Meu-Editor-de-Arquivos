@@ -262,6 +262,8 @@ export async function hashSelection(algorithm: HashAlgorithm): Promise<void> {
   }
 }
 
+export { toggleTheme } from '@/theme'
+
 export const zoomIn = (): void => useView.getState().zoomFont(1)
 export const zoomOut = (): void => useView.getState().zoomFont(-1)
 export const zoomReset = (): void => useView.getState().resetFont()

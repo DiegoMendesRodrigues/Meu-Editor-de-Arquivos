@@ -101,7 +101,7 @@ function NewMenu() {
           <DropdownMenu.Content
             align="start"
             sideOffset={2}
-            className="z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-48 overflow-y-auto rounded-md border border-border bg-white py-1 shadow-lg"
+            className="z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-48 overflow-y-auto rounded-md border border-border bg-surface py-1 shadow-lg"
           >
             {NEW_TYPES.map(item)}
             <DropdownMenu.Separator className="my-1 h-px bg-border" />
@@ -114,7 +114,7 @@ function NewMenu() {
                 <DropdownMenu.Portal>
                   <DropdownMenu.SubContent
                     sideOffset={2}
-                    className="z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-48 overflow-y-auto rounded-md border border-border bg-white py-1 shadow-lg"
+                    className="z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-48 overflow-y-auto rounded-md border border-border bg-surface py-1 shadow-lg"
                   >
                     {group.types.map(item)}
                   </DropdownMenu.SubContent>
@@ -147,7 +147,7 @@ function HeadingMenu({ disabled }: { disabled: boolean }) {
           align="start"
           sideOffset={2}
           onCloseAutoFocus={(e) => e.preventDefault()}
-          className="z-50 min-w-44 rounded-md border border-border bg-white py-1 shadow-lg"
+          className="z-50 min-w-44 rounded-md border border-border bg-surface py-1 shadow-lg"
         >
           {HEADINGS.map((h) => (
             <DropdownMenu.Item
@@ -199,7 +199,7 @@ export function Toolbar() {
   const historyOff = previewing && !isMarkdown
 
   return (
-    <div className="flex h-9 shrink-0 items-center gap-0.5 border-b border-border bg-white px-2">
+    <div className="flex h-9 shrink-0 items-center gap-0.5 border-b border-border bg-surface px-2">
       <NewMenu />
       <ToolButton icon={FolderOpen} label={`${t('toolbar.open')} (Ctrl+O)`} onClick={() => void cmd.openFile()} />
       <ToolButton icon={Save} label={`${t('toolbar.save')} (Ctrl+S)`} onClick={() => void cmd.save()} />

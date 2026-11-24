@@ -9,7 +9,7 @@ export function BottomPanel() {
   const t = useT()
   const toggle = useView((s) => s.toggle)
   return (
-    <div className="flex h-full flex-col bg-white">
+    <div className="flex h-full flex-col bg-surface">
       <div className="flex h-8 shrink-0 items-center gap-4 border-b border-border bg-chrome px-3 text-xs font-semibold uppercase tracking-wide text-zinc-600">
         <span className="border-b-2 border-accent py-1.5">{t('bottom.search')}</span>
         <span className="py-1.5 text-zinc-400">{t('bottom.console')}</span>

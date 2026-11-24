@@ -70,8 +70,11 @@ Editing commands are in **{{menu.edit}}** and display options are in **{{menu.vi
 - **Font size:** Ctrl++ makes it larger, Ctrl+- makes it smaller and Ctrl+0 restores the default.
 - **Indentation:** in **{{menu.edit}}**, choose between spaces and tabs and the size (2, 4 or 8 columns).
 - **{{menu.view.fullScreen}}** (F11, in **{{menu.view}}**): shows only the document, filling the whole screen. Press F11 again, or click the button in the top right corner, to leave.
+- **{{menu.view.toggleTheme}}** (in **{{menu.view}}**): switches between light and dark mode. Until you choose, the app follows the operating system theme; your choice is remembered for next time.
 
 Your display preferences are remembered for next time. The editor's own texts, such as the find box (Ctrl+F) and the command palette (F1), appear in English.
+
+![The app in dark mode](img/s22-dark-mode.png)
 
 ### Case, whitespace and line endings
 

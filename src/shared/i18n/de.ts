@@ -111,6 +111,7 @@ export const de: Messages = {
   "menu.view.fontReset": "Standardschriftgröße",
   "menu.view.foldAll": "Alles einklappen",
   "menu.view.unfoldAll": "Alles ausklappen",
+  "menu.view.toggleTheme": "Zwischen hellem und dunklem Modus wechseln",
   "menu.encoding.utf8": "UTF-8",
   "menu.encoding.utf8bom": "UTF-8 mit BOM",
   "menu.encoding.crlf": "Windows-Zeilenenden (CRLF)",

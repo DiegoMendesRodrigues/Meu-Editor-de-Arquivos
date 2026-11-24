@@ -48,6 +48,16 @@ monaco.editor.defineTheme('meu-claro', {
     'editorInfo.foreground': '#d32f2f'
   }
 })
+// Tema escuro do app: o "vs-dark" com os mesmos ajustes do claro.
+monaco.editor.defineTheme('meu-escuro', {
+  base: 'vs-dark',
+  inherit: true,
+  rules: [],
+  colors: {
+    'editorWhitespace.foreground': '#6b7280',
+    'editorInfo.foreground': '#f14c4c'
+  }
+})
 loader.config({ monaco })
 
 export { monaco }

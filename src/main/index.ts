@@ -4,7 +4,7 @@ import { app, BrowserWindow, Menu, session, shell } from 'electron'
 import log from 'electron-log/main'
 import { windowIcon } from './icon'
 import { registerFileHandlers } from './ipc/files'
-import { guardWindowClose, registerAppHandlers, reportFullScreen } from './ipc/app'
+import { guardWindowClose, registerAppHandlers, reportFullScreen, windowBackground } from './ipc/app'
 import { registerFolderHandlers } from './ipc/folders'
 import { registerSearchHandlers } from './ipc/search'
 import { loadRecent, registerRecentHandlers } from './ipc/recent'
@@ -44,7 +44,7 @@ function createWindow(): void {
     minHeight: 500,
     show: false,
     title: 'Meu Editor de Arquivos',
-    backgroundColor: '#ffffff',
+    backgroundColor: windowBackground(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,

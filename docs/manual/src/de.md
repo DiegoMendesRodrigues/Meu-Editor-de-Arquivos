@@ -70,8 +70,11 @@ Die Bearbeitungsbefehle finden Sie unter **{{menu.edit}}**, die Anzeigeoptionen 
 - **Schriftgröße:** Ctrl++ vergrößert, Ctrl+- verkleinert und Ctrl+0 stellt die Standardgröße wieder her.
 - **Einrückung:** Wählen Sie unter **{{menu.edit}}** zwischen Leerzeichen und Tabulator sowie die Größe (2, 4 oder 8 Spalten).
 - **{{menu.view.fullScreen}}** (F11, unter **{{menu.view}}**): zeigt nur das Dokument, bildschirmfüllend. Drücken Sie erneut F11 oder klicken Sie auf die Schaltfläche oben rechts, um den Modus zu verlassen.
+- **{{menu.view.toggleTheme}}** (unter **{{menu.view}}**): wechselt zwischen hellem und dunklem Modus. Solange Sie nichts wählen, folgt die Anwendung dem Design des Betriebssystems; Ihre Wahl wird für das nächste Mal gespeichert.
 
 Ihre Anzeigeeinstellungen werden für das nächste Mal gespeichert. Die eigenen Texte des Editors, etwa das Suchfeld (Ctrl+F) und die Befehlspalette (F1), erscheinen auf Englisch.
+
+![Die Anwendung im dunklen Modus](img/s22-dark-mode.png)
 
 ### Buchstaben, Leerzeichen und Zeilenenden
 

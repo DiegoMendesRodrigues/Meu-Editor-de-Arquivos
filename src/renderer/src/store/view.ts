@@ -1,5 +1,6 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { create } from 'zustand'
+import type { Theme } from '@shared/ipc'
 
 /** Preferências de exibição e de edição (guardadas na sessão). */
 export interface ViewValues {
@@ -11,6 +12,8 @@ export interface ViewValues {
   insertSpaces: boolean
   fontSize: number
   tabSize: number
+  /** Tema escolhido pelo usuário; null = segue o sistema operacional. */
+  theme: Theme | null
 }
 
 export type ViewKey = {
@@ -27,6 +30,7 @@ interface ViewState extends ViewValues {
   zoomFont(delta: number): void
   resetFont(): void
   setTabSize(size: number): void
+  setTheme(theme: Theme | null): void
 }
 
 export const DEFAULT_FONT_SIZE = 14
@@ -40,11 +44,13 @@ export const useView = create<ViewState>((set) => ({
   insertSpaces: true,
   fontSize: DEFAULT_FONT_SIZE,
   tabSize: 4,
+  theme: null,
   fullScreen: false,
   setFullScreen: (on) => set({ fullScreen: on }),
   toggle: (key) => set((s) => ({ [key]: !s[key] })),
   setAll: (values) => set(values),
   zoomFont: (delta) => set((s) => ({ fontSize: clamp(s.fontSize + delta, 8, 40) })),
   resetFont: () => set({ fontSize: DEFAULT_FONT_SIZE }),
-  setTabSize: (size) => set({ tabSize: clamp(size, 1, 16) })
+  setTabSize: (size) => set({ tabSize: clamp(size, 1, 16) }),
+  setTheme: (theme) => set({ theme })
 }))

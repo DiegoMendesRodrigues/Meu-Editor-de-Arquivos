@@ -60,7 +60,7 @@ Current version: **1.1.0**.
 - Six interface languages: German, Spanish, French, English, Brazilian Portuguese and European Portuguese
 - Built-in user manual in each language, with screenshots of the application
 - Resizable, hideable sidebar and bottom panel
-- Light theme
+- Light and dark modes (follows the system until the user chooses)
 
 **Account and sync (optional)**
 - Sign-up, profile and password change

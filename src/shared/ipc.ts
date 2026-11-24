@@ -58,12 +58,16 @@ export const IpcChannels = {
   setFullScreen: 'app:set-full-screen',
   fullScreenChanged: 'app:full-screen-changed',
   hashText: 'tools:hash-text',
-  copyText: 'tools:copy-text'
+  copyText: 'tools:copy-text',
+  setTheme: 'app:set-theme'
 } as const
 
 /** Algoritmos de resumo (hash) do menu Ferramentas. */
 export const HASH_ALGORITHMS = ['MD5', 'SHA-1', 'SHA-256', 'SHA-512'] as const
 export type HashAlgorithm = (typeof HASH_ALGORITHMS)[number]
+
+/** Tema da interface. */
+export type Theme = 'light' | 'dark'
 
 /** Limite de texto não salvo guardado na sessão (acima disso o app volta a perguntar ao fechar). */
 export const SESSION_MAX_UNSAVED_CHARS = 100 * 1024 * 1024
@@ -183,6 +187,8 @@ export interface SessionData {
     tabSize?: number
     /** Idioma escolhido pelo usuário; ausente = idioma do sistema. */
     locale?: Locale
+    /** Tema escolhido pelo usuário; ausente = o do sistema operacional. */
+    theme?: Theme
   }
   /** Corretor ortográfico: ligado, idioma (ausente = o da interface) e dicionário do usuário. */
   spelling?: {
@@ -336,6 +342,11 @@ export interface EditorApi {
   checkUpdate(): Promise<UpdateInfo>
 
   getAppInfo(): Promise<AppInfo>
+  /**
+   * Tema da janela e dos diálogos nativos: 'system' segue o sistema operacional. Com um tema
+   * fixo, o prefers-color-scheme do Renderer também passa a ser esse.
+   */
+  setTheme(theme: Theme | 'system'): Promise<void>
   /** Coloca a janela em tela inteira (ou a tira). */
   setFullScreen(on: boolean): Promise<void>
   /** O Main avisa quando a janela entra ou sai da tela inteira. */

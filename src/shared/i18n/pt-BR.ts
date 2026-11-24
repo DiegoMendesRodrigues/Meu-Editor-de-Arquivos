@@ -110,6 +110,7 @@ export const ptBR = {
   "menu.view.fontReset": "Tamanho padrão da fonte",
   "menu.view.foldAll": "Recolher tudo",
   "menu.view.unfoldAll": "Expandir tudo",
+  "menu.view.toggleTheme": "Alterar entre o modo claro e escuro",
   "menu.encoding.utf8": "UTF-8",
   "menu.encoding.utf8bom": "UTF-8 com BOM",
   "menu.encoding.crlf": "Quebra de linha Windows (CRLF)",

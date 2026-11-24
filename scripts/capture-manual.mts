@@ -198,7 +198,7 @@ async function stubMessageBox(app: ElectronApplication): Promise<void> {
 }
 
 async function launch(locale: Locale, userData: string): Promise<{ app: ElectronApplication; page: Page }> {
-  const app = await electron.launch({ args: [resolve('out/main/index.js'), `--user-data-dir=${userData}`, `--lang=${DEMOS[locale].system}`] })
+  const app = await electron.launch({ args: [resolve('out/main/index.js'), `--user-data-dir=${userData}`, `--lang=${DEMOS[locale].system}`], colorScheme: 'light' }) // telas no tema claro, qualquer que seja o do sistema
   const page = await app.firstWindow()
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(1120, 720))
   await page.waitForSelector('[role=tab]')
@@ -375,6 +375,15 @@ async function captureLocale(locale: Locale): Promise<void> {
     await page.getByRole('dialog').locator('textarea').first().fill('Meu Editor de Arquivos')
     await sleep(300)
     await shotDialog(page, img('s21-hash'))
+
+    // --- Modo escuro: a janela inteira, e depois volta ao claro
+    await page.locator('nav button').nth(MENU.view).click()
+    await page.getByRole('menuitem', { name: t('menu.view.toggleTheme') }).click()
+    await sleep(500)
+    await shot(page, img('s22-dark-mode'))
+    await page.locator('nav button').nth(MENU.view).click()
+    await page.getByRole('menuitem', { name: t('menu.view.toggleTheme') }).click()
+    await sleep(300)
 
     // --- Atalhos e Sobre
     await page.locator('nav button').nth(MENU.help).click()

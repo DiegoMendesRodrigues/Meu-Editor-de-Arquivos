@@ -33,7 +33,8 @@ export const test = base.extend<Fixtures>({
   app: async ({ workspace: _workspace }, use) => {
     const userData = mkdtempSync(join(tmpdir(), 'editor-e2e-data-'))
     const app = await electron.launch({
-      args: [resolve('out/main/index.js'), `--user-data-dir=${userData}`, '--lang=pt-BR']
+      args: [resolve('out/main/index.js'), `--user-data-dir=${userData}`, '--lang=pt-BR'],
+      colorScheme: 'light' // o app segue o tema do sistema; os testes partem sempre do claro
     })
     await use(app)
     // Se o teste deixou texto não salvo, o app pergunta ao fechar: responde "Não salvar".

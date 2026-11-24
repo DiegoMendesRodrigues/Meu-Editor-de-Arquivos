@@ -1,6 +1,6 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { createHash } from 'node:crypto'
-import { BrowserWindow, clipboard, shell } from 'electron'
+import { BrowserWindow, clipboard, nativeTheme, shell } from 'electron'
 import { HASH_ALGORITHMS, IpcChannels, type AppInfo, type UpdateInfo } from '@shared/ipc'
 import { z } from 'zod'
 import { LOCALES, type Locale } from '@shared/i18n'
@@ -23,6 +23,9 @@ export function guardWindowClose(win: BrowserWindow): void {
     win.webContents.send(IpcChannels.beforeClose)
   })
 }
+
+/** Cor de fundo da janela (vista antes de a página desenhar), conforme o tema em uso. */
+export const windowBackground = (): string => (nativeTheme.shouldUseDarkColors ? '#1e1e1e' : '#ffffff')
 
 /** Avisa o Renderer quando a janela entra ou sai da tela inteira (F11, menu ou sistema). */
 export function reportFullScreen(win: BrowserWindow): void {
@@ -67,6 +70,12 @@ export function registerAppHandlers(): void {
     version: __APP_VERSION__,
     platform: process.platform
   }))
+
+  // Tema: barra de título, diálogos nativos e o prefers-color-scheme da página acompanham.
+  handle(IpcChannels.setTheme, (e, raw: unknown) => {
+    nativeTheme.themeSource = z.enum(['light', 'dark', 'system']).parse(raw)
+    BrowserWindow.fromWebContents(e.sender)?.setBackgroundColor(windowBackground())
+  })
 
   handle(IpcChannels.setFullScreen, (e, raw: unknown) => {
     BrowserWindow.fromWebContents(e.sender)?.setFullScreen(z.boolean().parse(raw))

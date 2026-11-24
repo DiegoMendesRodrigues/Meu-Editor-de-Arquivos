@@ -111,6 +111,7 @@ export const ptPT: Messages = {
   "menu.view.fontReset": "Tamanho predefinido do tipo de letra",
   "menu.view.foldAll": "Recolher tudo",
   "menu.view.unfoldAll": "Expandir tudo",
+  "menu.view.toggleTheme": "Alternar entre o modo claro e escuro",
   "menu.encoding.utf8": "UTF-8",
   "menu.encoding.utf8bom": "UTF-8 com BOM",
   "menu.encoding.crlf": "Quebra de linha Windows (CRLF)",

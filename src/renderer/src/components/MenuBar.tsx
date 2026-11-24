@@ -27,7 +27,7 @@ interface SubMenu {
 }
 type Entry = Item | SubMenu | 'separator'
 
-const contentClass = 'z-50 max-h-[75vh] min-w-60 overflow-y-auto rounded-md border border-border bg-white py-1 text-[13px] shadow-lg'
+const contentClass = 'z-50 max-h-[75vh] min-w-60 overflow-y-auto rounded-md border border-border bg-surface py-1 text-[13px] shadow-lg'
 const itemClass =
   'flex cursor-default items-center gap-2 px-3 py-1.5 outline-none data-[disabled]:text-zinc-400 data-[highlighted]:bg-accent data-[highlighted]:text-white'
 
@@ -185,7 +185,9 @@ export function MenuBar() {
         { label: t('menu.view.fontReset'), shortcut: 'Ctrl+0', action: cmd.zoomReset },
         'separator',
         { label: t('menu.view.foldAll'), action: cmd.foldAll },
-        { label: t('menu.view.unfoldAll'), action: cmd.unfoldAll }
+        { label: t('menu.view.unfoldAll'), action: cmd.unfoldAll },
+        'separator',
+        { label: t('menu.view.toggleTheme'), action: cmd.toggleTheme }
       ]
     },
     {

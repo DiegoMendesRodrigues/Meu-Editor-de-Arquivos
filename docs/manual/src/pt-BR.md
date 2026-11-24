@@ -70,8 +70,11 @@ Os comandos de edição ficam em **{{menu.edit}}**, e os de exibição em **{{me
 - **Tamanho da letra:** Ctrl++ aumenta, Ctrl+- diminui e Ctrl+0 volta ao tamanho padrão.
 - **Indentação:** em **{{menu.edit}}**, escolha entre espaços ou tabulação e o tamanho (2, 4 ou 8 colunas).
 - **{{menu.view.fullScreen}}** (F11, em **{{menu.view}}**): mostra só o documento, ocupando a tela toda. Pressione F11 de novo, ou clique no botão do canto superior direito, para sair.
+- **{{menu.view.toggleTheme}}** (em **{{menu.view}}**): alterna entre o modo claro e o escuro. Enquanto você não escolhe, o aplicativo segue o tema do sistema operacional; a escolha fica guardada para as próximas vezes.
 
 As suas preferências de exibição ficam guardadas para a próxima vez. Os textos internos do editor, como a caixa de busca (Ctrl+F) e a paleta de comandos (F1), aparecem em inglês.
+
+![O aplicativo no modo escuro](img/s22-dark-mode.png)
 
 ### Letras, espaços e quebras de linha
 

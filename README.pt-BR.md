@@ -60,7 +60,7 @@ Versão atual: **1.1.0**.
 - Seis idiomas: alemão, espanhol, francês, inglês, português do Brasil e português de Portugal
 - Manual do usuário em cada idioma, com telas do próprio aplicativo
 - Barra lateral e painel inferior redimensionáveis e ocultáveis
-- Tema claro
+- Modos claro e escuro (segue o sistema até o usuário escolher)
 
 **Conta e sincronização (opcional)**
 - Cadastro, perfil e troca de senha

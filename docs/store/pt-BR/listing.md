@@ -22,7 +22,7 @@ Ao fechar o aplicativo, nada se perde: os documentos voltam como estavam na pró
 
 ## Novidades desta versão
 
-Versão 1.1.0: conversão de final de linha (Windows, Unix e Mac), conversão para maiúsculas, minúsculas e modo Título, limpeza de espaços, tela inteira (F11) e geração de MD5, SHA-1, SHA-256 e SHA-512.
+Versão 1.1.0: conversão de final de linha (Windows, Unix e Mac), conversão para maiúsculas, minúsculas e modo Título, limpeza de espaços, tela inteira (F11), modo escuro e geração de MD5, SHA-1, SHA-256 e SHA-512.
 
 ## Recursos do produto
 

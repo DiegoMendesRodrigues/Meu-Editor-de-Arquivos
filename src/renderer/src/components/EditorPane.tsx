@@ -15,6 +15,7 @@ import { newFile, openFile } from '@/commands'
 import { useLocale, useT } from '@/i18n'
 import { monacoSpeaks } from '@/editor/monacoNls'
 import { attachSpellcheck, registerSpellcheck } from '@/spell/spellcheck'
+import { useTheme } from '@/theme'
 
 registerSpellcheck()
 
@@ -26,6 +27,7 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
     useShallow((s) => ({ fontSize: s.fontSize, wordWrap: s.wordWrap, showInvisibles: s.showInvisibles, tabSize: s.tabSize, insertSpaces: s.insertSpaces }))
   )
   const locale = useLocale((s) => s.locale)
+  const theme = useTheme()
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const spellRef = useRef<IDisposable | null>(null)
 
@@ -114,7 +116,7 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
       path={modelPath(doc)}
       defaultValue={doc.content}
       language={doc.language}
-      theme="meu-claro"
+      theme={theme === 'dark' ? 'meu-escuro' : 'meu-claro'}
       // Mantém o modelo (e o histórico de desfazer) ao alternar para a visualização.
       keepCurrentModel
       onMount={handleMount}
@@ -162,7 +164,7 @@ export function EditorPane() {
 
   if (!doc) {
     return (
-      <div className="grid h-full place-items-center bg-white text-zinc-500">
+      <div className="grid h-full place-items-center bg-surface text-zinc-500">
         <div className="text-center">
           <p className="mb-3 text-base">{t('editor.noDocument')}</p>
           <div className="flex justify-center gap-2">

@@ -157,7 +157,7 @@ export function NewCloudFolder({ onDone }: { onDone: () => void }) {
         }}
         placeholder={parent ? t('cloud.newFolderIn', { path: parent }) : t('cloud.newFolderName')}
         aria-label={t('cloud.newFolderName')}
-        className={`w-full rounded border bg-white px-1.5 py-0.5 ${error ? 'border-red-500' : 'border-border'}`}
+        className={`w-full rounded border bg-surface px-1.5 py-0.5 ${error ? 'border-red-500' : 'border-border'}`}
       />
       {error && <p className="text-[11px] text-red-700">{t('cloud.invalidName')}</p>}
     </form>

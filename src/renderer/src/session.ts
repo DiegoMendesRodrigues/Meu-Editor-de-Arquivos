@@ -53,7 +53,8 @@ export function snapshot(includeUnsaved: boolean): SessionData {
       insertSpaces: view.insertSpaces,
       fontSize: view.fontSize,
       tabSize: view.tabSize,
-      locale: useLocale.getState().locale
+      locale: useLocale.getState().locale,
+      ...(view.theme ? { theme: view.theme } : {})
     },
     spelling: (() => {
       const s = useSpelling.getState()

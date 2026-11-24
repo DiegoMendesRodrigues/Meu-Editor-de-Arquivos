@@ -70,8 +70,11 @@ Les commandes de modification se trouvent dans **{{menu.edit}}** et les options 
 - **Taille de la police :** Ctrl++ l'agrandit, Ctrl+- la réduit et Ctrl+0 rétablit la taille par défaut.
 - **Indentation :** dans **{{menu.edit}}**, choisissez entre espaces et tabulation, ainsi que la taille (2, 4 ou 8 colonnes).
 - **{{menu.view.fullScreen}}** (F11, dans **{{menu.view}}**) : affiche uniquement le document, sur tout l’écran. Appuyez de nouveau sur F11, ou cliquez sur le bouton en haut à droite, pour en sortir.
+- **{{menu.view.toggleTheme}}** (dans **{{menu.view}}**) : passe du mode clair au mode sombre et inversement. Tant que vous n’avez pas choisi, l’application suit le thème du système d’exploitation ; votre choix est conservé pour la prochaine fois.
 
 Vos préférences d'affichage sont conservées pour la prochaine fois. Les textes propres à l'éditeur, comme la zone de recherche (Ctrl+F) et la palette de commandes (F1), apparaissent en anglais.
+
+![L’application en mode sombre](img/s22-dark-mode.png)
 
 ### Lettres, espaces et fins de ligne
 

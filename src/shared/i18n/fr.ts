@@ -111,6 +111,7 @@ export const fr: Messages = {
   "menu.view.fontReset": "Taille de police par défaut",
   "menu.view.foldAll": "Tout replier",
   "menu.view.unfoldAll": "Tout déplier",
+  "menu.view.toggleTheme": "Basculer entre le mode clair et sombre",
   "menu.encoding.utf8": "UTF-8",
   "menu.encoding.utf8bom": "UTF-8 avec BOM",
   "menu.encoding.crlf": "Fins de ligne Windows (CRLF)",

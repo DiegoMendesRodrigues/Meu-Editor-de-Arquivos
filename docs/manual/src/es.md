@@ -70,8 +70,11 @@ Los comandos de edición están en **{{menu.edit}}** y las opciones de visualiza
 - **Tamaño de la letra:** Ctrl++ la agranda, Ctrl+- la reduce y Ctrl+0 vuelve al tamaño predeterminado.
 - **Sangría:** en **{{menu.edit}}**, elige entre espacios o tabulación y el tamaño (2, 4 u 8 columnas).
 - **{{menu.view.fullScreen}}** (F11, en **{{menu.view}}**): muestra solo el documento, ocupando toda la pantalla. Pulsa F11 de nuevo, o haz clic en el botón de la esquina superior derecha, para salir.
+- **{{menu.view.toggleTheme}}** (en **{{menu.view}}**): cambia entre el modo claro y el oscuro. Mientras no elija, la aplicación sigue el tema del sistema operativo; la elección se guarda para la próxima vez.
 
 Tus preferencias de visualización se guardan para la próxima vez. Los textos propios del editor, como el cuadro de búsqueda (Ctrl+F) y la paleta de comandos (F1), aparecen en inglés.
+
+![La aplicación en modo oscuro](img/s22-dark-mode.png)
 
 ### Letras, espacios y finales de línea
 

@@ -111,6 +111,7 @@ export const en: Messages = {
   "menu.view.fontReset": "Reset Font Size",
   "menu.view.foldAll": "Fold All",
   "menu.view.unfoldAll": "Unfold All",
+  "menu.view.toggleTheme": "Toggle Light and Dark Mode",
   "menu.encoding.utf8": "UTF-8",
   "menu.encoding.utf8bom": "UTF-8 with BOM",
   "menu.encoding.crlf": "Windows Line Endings (CRLF)",
