@@ -53,6 +53,8 @@ The folder open in the explorer cannot be renamed or deleted from here.
 
 Each file has an icon for its type: documents (.md, .txt, .tex), logs, programming, scripts, web, data and configuration (the same sections as the **+** button) and a generic icon for the rest.
 
+The sidebar areas ({{sidebar.openDocs}}, {{sidebar.recent}}, the API client areas and the others) have a triangle to the left of the name: click it, or the name, to expand or collapse the area. To change the order, drag the area name up or down (with the keyboard, Alt+↑ and Alt+↓ with the name focused). The order and the collapsed areas are saved on this computer.
+
 ## 4. Saving and temporary documents
 
 - **{{menu.file.save}}** (**Ctrl+S**) writes the document to its file. For a new document, the application asks for a name and a location.

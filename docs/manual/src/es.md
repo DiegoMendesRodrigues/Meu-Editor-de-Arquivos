@@ -53,6 +53,8 @@ La carpeta abierta en el explorador no se puede renombrar ni eliminar desde aqu�
 
 Cada archivo tiene un icono según su tipo: documentos (.md, .txt, .tex), logs, programación, scripts, web, datos y configuración (las mismas secciones del botón **+**) y un icono genérico para los demás.
 
+Las áreas de la barra lateral ({{sidebar.openDocs}}, {{sidebar.recent}}, las del cliente de API y las demás) tienen un triángulo a la izquierda del nombre: haga clic en él, o en el nombre, para abrir o cerrar el área. Para cambiar el orden, arrastre el nombre del área hacia arriba o hacia abajo (con el teclado, Alt+↑ y Alt+↓ con el nombre seleccionado). El orden y las áreas cerradas se guardan en este equipo.
+
 ## 4. Guardar y documentos temporales
 
 - **{{menu.file.save}}** (**Ctrl+S**) escribe el documento en su archivo. En un documento nuevo, la aplicación pide el nombre y la ubicación.

@@ -1063,4 +1063,5 @@ export const de: Messages = {
   "apiClient.secretHost.title": "Geheimnisse an {host} senden?",
   "apiClient.secretHost.body": "Diese Anfrage verwendet Geheimnisse aus dem Tresor (Tokens, Passwörter), und der Host {host} wurde dafür noch nicht bestätigt. Bestätigen Sie nur, wenn Sie diesem Ziel vertrauen; die Auswahl wird gespeichert.",
   "apiClient.secretHost.confirm": "Trotzdem senden",
+  "sidebar.sectionHint": "Klicken zum Auf- oder Zuklappen. Ziehen zum Umordnen (oder Alt+↑/↓).",
 }

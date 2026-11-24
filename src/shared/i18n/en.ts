@@ -1063,4 +1063,5 @@ export const en: Messages = {
   "apiClient.secretHost.title": "Send secrets to {host}?",
   "apiClient.secretHost.body": "This request uses secrets from the vault (tokens, passwords) and the host {host} has not been confirmed for them yet. Confirm only if you trust this destination; the choice is remembered.",
   "apiClient.secretHost.confirm": "Send anyway",
+  "sidebar.sectionHint": "Click to expand or collapse. Drag to reorder (or Alt+↑/↓).",
 }

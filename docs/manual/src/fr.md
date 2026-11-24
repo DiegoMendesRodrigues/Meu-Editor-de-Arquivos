@@ -53,6 +53,8 @@ Le dossier ouvert dans l'explorateur ne peut être ni renommé ni supprimé d'ic
 
 Chaque fichier a une icône selon son type : documents (.md, .txt, .tex), journaux, programmation, scripts, web, données et configuration (les mêmes sections que le bouton **+**) et une icône générique pour les autres.
 
+Les zones de la barre latérale ({{sidebar.openDocs}}, {{sidebar.recent}}, celles du client d'API et les autres) ont un triangle à gauche du nom : cliquez dessus, ou sur le nom, pour ouvrir ou fermer la zone. Pour changer l'ordre, faites glisser le nom de la zone vers le haut ou vers le bas (au clavier, Alt+↑ et Alt+↓ avec le nom sélectionné). L'ordre et les zones fermées sont enregistrés sur cet ordinateur.
+
 ## 4. Enregistrer et documents temporaires
 
 - **{{menu.file.save}}** (**Ctrl+S**) écrit le document dans son fichier. Pour un nouveau document, l'application demande le nom et l'emplacement.

@@ -53,6 +53,8 @@ Der im Explorer geöffnete Ordner kann hier weder umbenannt noch gelöscht werde
 
 Jede Datei hat ein Symbol nach ihrem Typ: Dokumente (.md, .txt, .tex), Logs, Programmierung, Skripte, Web, Daten und Konfiguration (dieselben Bereiche wie die Schaltfläche **+**) und ein allgemeines Symbol für alle anderen.
 
+Die Bereiche der Seitenleiste ({{sidebar.openDocs}}, {{sidebar.recent}}, die des API-Clients und die übrigen) haben links vom Namen ein Dreieck: Klicken Sie darauf oder auf den Namen, um den Bereich auf- oder zuzuklappen. Um die Reihenfolge zu ändern, ziehen Sie den Namen des Bereichs nach oben oder unten (per Tastatur Alt+↑ und Alt+↓ bei ausgewähltem Namen). Die Reihenfolge und die zugeklappten Bereiche werden auf diesem Computer gespeichert.
+
 ## 4. Speichern und temporäre Dokumente
 
 - **{{menu.file.save}}** (**Ctrl+S**) schreibt das Dokument in seine Datei. Bei einem neuen Dokument fragt die Anwendung nach Name und Speicherort.

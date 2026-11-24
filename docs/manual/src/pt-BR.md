@@ -53,6 +53,8 @@ A pasta aberta no explorador não pode ser renomeada nem excluída por aqui.
 
 Cada arquivo tem um ícone conforme o tipo: documentos (.md, .txt, .tex), logs, programação, scripts, web, dados e configuração (as mesmas seções do botão **+**) e um ícone genérico para os demais.
 
+As áreas da barra lateral ({{sidebar.openDocs}}, {{sidebar.recent}}, as do Cliente de API e as outras) têm um triângulo à esquerda do nome: clique nele, ou no nome, para abrir ou fechar a área. Para mudar a ordem, arraste o nome da área para cima ou para baixo (pelo teclado, Alt+↑ e Alt+↓ com o nome selecionado). A ordem e as áreas fechadas ficam guardadas neste computador.
+
 ## 4. Salvar e documentos temporários
 
 - **{{menu.file.save}}** (**Ctrl+S**) grava o documento no arquivo. Em um documento novo, o aplicativo pede o nome e o local.

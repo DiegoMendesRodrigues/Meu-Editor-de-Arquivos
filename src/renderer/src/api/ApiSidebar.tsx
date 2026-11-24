@@ -213,69 +213,89 @@ function CollectionsList() {
   )
 }
 
-/** Ambiente ativo, coleções e histórico. Aparecem depois de Ferramentas → Cliente de API ou com uma aba de API ativa. */
-export function ApiSidebarSections() {
-  const t = useT()
+/**
+ * As áreas do Cliente de API aparecem depois de Ferramentas → Cliente de API ou com uma aba de API ativa.
+ * Abrir um arquivo de API (de qualquer jeito) liga as áreas.
+ */
+export function useApiSidebarVisible(): boolean {
   const sidebarOn = useApiStore((s) => s.sidebarOn)
-  const setSidebarOn = useApiStore((s) => s.setSidebarOn)
-  const bumpCollections = useApiStore((s) => s.bumpCollections)
-  const bumpHistory = useApiStore((s) => s.bumpHistory)
-  const openDialog = useApiStore((s) => s.openDialog)
-  const doc = useActiveDocument()
-  const apiActive = isApiDocument(doc)
-  // Abrir um arquivo de API (de qualquer jeito) mostra as seções.
+  const apiActive = isApiDocument(useActiveDocument())
   useEffect(() => {
     if (apiActive && !useApiStore.getState().sidebarOn) useApiStore.getState().setSidebarOn(true)
   }, [apiActive])
-  if (!sidebarOn) return null
+  return sidebarOn
+}
 
+/** Ambiente ativo. */
+export function ApiEnvironmentSection() {
+  const t = useT()
+  const setSidebarOn = useApiStore((s) => s.setSidebarOn)
+  const doc = useActiveDocument()
   return (
-    <>
-      <Section
-        title={t('apiClient.env.section')}
-        alwaysShowActions
-        actions={
-          <>
-            <IconButton icon={Plus} label={t('apiClient.env.new')} onClick={newEnvironmentDocument} />
-            <IconButton icon={X} label={t('apiClient.sidebar.hide')} onClick={() => setSidebarOn(false)} />
-          </>
-        }
-      >
-        <div className="flex items-center gap-1.5 px-3">
-          <Layers size={14} className="shrink-0 text-zinc-500" aria-hidden />
-          <EnvironmentSelect doc={doc} />
-        </div>
-      </Section>
-      <Section
-        title={t('apiClient.col.section')}
-        alwaysShowActions
-        actions={
-          <>
-            <IconButton icon={Plus} label={t('apiClient.col.new')} onClick={() => void newCollectionFlow()} />
-            <IconButton icon={RefreshCw} label={t('sidebar.refresh')} onClick={bumpCollections} />
-          </>
-        }
-      >
-        <CollectionsList />
-      </Section>
-      <Section
-        title={t('apiClient.history.section')}
-        alwaysShowActions
-        actions={
-          <>
-            <IconButton icon={Cookie} label={t('apiClient.cookies.title')} onClick={() => openDialog({ kind: 'cookies' })} />
-            <IconButton
-              icon={Trash2}
-              label={t('apiClient.history.clear')}
-              onClick={() => {
-                if (window.confirm(t('apiClient.history.confirmClear'))) void window.api.apiHistoryClear().then(bumpHistory, () => undefined)
-              }}
-            />
-          </>
-        }
-      >
-        <HistoryList />
-      </Section>
-    </>
+    <Section
+      id="apiEnv"
+      title={t('apiClient.env.section')}
+      alwaysShowActions
+      actions={
+        <>
+          <IconButton icon={Plus} label={t('apiClient.env.new')} onClick={newEnvironmentDocument} />
+          <IconButton icon={X} label={t('apiClient.sidebar.hide')} onClick={() => setSidebarOn(false)} />
+        </>
+      }
+    >
+      <div className="flex items-center gap-1.5 px-3">
+        <Layers size={14} className="shrink-0 text-zinc-500" aria-hidden />
+        <EnvironmentSelect doc={doc} />
+      </div>
+    </Section>
+  )
+}
+
+/** Coleções (pastas com collection.apicol, no disco ou na nuvem). */
+export function ApiCollectionsSection() {
+  const t = useT()
+  const bumpCollections = useApiStore((s) => s.bumpCollections)
+  return (
+    <Section
+      id="apiCollections"
+      title={t('apiClient.col.section')}
+      alwaysShowActions
+      actions={
+        <>
+          <IconButton icon={Plus} label={t('apiClient.col.new')} onClick={() => void newCollectionFlow()} />
+          <IconButton icon={RefreshCw} label={t('sidebar.refresh')} onClick={bumpCollections} />
+        </>
+      }
+    >
+      <CollectionsList />
+    </Section>
+  )
+}
+
+/** Histórico de envios (e os cookies guardados). */
+export function ApiHistorySection() {
+  const t = useT()
+  const bumpHistory = useApiStore((s) => s.bumpHistory)
+  const openDialog = useApiStore((s) => s.openDialog)
+  return (
+    <Section
+      id="apiHistory"
+      title={t('apiClient.history.section')}
+      alwaysShowActions
+      actions={
+        <>
+          <IconButton icon={Cookie} label={t('apiClient.cookies.title')} onClick={() => openDialog({ kind: 'cookies' })} />
+          <IconButton
+            icon={Trash2}
+            label={t('apiClient.history.clear')}
+            onClick={() => {
+              if (window.confirm(t('apiClient.history.confirmClear'))) void window.api.apiHistoryClear().then(bumpHistory, () => undefined)
+            }}
+          />
+        </>
+      }
+    >
+      <HistoryList />
+    </Section>
   )
 }

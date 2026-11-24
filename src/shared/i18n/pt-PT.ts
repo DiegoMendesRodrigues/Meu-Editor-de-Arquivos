@@ -1063,4 +1063,5 @@ export const ptPT: Messages = {
   "apiClient.secretHost.title": "Enviar segredos para {host}?",
   "apiClient.secretHost.body": "Este pedido usa segredos do cofre (tokens, palavras-passe) e o anfitrião {host} ainda não foi confirmado para eles. Confirme só se confia neste destino; a escolha fica guardada.",
   "apiClient.secretHost.confirm": "Enviar mesmo assim",
+  "sidebar.sectionHint": "Clique para abrir ou fechar. Arraste para mudar a ordem (ou Alt+↑/↓).",
 }

@@ -1062,6 +1062,7 @@ export const ptBR = {
   "apiClient.secretHost.title": "Enviar segredos para {host}?",
   "apiClient.secretHost.body": "Esta requisição usa segredos do cofre (tokens, senhas) e o host {host} ainda não foi confirmado para eles. Confirme só se você confia neste destino; a escolha fica guardada.",
   "apiClient.secretHost.confirm": "Enviar mesmo assim",
+  "sidebar.sectionHint": "Clique para abrir ou fechar. Arraste para mudar a ordem (ou Alt+↑/↓).",
 }
 
 export type Messages = typeof ptBR

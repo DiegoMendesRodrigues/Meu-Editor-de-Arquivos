@@ -1063,4 +1063,5 @@ export const es: Messages = {
   "apiClient.secretHost.title": "¿Enviar secretos a {host}?",
   "apiClient.secretHost.body": "Esta solicitud usa secretos del almacén (tokens, contraseñas) y el host {host} aún no se ha confirmado para ellos. Confirme solo si confía en este destino; la elección se guarda.",
   "apiClient.secretHost.confirm": "Enviar de todos modos",
+  "sidebar.sectionHint": "Haga clic para abrir o cerrar. Arrastre para cambiar el orden (o Alt+↑/↓).",
 }
