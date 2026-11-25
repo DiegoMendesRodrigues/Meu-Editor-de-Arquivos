@@ -75,6 +75,26 @@ export function CloudOpenDialog() {
   )
 }
 
+/** Aviso de limite do plano: a nuvem recusou a gravação (quantidade de arquivos ou armazenamento). */
+export function CloudLimitAlert() {
+  const t = useT()
+  const limit = useCloud((s) => s.limitAlert)
+  if (!limit) return null
+  const close = (): void => useCloud.getState().showLimitAlert(null)
+  return (
+    <Modal title={t('cloud.limit.title')} size="sm" onClose={close}>
+      <div role="alert" className="flex flex-col gap-4 text-sm" data-testid="cloud-limit-alert" data-limit={limit}>
+        <p>{t(limit === 'files' ? 'cloud.limit.files' : 'cloud.limit.storage')}</p>
+        <div className="flex justify-end">
+          <button type="button" className={primaryButtonClass} onClick={close} autoFocus>
+            {t('cloud.limit.ok')}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 export function CloudSaveDialog() {
   const t = useT()
   const closeDialog = useDialogs((s) => s.close)

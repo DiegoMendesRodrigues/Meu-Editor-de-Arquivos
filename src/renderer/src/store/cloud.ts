@@ -4,7 +4,7 @@
  * em uso: com a conta conectada, abrir e salvar usam a nuvem; o ícone do rodapé alterna para o disco.
  */
 import { create } from 'zustand'
-import type { CloudFileMeta, CloudPlan } from '@shared/ipc'
+import type { CloudFileMeta, CloudPlan, CloudPlanLimit } from '@shared/ipc'
 import { errorMessage, useAccount } from './account'
 
 export type StorageMode = 'local' | 'cloud'
@@ -23,6 +23,9 @@ interface CloudState {
   storedFiles: number | null
   /** Plano do usuário (nome e limites); null = desconhecido, sem conta ou servidor anterior. */
   plan: CloudPlan | null
+  /** Aviso de limite do plano aberto (a gravação foi recusada); null = nenhum. */
+  limitAlert: CloudPlanLimit | null
+  showLimitAlert(limit: CloudPlanLimit | null): void
   /** Busca no servidor o uso da nuvem (espaço, arquivos e plano). */
   refreshStorage(): Promise<void>
   /** Pasta sugerida para salvar (a última selecionada na barra lateral). */
@@ -43,6 +46,8 @@ export const useCloud = create<CloudState>((set) => ({
   storageBytes: null,
   storedFiles: null,
   plan: null,
+  limitAlert: null,
+  showLimitAlert: (limitAlert) => set({ limitAlert }),
   refreshStorage: async () => {
     if (!useAccount.getState().status.user) return set({ storageBytes: null, storedFiles: null, plan: null })
     try {

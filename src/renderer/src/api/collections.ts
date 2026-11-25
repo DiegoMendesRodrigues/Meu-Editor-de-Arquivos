@@ -1,6 +1,7 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { parseApiRequest } from '@shared/api/schema'
 import type { CollectionRequestItem, CollectionTree as SharedCollectionTree } from '@shared/api/collectionTypes'
+import { planLimitReached } from '@/cloud'
 import { useCloud, joinPath, parentOf, baseName } from '@/store/cloud'
 import { parseCollection } from './environment'
 
@@ -151,6 +152,8 @@ export async function writeCollectionFiles(dir: string, files: { relativePath: s
   for (const file of files) {
     const path = freeCloudPath(joinPath(dir, file.relativePath))
     const res = await window.api.cloudSave({ path, content: file.content, encoding: 'UTF-8', baseVersion: null, force: false })
+    // Limite do plano: o aviso já apareceu; para aqui e devolve o que foi gravado até agora.
+    if (planLimitReached(res)) break
     if (!res.ok) throw new Error('cloud-conflict')
     useCloud.getState().upsertFile(res.file)
     created.push(res.file.path)

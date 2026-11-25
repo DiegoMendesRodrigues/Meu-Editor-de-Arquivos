@@ -397,7 +397,13 @@ interface CloudSaveRequest {
   force: boolean
 }
 
-export type CloudSaveResult = { ok: true; file: CloudFileMeta } | { ok: false; conflict: true; current: CloudFileMeta }
+/** Limite do plano que impediu a gravação: quantidade de arquivos ou armazenamento. */
+export type CloudPlanLimit = 'files' | 'storage'
+
+export type CloudSaveResult =
+  | { ok: true; file: CloudFileMeta }
+  | { ok: false; conflict: true; current: CloudFileMeta }
+  | { ok: false; limit: CloudPlanLimit }
 
 /** Resposta do site (version.php), já validada. */
 export interface UpdateInfo {

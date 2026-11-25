@@ -1428,4 +1428,10 @@ export const fr: Messages = {
   "storage.sizeLimit": "{used} sur {max} Mo du forfait {plan} (fichiers et textes non enregistrés)",
   "cloud.open.summary": "{n} fichiers stockés, {size} Mo au total, synchronisés avec votre compte.",
   "cloud.open.plan": "Votre forfait : {plan} - Nombre maximal de fichiers : {maxFiles} - Stockage maximal : {maxSizeMb} Mo",
+  "cloud.limit.title": "Avertissement",
+  "cloud.limit.files": "Le nombre maximal de fichiers stockés dans le cloud autorisé par votre forfait a été dépassé. Vous ne pouvez plus stocker de fichiers dans cet environnement.",
+  "cloud.limit.storage": "Le stockage total en Mo de tous les fichiers stockés dans le cloud autorisé par votre forfait a été dépassé. Vous ne pouvez plus stocker d’informations dans cet environnement.",
+  "cloud.limit.ok": "Compris",
+  "api.plan_file_limit": "Le nombre maximal de fichiers de votre forfait a été dépassé.",
+  "api.plan_storage_limit": "Le stockage maximal de votre forfait a été dépassé.",
 }

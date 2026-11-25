@@ -624,6 +624,48 @@ test.describe('janela Abrir da nuvem', () => {
   })
 })
 
+test.describe('limites do plano na nuvem', () => {
+  test('armazenamento cheio: salvar mostra o aviso e não grava; quantidade cheia recusa arquivo novo', async ({ page }) => {
+    const api = await signInToTestApi(page)
+    try {
+      type Save = { cloudSave(r: object): Promise<{ ok: boolean; limit?: string }> }
+      // 5 MB exatos: o plano Gratuito fica cheio (o rodapé fica vermelho).
+      await page.evaluate(async () => {
+        const w = window as unknown as { api: Save }
+        await w.api.cloudSave({ path: 'cheio.txt', content: 'x'.repeat(5 * 1024 * 1024), encoding: 'UTF-8', baseVersion: null, force: false })
+      })
+      await expect(page.getByTestId('cloud-storage')).toHaveAttribute('data-level', 'full')
+
+      await page.locator('.monaco-editor').click()
+      await page.keyboard.type('texto novo')
+      await page.keyboard.press('Control+S')
+      const save = page.getByRole('dialog', { name: pt('cloud.save.title') })
+      await save.getByLabel(pt('cloud.save.name'), { exact: true }).fill('novo.md')
+      await save.getByRole('button', { name: pt('cloud.save.title') }).click()
+      const alert = page.getByRole('dialog', { name: pt('cloud.limit.title') })
+      await expect(alert).toContainText(pt('cloud.limit.storage'))
+      await alert.getByRole('button', { name: pt('cloud.limit.ok') }).click()
+      await expect(alert).toHaveCount(0)
+      const paths = await page.evaluate(async () => {
+        const w = window as unknown as { api: { cloudList(): Promise<{ path: string }[]> } }
+        return (await w.api.cloudList()).map((f) => f.path)
+      })
+      expect(paths).toEqual(['cheio.txt'])
+
+      // Quantidade: com 100 arquivos, o 101º é recusado com o limite de arquivos.
+      const limit = await page.evaluate(async () => {
+        const w = window as unknown as { api: Save & { cloudDelete(id: string): Promise<void>; cloudList(): Promise<{ id: string }[]> } }
+        for (const f of await w.api.cloudList()) await w.api.cloudDelete(f.id)
+        for (let i = 0; i < 100; i++) await w.api.cloudSave({ path: `a${i}.txt`, content: 'x', encoding: 'UTF-8', baseVersion: null, force: false })
+        return (await w.api.cloudSave({ path: 'extra.txt', content: 'x', encoding: 'UTF-8', baseVersion: null, force: false })).limit
+      })
+      expect(limit).toBe('files')
+    } finally {
+      await api.close()
+    }
+  })
+})
+
 test.describe('barra lateral: botão direito e ícones', () => {
   type Page = import('@playwright/test').Page
   /** Abre a pasta de exemplo no explorador. */

@@ -1428,4 +1428,10 @@ export const en: Messages = {
   "storage.sizeLimit": "{used} of {max} MB in the {plan} plan (files and unsaved texts)",
   "cloud.open.summary": "{n} files stored, {size} MB in total, synced to your account.",
   "cloud.open.plan": "Your plan: {plan} - Maximum number of files: {maxFiles} - Maximum storage: {maxSizeMb} MB",
+  "cloud.limit.title": "Warning",
+  "cloud.limit.files": "The maximum number of files stored in the cloud allowed by your plan has been exceeded. You cannot store more files in this environment.",
+  "cloud.limit.storage": "The total storage in MB for all files stored in the cloud allowed by your plan has been exceeded. You cannot store more information in this environment.",
+  "cloud.limit.ok": "Got it",
+  "api.plan_file_limit": "Your plan's maximum number of files has been exceeded.",
+  "api.plan_storage_limit": "Your plan's maximum storage has been exceeded.",
 }

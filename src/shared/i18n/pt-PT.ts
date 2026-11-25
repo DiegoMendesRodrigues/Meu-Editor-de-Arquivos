@@ -1428,4 +1428,10 @@ export const ptPT: Messages = {
   "storage.sizeLimit": "{used} de {max} MB do plano {plan} (ficheiros e textos ainda não guardados)",
   "cloud.open.summary": "{n} ficheiros armazenados com o tamanho de {size} MB sincronizados na sua conta.",
   "cloud.open.plan": "O seu plano: {plan} - Quantidade máxima de ficheiros: {maxFiles} - Armazenamento máximo: {maxSizeMb} MB",
+  "cloud.limit.title": "Aviso",
+  "cloud.limit.files": "A quantidade máxima de ficheiros armazenados na nuvem, permitidos pelo seu plano foi excedida. Não pode armazenar mais ficheiros neste ambiente.",
+  "cloud.limit.storage": "O armazenamento total em MB, referente a todos os ficheiros armazenados na nuvem, permitidos pelo seu plano foi excedido. Não pode armazenar mais informações neste ambiente.",
+  "cloud.limit.ok": "Entendido",
+  "api.plan_file_limit": "A quantidade máxima de ficheiros do seu plano foi excedida.",
+  "api.plan_storage_limit": "O armazenamento máximo do seu plano foi excedido.",
 }

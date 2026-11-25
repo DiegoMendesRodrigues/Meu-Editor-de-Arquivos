@@ -111,7 +111,7 @@ function check<T>(schema: z.ZodType<T>, value: unknown): T {
 }
 
 /** Códigos de erro da API que têm mensagem traduzida. */
-const API_CODES = new Set(['invalid_request', 'email_in_use', 'invalid_credentials', 'too_many_attempts', 'wrong_password', 'invalid_token', 'not_found', 'too_large', 'internal', 'path_in_use', 'folder_not_empty', 'folder_in_use'])
+const API_CODES = new Set(['invalid_request', 'email_in_use', 'invalid_credentials', 'too_many_attempts', 'wrong_password', 'invalid_token', 'not_found', 'too_large', 'internal', 'path_in_use', 'folder_not_empty', 'folder_in_use', 'plan_file_limit', 'plan_storage_limit'])
 const passwordSchema = z.string().min(1).max(200)
 /** Caminho na nuvem: relativo, com "/", sem "..", "." nem segmentos vazios. */
 const cloudPathSchema = z
@@ -304,7 +304,16 @@ export function registerAccountHandlers(): void {
         force: z.boolean()
       })
       .parse(raw)
-    const res = await api<{ file?: CloudFileMeta; current?: CloudFileMeta }>('PUT', '/v1/files', { auth: true, body: req, allow: [409] })
+    let res: { file?: CloudFileMeta; current?: CloudFileMeta }
+    try {
+      res = await api<{ file?: CloudFileMeta; current?: CloudFileMeta }>('PUT', '/v1/files', { auth: true, body: req, allow: [409] })
+    } catch (err) {
+      // Limite do plano atingido: o Renderer mostra o aviso próprio em vez de um erro genérico.
+      const code = err instanceof ApiError && err.status === 403 ? (err.body as { error?: { code?: string } } | null)?.error?.code : undefined
+      if (code === 'plan_file_limit') return { ok: false, limit: 'files' }
+      if (code === 'plan_storage_limit') return { ok: false, limit: 'storage' }
+      throw err
+    }
     if (res.current && !res.file) return { ok: false, conflict: true, current: toMeta(res.current) }
     return { ok: true, file: toMeta(res.file!) }
   })

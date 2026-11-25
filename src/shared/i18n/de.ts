@@ -1428,4 +1428,10 @@ export const de: Messages = {
   "storage.sizeLimit": "{used} von {max} MB im Tarif {plan} (Dateien und noch nicht gespeicherte Texte)",
   "cloud.open.summary": "{n} Dateien mit einer Größe von {size} MB, mit Ihrem Konto synchronisiert.",
   "cloud.open.plan": "Ihr Tarif: {plan} - Maximale Anzahl an Dateien: {maxFiles} - Maximaler Speicher: {maxSizeMb} MB",
+  "cloud.limit.title": "Hinweis",
+  "cloud.limit.files": "Die von Ihrem Tarif erlaubte maximale Anzahl an Dateien in der Cloud wurde überschritten. Sie können in dieser Umgebung keine weiteren Dateien speichern.",
+  "cloud.limit.storage": "Der von Ihrem Tarif erlaubte Gesamtspeicher in MB für alle Dateien in der Cloud wurde überschritten. Sie können in dieser Umgebung keine weiteren Informationen speichern.",
+  "cloud.limit.ok": "Verstanden",
+  "api.plan_file_limit": "Die maximale Dateianzahl Ihres Tarifs wurde überschritten.",
+  "api.plan_storage_limit": "Der maximale Speicher Ihres Tarifs wurde überschritten.",
 }

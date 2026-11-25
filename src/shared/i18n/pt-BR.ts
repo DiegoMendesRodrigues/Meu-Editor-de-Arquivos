@@ -1427,6 +1427,12 @@ export const ptBR = {
   "storage.sizeLimit": "{used} de {max} MB do plano {plan} (arquivos e textos ainda não salvos)",
   "cloud.open.summary": "{n} arquivos armazenados com o tamanho {size} MB sincronizados na sua conta.",
   "cloud.open.plan": "Seu Plano: {plan} - Quantidade máxima de arquivos: {maxFiles} - Armazenamento máximo: {maxSizeMb} MB",
+  "cloud.limit.title": "Aviso",
+  "cloud.limit.files": "A quantidade máxima de arquivos armazenados na nuvem, permitidos pelo seu plano foi excedida. Você não pode armazenar mais arquivos nesse ambiente.",
+  "cloud.limit.storage": "O armazenamento total em MB, referente a todos os arquivos armazenados na nuvem, permitidos pelo seu plano foi excedido. Você não pode armazenar mais informações nesse ambiente.",
+  "cloud.limit.ok": "Entendido",
+  "api.plan_file_limit": "A quantidade máxima de arquivos do seu plano foi excedida.",
+  "api.plan_storage_limit": "O armazenamento máximo do seu plano foi excedido.",
 }
 
 export type Messages = typeof ptBR

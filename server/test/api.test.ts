@@ -416,3 +416,49 @@ describe('último acesso', () => {
     await app.close()
   })
 })
+
+describe('limites do plano', () => {
+  const put = (path: string, content: string) => ({ path, content, encoding: 'UTF-8', baseVersion: null, force: true })
+  const MB = 1024 * 1024
+
+  it('com a quantidade máxima de arquivos, recusa arquivo novo mas deixa atualizar os existentes', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    for (let i = 0; i < 100; i++) expect((await ctx.call('PUT', '/v1/files', { token, body: put(`a${i}.txt`, 'x') })).status).toBe(200)
+    const extra = await ctx.call('PUT', '/v1/files', { token, body: put('novo.txt', 'x') })
+    expect(extra.status).toBe(403)
+    expect(extra.body.error.code).toBe('plan_file_limit')
+    // Atualizar um arquivo que já existe não aumenta a quantidade.
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('a0.txt', 'y') })).status).toBe(200)
+    // Depois de excluir um, volta a ter vaga.
+    const files = (await ctx.call('GET', '/v1/files', { token })).body.files as { id: string }[]
+    await ctx.call('DELETE', `/v1/files/${files[0].id}`, { token })
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('novo.txt', 'x') })).status).toBe(200)
+  })
+
+  it('com o armazenamento cheio, recusa arquivo novo e crescimento, mas deixa diminuir', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    // Exatamente 5 MB: chega ao limite sem passar.
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('grande.txt', 'x'.repeat(5 * MB)) })).status).toBe(200)
+    const novo = await ctx.call('PUT', '/v1/files', { token, body: put('vazio.txt', '') })
+    expect(novo.status).toBe(403)
+    expect(novo.body.error.code).toBe('plan_storage_limit')
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('grande.txt', 'x'.repeat(5 * MB + 1)) })).body.error.code).toBe('plan_storage_limit')
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('grande.txt', 'x'.repeat(4 * MB)) })).status).toBe(200)
+    // Com espaço livre, um arquivo que passaria do limite também é recusado.
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('outro.txt', 'x'.repeat(MB + 1)) })).body.error.code).toBe('plan_storage_limit')
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('outro.txt', 'x'.repeat(MB)) })).status).toBe(200)
+  })
+
+  it('a área de trabalho não cresce além do limite', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    await ctx.call('PUT', '/v1/files', { token, body: put('grande.txt', 'x'.repeat(5 * MB - 10)) })
+    expect((await ctx.call('PUT', '/v1/workspace', { token, body: { data: '0123456789', baseVersion: 0 } })).status).toBe(200)
+    const cheio = await ctx.call('PUT', '/v1/workspace', { token, body: { data: '0123456789A', baseVersion: 1 } })
+    expect(cheio.status).toBe(403)
+    expect(cheio.body.error.code).toBe('plan_storage_limit')
+    expect((await ctx.call('PUT', '/v1/workspace', { token, body: { data: '012', baseVersion: 1 } })).status).toBe(200)
+  })
+})

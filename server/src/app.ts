@@ -286,10 +286,34 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return { file: { ...fileMeta(file), content: file.content } }
   })
 
+  // Limites do plano (grupo) do usuário. A contagem e o espaço são recalculados antes de conferir, para
+  // não depender de um total desatualizado.
+  const fileLimitError = (): HttpError =>
+    new HttpError(403, 'plan_file_limit', 'A quantidade máxima de arquivos armazenados na nuvem, permitidos pelo seu plano, foi excedida.')
+  const storageLimitError = (): HttpError =>
+    new HttpError(403, 'plan_storage_limit', 'O armazenamento total em MB permitido pelo seu plano foi excedido.')
+  const currentUsage = async (userId: string) => {
+    // Falha no recálculo não impede a gravação: confere com os totais já gravados.
+    await store.refreshUsage(userId).catch((err) => app.log.error({ err }, 'Falha ao recalcular o uso antes de conferir o plano'))
+    const usage = await store.getUsage(userId)
+    return { ...usage, limitBytes: usage.plan.maxSizeMb * 1024 * 1024 }
+  }
+
   app.put('/v1/files', auth, async (req, reply) => {
     const body = putFileSchema.parse(req.body)
-    if (Buffer.byteLength(body.content, 'utf8') > MAX_FILE_BYTES) {
+    const bytes = Buffer.byteLength(body.content, 'utf8')
+    if (bytes > MAX_FILE_BYTES) {
       throw new HttpError(413, 'too_large', 'O arquivo passa de 10 MB.')
+    }
+    // Arquivo novo: só se houver vaga na quantidade e espaço sobrando. Arquivo existente: só não pode crescer
+    // além do limite (gravar algo do mesmo tamanho ou menor continua permitido, para liberar espaço).
+    const usage = await currentUsage(req.user!.id)
+    const lower = body.path.toLowerCase() // o banco compara caminhos sem diferenciar maiúsculas
+    const existing = (await store.listFiles(req.user!.id)).find((f) => f.path.toLowerCase() === lower)
+    if (!existing && usage.storedFiles >= usage.plan.maxFiles) throw fileLimitError()
+    const growth = bytes - (existing?.size ?? 0)
+    if ((!existing && usage.storageBytes >= usage.limitBytes) || (growth > 0 && usage.storageBytes + growth > usage.limitBytes)) {
+      throw storageLimitError()
     }
     const result = await store.upsertFile(req.user!.id, body)
     if (!result.ok) {
@@ -319,7 +343,13 @@ export function buildApp(opts: AppOptions): FastifyInstance {
 
   app.put('/v1/workspace', auth, async (req) => {
     const body = z.object({ data: z.string().max(MAX_FILE_BYTES), baseVersion: z.number().int().min(0) }).parse(req.body)
-    if (Buffer.byteLength(body.data, 'utf8') > MAX_FILE_BYTES) throw new HttpError(413, 'too_large', 'O arquivo passa de 10 MB.')
+    const bytes = Buffer.byteLength(body.data, 'utf8')
+    if (bytes > MAX_FILE_BYTES) throw new HttpError(413, 'too_large', 'O arquivo passa de 10 MB.')
+    // Os textos não salvos também ocupam o espaço do plano: acima do limite, a área de trabalho não cresce.
+    const usage = await currentUsage(req.user!.id)
+    const before = await store.getWorkspace(req.user!.id)
+    const growth = bytes - (before ? Buffer.byteLength(before.data, 'utf8') : 0)
+    if (growth > 0 && usage.storageBytes + growth > usage.limitBytes) throw storageLimitError()
     const result = await store.putWorkspace(req.user!.id, body.data, body.baseVersion)
     if (!result.ok) throw new HttpError(409, 'workspace_conflict', 'A área de trabalho mudou em outro computador.')
     return {
