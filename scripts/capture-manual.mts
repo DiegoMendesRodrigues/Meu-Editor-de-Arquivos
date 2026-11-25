@@ -145,6 +145,58 @@ const DEMOS: Record<Locale, Demo> = {
   }
 }
 
+/** Conversa de exemplo do Assistente de IA (respondida por um Ollama falso local) e arquivos extras na nuvem. */
+const EXTRAS: Record<Locale, { question: string; answer: string; cloud: { path: string; text: string }[] }> = {
+  'pt-BR': {
+    question: 'Resuma este documento em três tópicos.',
+    answer: 'Resumo do documento:\n\n1. **Boas-vindas** ao Meu Editor de Arquivos, com um exemplo em Markdown.\n2. **Lista de tarefas**: a pasta já foi aberta; faltam revisar a ata e enviar o relatório.\n3. **Dica**: o botão de edição troca para o texto Markdown.',
+    cloud: [{ path: 'trabalho/relatorio-mensal.md', text: '# Relatório mensal\n\nVendas: +12%.\n' }, { path: 'pessoal/lista-de-compras.txt', text: 'Café\nPão\nFrutas\n' }, { path: 'projetos/api/config.json', text: '{\n  "ambiente": "homologação"\n}\n' }]
+  },
+  'pt-PT': {
+    question: 'Resuma este documento em três tópicos.',
+    answer: 'Resumo do documento:\n\n1. **Boas-vindas** ao Meu Editor de Arquivos, com um exemplo em Markdown.\n2. **Lista de tarefas**: a pasta já foi aberta; falta rever a ata e enviar o relatório.\n3. **Dica**: o botão de edição muda para o texto Markdown.',
+    cloud: [{ path: 'trabalho/relatorio-mensal.md', text: '# Relatório mensal\n\nVendas: +12%.\n' }, { path: 'pessoal/lista-de-compras.txt', text: 'Café\nPão\nFruta\n' }, { path: 'projetos/api/config.json', text: '{\n  "ambiente": "testes"\n}\n' }]
+  },
+  en: {
+    question: 'Summarize this document in three points.',
+    answer: 'Document summary:\n\n1. **Welcome** to Meu Editor de Arquivos, with a Markdown sample.\n2. **Task list**: the folder is open; reviewing the minutes and sending the report are pending.\n3. **Tip**: the edit button switches to the Markdown text.',
+    cloud: [{ path: 'work/monthly-report.md', text: '# Monthly report\n\nSales: +12%.\n' }, { path: 'personal/shopping-list.txt', text: 'Coffee\nBread\nFruit\n' }, { path: 'projects/api/config.json', text: '{\n  "environment": "staging"\n}\n' }]
+  },
+  es: {
+    question: 'Resume este documento en tres puntos.',
+    answer: 'Resumen del documento:\n\n1. **Bienvenida** a Meu Editor de Arquivos, con un ejemplo en Markdown.\n2. **Lista de tareas**: la carpeta ya está abierta; faltan revisar el acta y enviar el informe.\n3. **Consejo**: el botón de edición cambia al texto Markdown.',
+    cloud: [{ path: 'trabajo/informe-mensual.md', text: '# Informe mensual\n\nVentas: +12%.\n' }, { path: 'personal/lista-de-compras.txt', text: 'Café\nPan\nFruta\n' }, { path: 'proyectos/api/config.json', text: '{\n  "entorno": "pruebas"\n}\n' }]
+  },
+  fr: {
+    question: 'Résume ce document en trois points.',
+    answer: 'Résumé du document :\n\n1. **Bienvenue** dans Meu Editor de Arquivos, avec un exemple en Markdown.\n2. **Liste de tâches** : le dossier est ouvert ; il reste à relire le compte rendu et à envoyer le rapport.\n3. **Astuce** : le bouton de modification passe au texte Markdown.',
+    cloud: [{ path: 'travail/rapport-mensuel.md', text: '# Rapport mensuel\n\nVentes : +12 %.\n' }, { path: 'personnel/liste-de-courses.txt', text: 'Café\nPain\nFruits\n' }, { path: 'projets/api/config.json', text: '{\n  "environnement": "recette"\n}\n' }]
+  },
+  de: {
+    question: 'Fasse dieses Dokument in drei Punkten zusammen.',
+    answer: 'Zusammenfassung:\n\n1. **Willkommen** bei Meu Editor de Arquivos, mit einem Markdown-Beispiel.\n2. **Aufgabenliste**: Der Ordner ist geöffnet; Protokoll prüfen und Bericht senden stehen noch aus.\n3. **Tipp**: Die Bearbeiten-Schaltfläche wechselt zum Markdown-Text.',
+    cloud: [{ path: 'arbeit/monatsbericht.md', text: '# Monatsbericht\n\nUmsatz: +12 %.\n' }, { path: 'privat/einkaufsliste.txt', text: 'Kaffee\nBrot\nObst\n' }, { path: 'projekte/api/config.json', text: '{\n  "umgebung": "test"\n}\n' }]
+  }
+}
+
+/** Ollama falso em 127.0.0.1: versão, um modelo e a resposta da conversa em streaming (NDJSON). */
+function startFakeOllama(answer: string): Promise<{ port: number; close(): void }> {
+  const server = createHttpServer((req, res) => {
+    res.setHeader('Content-Type', 'application/json')
+    if (req.url === '/api/version') return void res.end(JSON.stringify({ version: '0.9.0' }))
+    if (req.url === '/api/tags') return void res.end(JSON.stringify({ models: [{ name: 'llama3.2' }] }))
+    if (req.url === '/api/chat') {
+      req.resume()
+      res.setHeader('Content-Type', 'application/x-ndjson')
+      for (const piece of answer.match(/[\s\S]{1,24}/g) ?? []) res.write(JSON.stringify({ message: { role: 'assistant', content: piece }, done: false }) + '\n')
+      return void res.end(JSON.stringify({ message: { role: 'assistant', content: '' }, done: true }) + '\n')
+    }
+    res.statusCode = 404
+    res.end('{}')
+  })
+  return new Promise((done) => server.listen(0, '127.0.0.1', () => done({ port: (server.address() as { port: number }).port, close: () => server.close() })))
+}
+
 const OUT = resolve('docs/manual')
 let API_PORT = 0
 const MENU = { file: 0, edit: 1, search: 2, view: 3, encoding: 4, language: 5, tools: 6, account: 7, help: 8 }
@@ -255,6 +307,10 @@ async function captureLocale(locale: Locale): Promise<void> {
   writeFileSync(join(folder, demo.badJson.name), demo.badJson.text)
   writeFileSync(join(folder, demo.txt.name), demo.txt.text)
   const userData = join(work, 'dados')
+  const extras = EXTRAS[locale]
+  const ollama = await startFakeOllama(extras.answer)
+  mkdirSync(userData, { recursive: true })
+  writeFileSync(join(userData, 'ai-settings.json'), JSON.stringify({ host: `http://127.0.0.1:${ollama.port}`, model: 'llama3.2', temperature: 0.7, allowRemote: false }))
 
   console.log(`\n== ${locale} ==`)
   let { app, page } = await launch(locale, userData)
@@ -425,6 +481,18 @@ async function captureLocale(locale: Locale): Promise<void> {
     await page.getByLabel(t('apiClient.env.valueN', { n: 2 })).fill('valor-de-exemplo')
     await shot(page, img('s24-api-environment'))
 
+    // --- Assistente de IA (Ollama falso local): pergunta sobre o documento Markdown aberto
+    await page.getByRole('tab').filter({ hasText: demo.md.name }).first().click()
+    await page.keyboard.press('Control+Shift+I')
+    const aiPanel = page.getByTestId('ai-panel')
+    await aiPanel.getByTestId('ai-status').and(page.locator('[data-state=ok]')).waitFor()
+    await aiPanel.getByLabel(t('ai.input.label')).fill(extras.question)
+    await aiPanel.getByTestId('ai-send').click()
+    await aiPanel.getByTestId('ai-assistant-message').filter({ hasText: extras.answer.split('\n').pop()!.replace(/\*\*/g, '').slice(-20) }).waitFor()
+    await aiPanel.getByTestId('ai-send').waitFor()
+    await shot(page, img('s25-ai-assistant'))
+    await aiPanel.getByRole('button', { name: t('ai.close') }).first().click()
+
     // --- Conta e nuvem (API de teste em memória)
     // Primeiro acesso: o aplicativo pede o endereço do servidor; depois mostra a tela de entrada.
     await page.locator('nav button').nth(MENU.account).click()
@@ -456,11 +524,36 @@ async function captureLocale(locale: Locale): Promise<void> {
     await page.getByRole('menuitem', { name: new RegExp(demo.user.name) }).click()
     await shotDialog(page, img('s18-account-profile'))
 
+    // --- Arquivos na nuvem: pastas na barra lateral, documento da nuvem aberto e o espaço usado no rodapé
+    await page.evaluate(async (files) => {
+      const api = (window as unknown as { api: { cloudSave(r: object): Promise<unknown> } }).api
+      for (const f of files) await api.cloudSave({ path: f.path, content: f.text, encoding: 'UTF-8', baseVersion: null, force: false })
+    }, extras.cloud)
+    await page.locator('nav button').nth(MENU.file).click()
+    await page.getByRole('menuitem', { name: t('menu.file.openCloud') }).click()
+    const cloudTree = page.getByRole('dialog').getByTestId('cloud-open-tree')
+    const cloudFile = cloudTree.getByRole('button', { name: new RegExp('^' + demo.cloudPath.split('/').pop()!.replace('.', '\\.')) })
+    if (!(await cloudFile.isVisible())) await cloudTree.getByRole('button', { name: demo.cloudPath.split('/')[0], exact: true }).click()
+    await cloudFile.dblclick()
+    await page.getByRole('dialog').waitFor({ state: 'hidden' })
+    await page.getByTestId('cloud-usage').waitFor()
+    // Só a área da nuvem aberta na barra lateral, com as pastas expandidas.
+    const openHeads = page.locator('aside section[data-section]:not([data-section="cloud"]) > :first-child button[aria-expanded="true"]')
+    for (let i = 0; i < 10 && (await openHeads.count()) > 0; i++) await openHeads.first().click()
+    const cloudSection = page.locator('aside section[data-section="cloud"]')
+    for (const f of [...extras.cloud.map((c) => c.path), demo.cloudPath]) {
+      const name = f.split('/')[0]
+      const folderRow = cloudSection.getByRole('treeitem', { name, exact: true }).first()
+      if ((await folderRow.count()) > 0 && (await folderRow.getAttribute('aria-expanded')) === 'false') await cloudSection.getByRole('button', { name, exact: true }).first().click()
+    }
+    await shot(page, img('s26-cloud-files'))
+
   } finally {
     await stubMessageBox(app).catch(() => undefined)
     await app.close().catch(() => undefined)
     stopApi(api)
     sample.close()
+    ollama.close()
     rmSync(work, { recursive: true, force: true })
   }
 }
