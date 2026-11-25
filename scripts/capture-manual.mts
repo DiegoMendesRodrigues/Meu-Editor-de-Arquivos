@@ -450,7 +450,7 @@ async function captureLocale(locale: Locale): Promise<void> {
     )
     await page.locator('nav button').nth(MENU.file).click()
     await page.getByRole('menuitem', { name: t('menu.file.openCloud') }).click()
-    await page.getByRole('list', { name: t('cloud.list') }).waitFor()
+    await page.getByRole('tree', { name: t('cloud.list') }).getByRole('treeitem').first().waitFor()
     await shotDialog(page, img('s17-cloud-open'))
     await page.locator('nav button').nth(MENU.account).click()
     await page.getByRole('menuitem', { name: new RegExp(demo.user.name) }).click()

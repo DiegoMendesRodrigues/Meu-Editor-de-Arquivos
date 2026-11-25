@@ -160,6 +160,15 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return token
   }
 
+  /** Registra o último acesso. Uma falha (coluna ainda não migrada, por exemplo) não pode derrubar a requisição. */
+  async function touchAccess(userId: string, req: FastifyRequest): Promise<void> {
+    try {
+      await store.touchLastAccess(userId, new Date())
+    } catch (err) {
+      req.log.error({ err }, 'Falha ao gravar o último acesso')
+    }
+  }
+
   async function authenticate(req: FastifyRequest): Promise<void> {
     const header = req.headers.authorization ?? ''
     const token = header.startsWith('Bearer ') ? header.slice(7).trim() : ''
@@ -175,6 +184,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     if (!user) throw unauthorized
     req.user = user
     req.tokenHash = tokenHash
+    await touchAccess(user.id, req)
   }
   const auth = { preHandler: authenticate }
 
@@ -202,6 +212,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
       throw new HttpError(401, 'invalid_credentials', 'E-mail ou senha incorretos.')
     }
     failures.delete(key)
+    await touchAccess(user.id, req)
     return { token: await issueSession(user.id), user: publicUser(user) }
   })
 
@@ -233,21 +244,22 @@ export function buildApp(opts: AppOptions): FastifyInstance {
 
   app.get('/v1/me', auth, async (req) => ({ user: publicUser(req.user!) }))
 
-  // Espaço usado na nuvem (bytes): arquivos + textos não salvos da área de trabalho.
   /**
-   * Recalcula o espaço usado depois de uma gravação. Uma falha aqui (banco sem a coluna nova, por exemplo)
-   * não pode transformar uma gravação já feita em erro: registra no log e responde sem o total.
+   * Recalcula o uso (espaço e número de arquivos) depois de uma gravação. Uma falha aqui (banco sem a coluna nova,
+   * por exemplo) não pode transformar uma gravação já feita em erro: registra no log e responde sem os totais.
    */
-  const refreshStorage = async (userId: string): Promise<number | undefined> => {
+  const refreshUsage = async (userId: string): Promise<{ storageBytes?: number; storedFiles?: number }> => {
     try {
-      return await store.refreshStorageBytes(userId)
+      const u = await store.refreshUsage(userId)
+      return { storageBytes: u.storageBytes, storedFiles: u.storedFiles }
     } catch (err) {
-      app.log.error({ err }, 'Falha ao recalcular o espaço usado na nuvem')
-      return undefined
+      app.log.error({ err }, 'Falha ao recalcular o uso da nuvem')
+      return { storageBytes: undefined, storedFiles: undefined }
     }
   }
 
-  app.get('/v1/me/storage', auth, async (req) => ({ storageBytes: await store.getStorageBytes(req.user!.id) }))
+  // Uso da nuvem: espaço (bytes: arquivos + textos não salvos), número de arquivos e limites do plano.
+  app.get('/v1/me/storage', auth, async (req) => store.getUsage(req.user!.id))
 
   app.patch('/v1/me', auth, async (req) => {
     const body = profileSchema.parse(req.body)
@@ -286,7 +298,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
         current: fileMeta(result.current)
       })
     }
-    return { file: fileMeta(result.file), storageBytes: await refreshStorage(req.user!.id) }
+    return { file: fileMeta(result.file), ...(await refreshUsage(req.user!.id)) }
   })
 
   // Mover ou renomear: muda o caminho do arquivo (pasta e/ou nome).
@@ -313,7 +325,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return {
       version: result.workspace.version,
       updatedAt: result.workspace.updatedAt.toISOString(),
-      storageBytes: await refreshStorage(req.user!.id)
+      ...(await refreshUsage(req.user!.id))
     }
   })
 
@@ -350,7 +362,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   app.delete('/v1/files/:id', auth, async (req) => {
     const { id } = z.object({ id: z.string().min(1).max(64) }).parse(req.params)
     if (!(await store.deleteFile(req.user!.id, id))) throw new HttpError(404, 'not_found', 'Arquivo não encontrado.')
-    return { storageBytes: await refreshStorage(req.user!.id) }
+    return { ...(await refreshUsage(req.user!.id)) }
   })
 
   return app

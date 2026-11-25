@@ -337,11 +337,11 @@ Avec un compte, vous conservez des fichiers dans le cloud et les ouvrez sur d'au
 ![Liste des fichiers dans le cloud](img/s17-cloud-open.png)
 
 5. **Enregistrer dans le cloud :** **{{menu.file}} → {{menu.file.saveCloud}}**. Choisissez le chemin, par exemple `travail/compte-rendu.md`.
-6. **Ouvrir depuis le cloud :** **{{menu.file}} → {{menu.file.openCloud}}**. Dans la liste, vous ouvrez ou supprimez des fichiers. Dans un document ouvert depuis le cloud, **Ctrl+S** enregistre de nouveau dans le cloud.
+6. **Ouvrir depuis le cloud :** **{{menu.file}} → {{menu.file.openCloud}}**. En haut s'affichent le nombre de fichiers enregistrés, leur taille totale et les limites de votre forfait. Les fichiers sont classés par dossier, comme dans la barre latérale, avec la version, la taille et la date de dernière modification en gris. Double-cliquez sur un fichier pour l'ouvrir ; le clic droit propose les mêmes actions que la barre latérale. Dans un document ouvert depuis le cloud, **Ctrl+S** enregistre de nouveau dans le cloud.
 
 Si le fichier a changé dans le cloud depuis la dernière fois, l'application vous prévient et demande si vous voulez l'écraser. Chaque fichier peut peser jusqu'à 10 Mo. Si votre système n'a pas de coffre d'identifiants, l'application vous prévient que vous devrez vous reconnecter à chaque ouverture.
 
-Lorsque vous êtes connecté, la barre d'état affiche, à gauche de l'icône du cloud, l'espace que vous utilisez dans le cloud, en Mo avec deux décimales (par exemple, `1.25 MB`). Le total comprend tous vos fichiers dans le cloud et les textes des documents non encore enregistrés, conservés pour continuer sur un autre ordinateur. La valeur change à chaque enregistrement ou suppression. Un fichier du cloud ouvert sans modifications n'occupe pas d'espace supplémentaire ; seul le texte non enregistré est conservé.
+Lorsque vous êtes connecté, la barre d'état affiche, à gauche de l'icône du cloud, le nombre de fichiers enregistrés et l'espace que vous utilisez dans le cloud, en Mo avec deux décimales (par exemple, `Fichiers : 3   Stockage : 1.25 MB`). Chaque valeur passe à l'orange à 90 % de la limite de votre forfait et au rouge à 100 %. Le total comprend tous vos fichiers dans le cloud et les textes des documents non encore enregistrés, conservés pour continuer sur un autre ordinateur. La valeur change à chaque enregistrement ou suppression. Un fichier du cloud ouvert sans modifications n'occupe pas d'espace supplémentaire ; seul le texte non enregistré est conservé.
 
 Si le même document est modifié sur deux ordinateurs avant la synchronisation, chaque ordinateur garde son texte, et la version de l'autre s'ouvre dans un nouvel onglet avec « (conflit – autre ordinateur) » dans le nom, pour que rien ne soit perdu.
 

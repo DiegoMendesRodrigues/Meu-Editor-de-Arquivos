@@ -522,7 +522,7 @@ test.describe('menu Codificação', () => {
   })
 })
 
-const pt = (key: Parameters<typeof translate>[1]): string => translate('pt-BR', key)
+const pt = (key: Parameters<typeof translate>[1], params?: Parameters<typeof translate>[2]): string => translate('pt-BR', key, params)
 
 /** Sobe a API de teste em memória (a mesma do servidor do projeto) numa porta livre e cria uma conta nela. */
 async function signInToTestApi(page: import('@playwright/test').Page): Promise<{ close(): Promise<void> }> {
@@ -549,23 +549,29 @@ test.describe('espaço usado na nuvem', () => {
     const api = await signInToTestApi(page)
     try {
       const used = page.getByTestId('cloud-storage')
-      await expect(used).toHaveText('0.00 MB')
-      await expect(used).toHaveAttribute('title', pt('storage.used'))
+      const files = page.getByTestId('cloud-files')
+      await expect(used).toHaveText(pt('status.cloudStorage', { size: '0.00 MB' }))
+      await expect(files).toHaveText(pt('status.cloudFiles', { n: 0 }))
+      await expect(files).toHaveAttribute('data-level', 'ok')
+      // Separador vertical à esquerda do grupo.
+      await expect(page.getByTestId('cloud-usage')).toHaveClass(/border-l/)
+      await expect(used).toHaveAttribute('title', pt('storage.sizeLimit', { used: '0.00', max: 5, plan: 'Gratuito' }))
       // Fica à esquerda do ícone da nuvem.
-      await expect(page.getByRole('contentinfo').locator('[data-testid=cloud-storage] + button[data-storage=cloud]')).toHaveCount(1)
+      await expect(page.getByRole('contentinfo').locator('[data-testid=cloud-usage] + button[data-storage=cloud]')).toHaveCount(1)
 
       // 1,25 MB salvos na nuvem: o rodapé muda sem precisar recarregar.
       await page.evaluate(async () => {
         const w = window as unknown as { api: { cloudSave(r: object): Promise<unknown> } }
         await w.api.cloudSave({ path: 'grande.txt', content: 'x'.repeat(1310720), encoding: 'UTF-8', baseVersion: null, force: false })
       })
-      await expect(used).toHaveText('1.25 MB')
+      await expect(used).toHaveText(pt('status.cloudStorage', { size: '1.25 MB' }))
+      await expect(files).toHaveText(pt('status.cloudFiles', { n: 1 }))
 
       // Abrir o arquivo da nuvem não repete o texto na área de trabalho: o espaço continua o mesmo.
       // A área de trabalho é enviada (só a referência ao arquivo), e o total é refeito no servidor.
       await page.getByRole('button', { name: pt('menu.file'), exact: true }).click()
       await page.getByRole('menuitem', { name: pt('menu.file.openCloud') }).click()
-      await page.getByRole('dialog').getByRole('listitem').filter({ hasText: 'grande.txt' }).getByRole('button', { name: pt('common.open') }).click()
+      await page.getByRole('dialog').getByRole('button', { name: /grande\.txt/ }).dblclick()
       await page.getByRole('dialog').waitFor({ state: 'hidden' })
       await expect(page.getByRole('tab', { name: /grande\.txt/ })).toBeVisible()
       const workspaceBytes = async (): Promise<number> =>
@@ -579,7 +585,39 @@ test.describe('espaço usado na nuvem', () => {
         const w = window as unknown as { api: { cloudStorage(): Promise<unknown> } }
         await w.api.cloudStorage()
       })
-      await expect(used).toHaveText('1.25 MB')
+      await expect(used).toHaveText(pt('status.cloudStorage', { size: '1.25 MB' }))
+    } finally {
+      await api.close()
+    }
+  })
+})
+
+test.describe('janela Abrir da nuvem', () => {
+  test('mostra o resumo, as pastas com detalhes em cinza, o menu e abre com duplo clique', async ({ page }) => {
+    const api = await signInToTestApi(page)
+    try {
+      await page.evaluate(async () => {
+        const w = window as unknown as { api: { cloudSave(r: object): Promise<unknown> } }
+        await w.api.cloudSave({ path: 'docs/nota.md', content: '# nota', encoding: 'UTF-8', baseVersion: null, force: false })
+        await w.api.cloudSave({ path: 'raiz.txt', content: 'abc', encoding: 'UTF-8', baseVersion: null, force: false })
+      })
+      await page.getByRole('button', { name: pt('menu.file'), exact: true }).click()
+      await page.getByRole('menuitem', { name: pt('menu.file.openCloud') }).click()
+      const dialog = page.getByRole('dialog', { name: pt('cloud.open.title') })
+      await expect(dialog.getByText(/2 arquivos armazenados com o tamanho 0,00 MB/)).toBeVisible()
+      const tree = dialog.getByTestId('cloud-open-tree')
+      await expect(tree.getByRole('button', { name: 'docs', exact: true })).toBeVisible()
+      // Detalhes (versão, tamanho, data) ao lado do nome.
+      await expect(tree.getByRole('button', { name: /nota\.md.*versão 1/ })).toBeVisible()
+
+      // Botão direito: mesmo menu da barra lateral.
+      await tree.getByRole('button', { name: 'docs', exact: true }).click({ button: 'right' })
+      await expect(page.getByRole('menuitem', { name: pt('sidebar.rename') })).toBeVisible()
+      await page.keyboard.press('Escape')
+
+      await tree.getByRole('button', { name: /nota\.md/ }).dblclick()
+      await dialog.waitFor({ state: 'hidden' })
+      await expect(page.getByRole('tab', { name: /nota\.md/ })).toBeVisible()
     } finally {
       await api.close()
     }

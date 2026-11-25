@@ -7,6 +7,19 @@ export interface User {
   name: string
   passwordHash: string
   createdAt: Date
+  /** Último acesso (cadastro, login ou qualquer requisição autenticada); ausente em bancos ainda não migrados. */
+  lastAccess?: Date
+}
+
+/** Uso da nuvem de um usuário. */
+export interface Usage {
+  storageBytes: number
+  storedFiles: number
+}
+
+/** Uso da nuvem com os limites do plano (grupo) do usuário. */
+export interface UsageWithPlan extends Usage {
+  plan: { name: string; maxFiles: number; maxSizeMb: number }
 }
 
 export interface RemoteFile {
@@ -53,6 +66,8 @@ export interface Store {
   findUserById(id: string): Promise<User | null>
   updateUserName(id: string, name: string): Promise<void>
   setPassword(id: string, passwordHash: string): Promise<void>
+  /** Grava o instante do último acesso do usuário. */
+  touchLastAccess(userId: string, at: Date): Promise<void>
 
   createSession(userId: string, tokenHash: string, expiresAt: Date): Promise<void>
   findSession(tokenHash: string): Promise<{ userId: string; expiresAt: Date } | null>
@@ -87,13 +102,14 @@ export interface Store {
    */
   renameFolder(userId: string, from: string, to: string): Promise<RenameFolderResult>
 
-  /** Espaço usado na nuvem (bytes), como está gravado para o usuário. */
-  getStorageBytes(userId: string): Promise<number>
+  /** Uso gravado para o usuário (bytes e número de arquivos) com os limites do plano dele. */
+  getUsage(userId: string): Promise<UsageWithPlan>
   /**
-   * Recalcula e grava o espaço usado: soma dos arquivos + área de trabalho (textos dos documentos
-   * não salvos). Chamado depois de cada gravação ou exclusão; devolve o novo total.
+   * Recalcula e grava o uso: espaço (soma dos arquivos + área de trabalho, isto é, textos dos
+   * documentos não salvos) e número de arquivos. Recalculado, nunca somado aos poucos.
+   * Chamado depois de cada gravação ou exclusão; devolve os novos totais.
    */
-  refreshStorageBytes(userId: string): Promise<number>
+  refreshUsage(userId: string): Promise<Usage>
 
   close(): Promise<void>
 }

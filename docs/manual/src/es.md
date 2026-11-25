@@ -337,11 +337,11 @@ Con una cuenta guardas archivos en la nube y los abres en otros equipos. Abre el
 ![Lista de archivos en la nube](img/s17-cloud-open.png)
 
 5. **Guardar en la nube:** **{{menu.file}} → {{menu.file.saveCloud}}**. Elige la ruta, por ejemplo `trabajo/acta.md`.
-6. **Abrir desde la nube:** **{{menu.file}} → {{menu.file.openCloud}}**. En la lista puedes abrir o eliminar archivos. En un documento abierto desde la nube, **Ctrl+S** vuelve a guardar en la nube.
+6. **Abrir desde la nube:** **{{menu.file}} → {{menu.file.openCloud}}**. Arriba aparecen cuántos archivos guarda, el tamaño total y los límites de su plan. Los archivos se organizan por carpeta, como en la barra lateral, con la versión, el tamaño y la fecha de la última modificación en gris. Haga doble clic en un archivo para abrirlo; el botón derecho ofrece las mismas acciones que la barra lateral. En un documento abierto desde la nube, **Ctrl+S** vuelve a guardar en la nube.
 
 Si el archivo ha cambiado en la nube desde la última vez, la aplicación te avisa y pregunta si quieres sobrescribirlo. Cada archivo puede tener hasta 10 MB. Si tu sistema no tiene almacén de credenciales, la aplicación te avisa de que tendrás que iniciar sesión cada vez que la abras.
 
-Con la cuenta conectada, la barra de estado muestra, a la izquierda del icono de la nube, cuánto espacio usa en la nube, en MB con dos decimales (por ejemplo, `1.25 MB`). La cuenta suma todos sus archivos en la nube y los textos de los documentos aún no guardados, que se conservan para continuar en otro equipo. El valor cambia con cada guardado o eliminación. Un archivo de la nube abierto sin cambios no ocupa espacio adicional; solo se conserva el texto aún no guardado.
+Con la cuenta conectada, la barra de estado muestra, a la izquierda del icono de la nube, cuántos archivos guarda y cuánto espacio usa en la nube, en MB con dos decimales (por ejemplo, `Archivos: 3   Almacenamiento: 1.25 MB`). Cada valor se pone naranja al llegar al 90% del límite de su plan y rojo al llegar al 100%. La cuenta suma todos sus archivos en la nube y los textos de los documentos aún no guardados, que se conservan para continuar en otro equipo. El valor cambia con cada guardado o eliminación. Un archivo de la nube abierto sin cambios no ocupa espacio adicional; solo se conserva el texto aún no guardado.
 
 Si el mismo documento se modifica en dos equipos antes de sincronizar, cada equipo conserva su texto, y la versión del otro se abre en una pestaña nueva con "(conflicto – otro equipo)" en el nombre, para que nada se pierda.
 

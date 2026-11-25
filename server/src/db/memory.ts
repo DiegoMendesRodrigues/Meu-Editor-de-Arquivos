@@ -1,6 +1,6 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { randomUUID } from 'node:crypto'
-import type { FileMeta, RemoteFile, Store, User, Workspace } from './store.js'
+import type { FileMeta, RemoteFile, Store, Usage, User, Workspace } from './store.js'
 
 const meta = ({ content: _c, ...m }: RemoteFile): FileMeta => m
 
@@ -12,7 +12,7 @@ export function createMemoryStore(): Store {
   const files = new Map<string, RemoteFile & { userId: string }>()
   const folders = new Map<string, Set<string>>() // usuário -> pastas criadas
   const workspaces = new Map<string, Workspace>()
-  const storage = new Map<string, number>() // usuário -> espaço usado gravado (bytes)
+  const usage = new Map<string, Usage>() // usuário -> uso gravado (bytes e arquivos)
   const userFolders = (userId: string): Set<string> => {
     let set = folders.get(userId)
     if (!set) folders.set(userId, (set = new Set()))
@@ -22,7 +22,7 @@ export function createMemoryStore(): Store {
   return {
     async createUser({ email, name, passwordHash }) {
       if ([...users.values()].some((u) => u.email === email)) return null
-      const user: User = { id: randomUUID(), email, name, passwordHash, createdAt: new Date() }
+      const user: User = { id: randomUUID(), email, name, passwordHash, createdAt: new Date(), lastAccess: new Date() }
       users.set(user.id, user)
       return user
     },
@@ -39,6 +39,11 @@ export function createMemoryStore(): Store {
     async setPassword(id, passwordHash) {
       const u = users.get(id)
       if (u) u.passwordHash = passwordHash
+    },
+
+    async touchLastAccess(userId, at) {
+      const u = users.get(userId)
+      if (u) u.lastAccess = at
     },
 
     async createSession(userId, tokenHash, expiresAt) {
@@ -159,14 +164,22 @@ export function createMemoryStore(): Store {
       workspaces.set(userId, w)
       return { ok: true, workspace: { ...w } }
     },
-    async getStorageBytes(userId) {
-      return storage.get(userId) ?? 0
+    async getUsage(userId) {
+      // Todo usuário da memória está no grupo 1 (Gratuito), como no banco.
+      const u = usage.get(userId) ?? { storageBytes: 0, storedFiles: 0 }
+      return { ...u, plan: { name: 'Gratuito', maxFiles: 100, maxSizeMb: 5 } }
     },
-    async refreshStorageBytes(userId) {
-      let total = Buffer.byteLength(workspaces.get(userId)?.data ?? '', 'utf8')
-      for (const f of files.values()) if (f.userId === userId) total += f.size
-      storage.set(userId, total)
-      return total
+    async refreshUsage(userId) {
+      let storageBytes = Buffer.byteLength(workspaces.get(userId)?.data ?? '', 'utf8')
+      let storedFiles = 0
+      for (const f of files.values()) {
+        if (f.userId !== userId) continue
+        storageBytes += f.size
+        storedFiles++
+      }
+      const total = { storageBytes, storedFiles }
+      usage.set(userId, total)
+      return { ...total }
     },
     async close() {}
   }

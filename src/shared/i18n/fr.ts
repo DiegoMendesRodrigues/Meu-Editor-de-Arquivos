@@ -1421,4 +1421,11 @@ export const fr: Messages = {
   "menu.view.showApiHistory": "Afficher l'Historique",
   "sidebar.removeArea": "Retirer la zone {name} de la barre latérale",
   "menu.tools.apiSubmenu": "Tester des requêtes et des API",
+  "status.cloudFiles": "Fichiers : {n}",
+  "status.cloudStorage": "Stockage : {size}",
+  "storage.files": "Fichiers enregistrés dans le cloud",
+  "storage.filesLimit": "{n} sur {max} fichiers du forfait {plan}",
+  "storage.sizeLimit": "{used} sur {max} Mo du forfait {plan} (fichiers et textes non enregistrés)",
+  "cloud.open.summary": "{n} fichiers stockés, {size} Mo au total, synchronisés avec votre compte.",
+  "cloud.open.plan": "Votre forfait : {plan} - Nombre maximal de fichiers : {maxFiles} - Stockage maximal : {maxSizeMb} Mo",
 }

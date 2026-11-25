@@ -337,11 +337,11 @@ Com uma conta, guarda ficheiros na nuvem e abre-os noutros computadores. Abra o 
 ![Lista de ficheiros na nuvem](img/s17-cloud-open.png)
 
 5. **Guardar na nuvem:** **{{menu.file}} → {{menu.file.saveCloud}}**. Escolha o caminho, por exemplo `trabalho/ata.md`.
-6. **Abrir da nuvem:** **{{menu.file}} → {{menu.file.openCloud}}**. Na lista pode abrir ou eliminar ficheiros. Num documento aberto da nuvem, **Ctrl+S** volta a guardar na nuvem.
+6. **Abrir da nuvem:** **{{menu.file}} → {{menu.file.openCloud}}**. No topo aparecem quantos ficheiros guarda, o tamanho total e os limites do seu plano. Os ficheiros ficam organizados por pasta, como na barra lateral, com a versão, o tamanho e a data da última alteração a cinzento. Faça duplo clique num ficheiro para o abrir; o botão direito apresenta as mesmas ações da barra lateral. Num documento aberto da nuvem, **Ctrl+S** volta a guardar na nuvem.
 
 Se o ficheiro tiver mudado na nuvem desde a última vez, a aplicação avisa e pergunta se quer substituí-lo. Cada ficheiro pode ter até 10 MB. Se o seu sistema não tiver cofre de credenciais, a aplicação avisa que terá de iniciar sessão sempre que a abrir.
 
-Com a conta ligada, o rodapé mostra, à esquerda do ícone da nuvem, quanto espaço usa na nuvem, em MB com duas casas decimais (por exemplo, `1.25 MB`). A conta soma todos os seus ficheiros na nuvem e os textos dos documentos ainda não guardados, que ficam guardados para continuar noutro computador. O valor muda a cada gravação ou eliminação. Um ficheiro da nuvem aberto sem alterações não ocupa espaço a mais; só o texto ainda não guardado é guardado.
+Com a conta ligada, o rodapé mostra, à esquerda do ícone da nuvem, quantos ficheiros guarda e quanto espaço usa na nuvem, em MB com duas casas decimais (por exemplo, `Ficheiros: 3   Armazenamento: 1.25 MB`). Cada valor fica laranja ao chegar a 90% do limite do seu plano e vermelho ao chegar a 100%. A conta soma todos os seus ficheiros na nuvem e os textos dos documentos ainda não guardados, que ficam guardados para continuar noutro computador. O valor muda a cada gravação ou eliminação. Um ficheiro da nuvem aberto sem alterações não ocupa espaço a mais; só o texto ainda não guardado é guardado.
 
 Se o mesmo documento for alterado em dois computadores antes de sincronizar, cada computador fica com o seu texto, e a versão do outro abre num separador novo, com "(conflito – outro computador)" no nome, para nada se perder.
 

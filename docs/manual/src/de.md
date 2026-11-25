@@ -337,11 +337,11 @@ Mit einem Konto speichern Sie Dateien in der Cloud und öffnen sie auf anderen C
 ![Liste der Dateien in der Cloud](img/s17-cloud-open.png)
 
 5. **In der Cloud speichern:** **{{menu.file}} → {{menu.file.saveCloud}}**. Wählen Sie den Pfad, zum Beispiel `arbeit/protokoll.md`.
-6. **Aus der Cloud öffnen:** **{{menu.file}} → {{menu.file.openCloud}}**. In der Liste öffnen oder löschen Sie Dateien. In einem aus der Cloud geöffneten Dokument speichert **Ctrl+S** wieder in der Cloud.
+6. **Aus der Cloud öffnen:** **{{menu.file}} → {{menu.file.openCloud}}**. Oben stehen die Anzahl Ihrer Dateien, ihre Gesamtgröße und die Grenzen Ihres Tarifs. Die Dateien sind wie in der Seitenleiste nach Ordnern sortiert, mit Version, Größe und Datum der letzten Änderung in Grau. Doppelklicken Sie auf eine Datei, um sie zu öffnen; der Rechtsklick bietet dieselben Aktionen wie die Seitenleiste. In einem aus der Cloud geöffneten Dokument speichert **Ctrl+S** wieder in der Cloud.
 
 Hat sich die Datei seit der letzten Synchronisierung in der Cloud geändert, warnt die Anwendung und fragt, ob sie überschrieben werden soll. Jede Datei darf bis zu 10 MB groß sein. Hat Ihr System keinen Tresor für Anmeldedaten, weist die Anwendung darauf hin, dass Sie sich bei jedem Start neu anmelden müssen.
 
-Solange Sie angemeldet sind, zeigt die Statusleiste links neben dem Cloud-Symbol, wie viel Cloud-Speicher Sie belegen, in MB mit zwei Nachkommastellen (zum Beispiel `1.25 MB`). Gezählt werden alle Ihre Dateien in der Cloud und die Texte noch nicht gespeicherter Dokumente, die aufbewahrt werden, damit Sie an einem anderen Computer weiterarbeiten können. Der Wert ändert sich bei jedem Speichern oder Löschen. Eine unverändert geöffnete Cloud-Datei belegt keinen zusätzlichen Speicher; nur noch nicht gespeicherter Text wird aufbewahrt.
+Solange Sie angemeldet sind, zeigt die Statusleiste links neben dem Cloud-Symbol, wie viele Dateien Sie speichern und wie viel Cloud-Speicher Sie belegen, in MB mit zwei Nachkommastellen (zum Beispiel `Dateien: 3   Speicher: 1.25 MB`). Jeder Wert wird bei 90 % der Grenze Ihres Tarifs orange und bei 100 % rot. Gezählt werden alle Ihre Dateien in der Cloud und die Texte noch nicht gespeicherter Dokumente, die aufbewahrt werden, damit Sie an einem anderen Computer weiterarbeiten können. Der Wert ändert sich bei jedem Speichern oder Löschen. Eine unverändert geöffnete Cloud-Datei belegt keinen zusätzlichen Speicher; nur noch nicht gespeicherter Text wird aufbewahrt.
 
 Wird dasselbe Dokument vor der Synchronisierung an zwei Computern geändert, behält jeder Computer seinen Text, und die andere Version öffnet sich in einem neuen Tab mit „(Konflikt – anderer Computer)“ im Namen, damit nichts verloren geht.
 

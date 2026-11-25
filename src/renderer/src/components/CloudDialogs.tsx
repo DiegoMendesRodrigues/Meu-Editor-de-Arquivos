@@ -1,12 +1,13 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import { useEffect, useState } from 'react'
-import type { CloudFileMeta } from '@shared/ipc'
+import { useEffect, useMemo, useState } from 'react'
 import { finishCloudSave, openFromCloud, pendingCloudSaveDoc, pushToCloud } from '@/cloud'
-import { allFolders, baseName, isValidCloudName, joinPath, parentOf, useCloud } from '@/store/cloud'
+import { allFolders, baseName, buildCloudTree, isValidCloudName, joinPath, parentOf, useCloud } from '@/store/cloud'
+import { formatTotalMb } from '@/cloudInfo'
 import { useLocale, useT } from '@/i18n'
-import { errorMessage, useAccount } from '@/store/account'
+import { useAccount } from '@/store/account'
 import { useDialogs } from '@/store/dialogs'
 import { useActiveDocument, useDocuments } from '@/store/documents'
+import { CloudRows, type CloudRowsMode } from './CloudTree'
 import { Modal, buttonClass, fieldClass, primaryButtonClass } from './Modal'
 
 const formatSize = (b: number): string => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(1)} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`)
@@ -32,58 +33,42 @@ export function CloudOpenDialog() {
   const locale = useLocale((s) => s.locale)
   const close = useDialogs((s) => s.close)
   const user = useAccount((s) => s.status.user)
-  const [files, setFiles] = useState<CloudFileMeta[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const files = useCloud((s) => s.files)
+  const folders = useCloud((s) => s.folders)
+  const plan = useCloud((s) => s.plan)
+  const loading = useCloud((s) => s.loading)
+  const error = useCloud((s) => s.error)
+  const tree = useMemo(() => buildCloudTree(files, folders), [files, folders])
 
-  const refresh = async (): Promise<void> => {
-    try {
-      setFiles(await window.api.cloudList())
-      setError(null)
-    } catch (err) {
-      setError(errorMessage(err))
-      void useAccount.getState().load()
-    }
-  }
   useEffect(() => {
-    if (user) void refresh()
+    if (user) void useCloud.getState().load()
   }, [user])
 
-  const open = async (id: string): Promise<void> => {
-    if (await openFromCloud(id)) close()
-  }
-  const remove = async (f: CloudFileMeta): Promise<void> => {
-    if (!window.confirm(t('cloud.confirmDelete', { path: f.path }))) return
-    try {
-      await window.api.cloudDelete(f.id)
-      await refresh()
-    } catch (err) {
-      setError(errorMessage(err))
-    }
+  const description = user ? (
+    <>
+      <span className="block">{t('cloud.open.summary', { n: files.length, size: formatTotalMb(files, locale) })}</span>
+      {plan && <span className="block">{t('cloud.open.plan', { plan: plan.name, maxFiles: plan.maxFiles, maxSizeMb: plan.maxSizeMb })}</span>}
+    </>
+  ) : (
+    t('cloud.open.description')
+  )
+  const mode: CloudRowsMode = {
+    onOpen: (f) => void openFromCloud(f.id).then((ok) => ok && close()),
+    info: (f) => t('cloud.fileInfo', { version: f.version, size: formatSize(f.size), date: new Date(f.updatedAt).toLocaleString(locale) })
   }
 
   return (
-    <Modal title={t('cloud.open.title')} description={t('cloud.open.description')} onClose={close}>
+    <Modal title={t('cloud.open.title')} description={description} onClose={close}>
       {!user ? (
         <NeedLogin onClose={close} />
       ) : (
         <div className="text-sm">
           {error && <p role="alert" className="mb-2 text-xs text-red-700">{error}</p>}
-          {files === null && !error && <p className="text-zinc-400">{t('cloud.loading')}</p>}
-          {files?.length === 0 && <p className="text-zinc-400">{t('cloud.empty')}</p>}
-          <ul className="divide-y divide-border rounded border border-border" aria-label={t('cloud.list')}>
-            {files?.map((f) => (
-              <li key={f.id} className="flex items-center gap-2 px-2 py-1.5">
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{f.path}</div>
-                  <div className="text-xs text-zinc-500">
-                    {t('cloud.fileInfo', { version: f.version, size: formatSize(f.size), date: new Date(f.updatedAt).toLocaleString(locale) })}
-                  </div>
-                </div>
-                <button type="button" className={primaryButtonClass} onClick={() => void open(f.id)}>{t('common.open')}</button>
-                <button type="button" className={buttonClass} onClick={() => void remove(f)}>{t('common.delete')}</button>
-              </li>
-            ))}
-          </ul>
+          {loading && files.length === 0 && !error && <p className="text-zinc-400">{t('cloud.loading')}</p>}
+          {!loading && !error && files.length === 0 && <p className="text-zinc-400">{t('cloud.empty')}</p>}
+          <div role="tree" aria-label={t('cloud.list')} data-testid="cloud-open-tree" className="rounded border border-border bg-surface py-1">
+            <CloudRows node={tree} files={files} mode={mode} />
+          </div>
         </div>
       )}
     </Modal>

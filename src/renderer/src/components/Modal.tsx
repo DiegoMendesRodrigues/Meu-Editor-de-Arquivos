@@ -13,7 +13,7 @@ export function Modal({
 }: {
   title: string
   /** Texto de apoio sob o título; opcional. */
-  description?: string
+  description?: React.ReactNode
   onClose: () => void
   /** "sm" para janelas pequenas (um campo ou poucas opções). */
   size?: 'sm' | 'md'

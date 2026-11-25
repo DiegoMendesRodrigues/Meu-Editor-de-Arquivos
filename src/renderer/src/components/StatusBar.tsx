@@ -2,7 +2,7 @@
 import { useEffect, useMemo } from 'react'
 import { Cloud, HardDrive } from 'lucide-react'
 import { useAccount } from '@/store/account'
-import { formatStorage, useCloud, useStorageMode } from '@/store/cloud'
+import { formatStorage, useCloud, useStorageMode, usageLevel, type UsageLevel } from '@/store/cloud'
 import { isApiLanguage, languageLabel } from '@/editor/languages'
 import { useApiStore } from '@/store/api'
 import { useT } from '@/i18n'
@@ -14,6 +14,9 @@ const formatSize = (bytes: number): string =>
   bytes < 1024 ? `${bytes} B` : bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`
 
 const encoder = new TextEncoder()
+
+/** Cor do uso da nuvem: laranja a partir de 90% do limite do plano, vermelho a partir de 100%. */
+const levelClass: Record<UsageLevel, string> = { ok: '', warn: 'font-semibold text-orange-600', full: 'font-semibold text-red-600' }
 
 export function StatusBar() {
   const t = useT()
@@ -27,6 +30,13 @@ export function StatusBar() {
   const user = useAccount((s) => s.status.user)
   const size = useMemo(() => (content === undefined ? 0 : encoder.encode(content).length), [content])
   const storageBytes = useCloud((s) => s.storageBytes)
+  const storedFiles = useCloud((s) => s.storedFiles)
+  const plan = useCloud((s) => s.plan)
+  const listedFiles = useCloud((s) => s.files.length)
+  // Servidor anterior à 1.1.0 não informa a quantidade: usa a lista de arquivos já carregada.
+  const fileCount = storedFiles ?? listedFiles
+  const filesLevel = usageLevel(fileCount, plan?.maxFiles)
+  const sizeLevel = usageLevel(storageBytes ?? 0, plan ? plan.maxSizeMb * 1024 * 1024 : null)
   const apiEnv = useApiStore((s) => s.envInfo)
   const apiEnvKey = useApiStore((s) => s.activeEnvironment)
 
@@ -71,8 +81,25 @@ export function StatusBar() {
         <span>{t('status.ready')}</span>
       )}
       {user && storageBytes !== null && (
-        <span className={doc ? '' : 'ml-auto'} title={t('storage.used')} data-testid="cloud-storage">
-          {formatStorage(storageBytes)}
+        <span className={`${doc ? '' : 'ml-auto '}flex items-center gap-3 border-l border-zinc-400 pl-3`} data-testid="cloud-usage">
+          <span
+            data-testid="cloud-files"
+            data-level={filesLevel}
+            className={levelClass[filesLevel]}
+            title={plan ? t('storage.filesLimit', { n: fileCount, max: plan.maxFiles, plan: plan.name }) : t('storage.files')}
+          >
+            {t('status.cloudFiles', { n: fileCount })}
+          </span>
+          <span
+            data-testid="cloud-storage"
+            data-level={sizeLevel}
+            className={levelClass[sizeLevel]}
+            title={
+              plan ? t('storage.sizeLimit', { used: (storageBytes / (1024 * 1024)).toFixed(2), max: plan.maxSizeMb, plan: plan.name }) : t('storage.used')
+            }
+          >
+            {t('status.cloudStorage', { size: formatStorage(storageBytes) })}
+          </span>
         </span>
       )}
       {/* Local de armazenamento em uso; com a conta conectada, o clique alterna entre nuvem e disco. */}

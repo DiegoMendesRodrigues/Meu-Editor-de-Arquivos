@@ -1,5 +1,5 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildApp, type Mailer } from '../src/app.js'
 import { createMemoryStore } from '../src/db/memory.js'
 
@@ -313,7 +313,7 @@ describe('espaço usado na nuvem', () => {
 describe('espaço usado na nuvem com falha no banco', () => {
   it('a gravação continua valendo mesmo se o recálculo falhar', async () => {
     const store = createMemoryStore()
-    store.refreshStorageBytes = async () => {
+    store.refreshUsage = async () => {
       throw new Error('coluna storage_bytes ausente')
     }
     const app = buildApp({ store, mailer: { async sendPasswordReset() {} } })
@@ -328,5 +328,91 @@ describe('espaço usado na nuvem com falha no banco', () => {
     expect(res.statusCode).toBe(200)
     expect(res.json().file.version).toBe(1)
     expect(res.json().storageBytes).toBeUndefined()
+    expect(res.json().storedFiles).toBeUndefined()
+  })
+})
+
+describe('uso da nuvem e plano', () => {
+  const put = (ctx: ReturnType<typeof setup>, token: string, path: string, content = 'abc') =>
+    ctx.call('PUT', '/v1/files', { token, body: { path, content, encoding: 'UTF-8', baseVersion: null, force: false } })
+
+  it('GET /v1/me/storage devolve espaço, número de arquivos e o plano Gratuito', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    const r = await ctx.call('GET', '/v1/me/storage', { token })
+    expect(r.status).toBe(200)
+    expect(r.body).toEqual({ storageBytes: 0, storedFiles: 0, plan: { name: 'Gratuito', maxFiles: 100, maxSizeMb: 5 } })
+  })
+
+  it('stored_files sobe e desce com as gravações e exclusões (recalculado, não somado)', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    const a = await put(ctx, token, 'a.txt')
+    expect(a.body.storedFiles).toBe(1)
+    const b = await put(ctx, token, 'b.txt', 'xy')
+    expect(b.body.storedFiles).toBe(2)
+    // Regravar o mesmo arquivo não aumenta a contagem.
+    const again = await ctx.call('PUT', '/v1/files', { token, body: { path: 'a.txt', content: 'novo', encoding: 'UTF-8', baseVersion: 1, force: false } })
+    expect(again.body.storedFiles).toBe(2)
+    const ws = await ctx.call('PUT', '/v1/workspace', { token, body: { data: '{}', baseVersion: 0 } })
+    expect(ws.body.storedFiles).toBe(2)
+    const del = await ctx.call('DELETE', `/v1/files/${a.body.file.id}`, { token })
+    expect(del.body.storedFiles).toBe(1)
+    expect((await ctx.call('GET', '/v1/me/storage', { token })).body).toMatchObject({ storedFiles: 1, storageBytes: 2 + 2 })
+    // Outro usuário tem a sua própria contagem.
+    const other = await ctx.register('bia@exemplo.com', 'Bia')
+    expect((await ctx.call('GET', '/v1/me/storage', { token: other })).body.storedFiles).toBe(0)
+  })
+
+  it('não expõe administradores em nenhuma rota', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    expect((await ctx.call('GET', '/v1/admins', { token })).status).toBe(404)
+    expect(JSON.stringify((await ctx.call('GET', '/v1/me', { token })).body)).not.toMatch(/admin|lastAccess|last_access/i)
+  })
+})
+
+describe('último acesso', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it('é gravado no cadastro e atualizado no login e em requisições autenticadas', async () => {
+    // Só o Date é simulado: timers reais mantêm o scrypt e o Fastify funcionando.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t0 = new Date('2030-01-01T10:00:00.000Z')
+    vi.setSystemTime(t0)
+    const store = createMemoryStore()
+    const app = buildApp({ store, mailer: { async sendPasswordReset() {} } })
+    const reg = await app.inject({ method: 'POST', url: '/v1/auth/register', payload: { email: 'ana@exemplo.com', name: 'Ana', password: PASSWORD } })
+    const userId = reg.json().user.id as string
+    const token = reg.json().token as string
+    expect((await store.findUserById(userId))?.lastAccess).toEqual(t0)
+
+    const t1 = new Date('2030-01-02T10:00:00.000Z')
+    vi.setSystemTime(t1)
+    const login = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: { email: 'ana@exemplo.com', password: PASSWORD } })
+    expect(login.statusCode).toBe(200)
+    expect((await store.findUserById(userId))?.lastAccess).toEqual(t1)
+
+    const t2 = new Date('2030-01-03T10:00:00.000Z')
+    vi.setSystemTime(t2)
+    const me = await app.inject({ method: 'GET', url: '/v1/me', headers: { authorization: `Bearer ${token}` } })
+    expect(me.statusCode).toBe(200)
+    expect((await store.findUserById(userId))?.lastAccess).toEqual(t2)
+    await app.close()
+  })
+
+  it('falha ao gravar o último acesso não derruba a requisição', async () => {
+    const store = createMemoryStore()
+    store.touchLastAccess = async () => {
+      throw new Error('coluna last_access ausente')
+    }
+    const app = buildApp({ store, mailer: { async sendPasswordReset() {} } })
+    const reg = await app.inject({ method: 'POST', url: '/v1/auth/register', payload: { email: 'ana@exemplo.com', name: 'Ana', password: PASSWORD } })
+    const token = reg.json().token as string
+    const me = await app.inject({ method: 'GET', url: '/v1/me', headers: { authorization: `Bearer ${token}` } })
+    expect(me.statusCode).toBe(200)
+    const login = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: { email: 'ana@exemplo.com', password: PASSWORD } })
+    expect(login.statusCode).toBe(200)
+    await app.close()
   })
 })

@@ -10,7 +10,9 @@ import {
   type AccountUser,
   type CloudFileContent,
   type CloudFileMeta,
-  type CloudSaveResult
+  type CloudSaveResult,
+  type CloudUsage,
+  type CloudUsageChange
 } from '@shared/ipc'
 import { fromStoredText } from '@shared/eol'
 import { detectEol } from './textCodec'
@@ -128,13 +130,18 @@ class ApiError extends Error {
   }
 }
 
-const storageSchema = z.object({ storageBytes: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER) })
+const count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER)
+const storageSchema = z.object({ storageBytes: count, storedFiles: count.optional() })
+const usageSchema = storageSchema.extend({
+  plan: z.object({ name: z.string().max(20), maxFiles: count, maxSizeMb: count }).nullish()
+})
 
-/** Respostas que trazem o espaço usado na nuvem (salvar, excluir, sincronizar) atualizam o rodapé das janelas. */
+/** Respostas que trazem o uso da nuvem (salvar, excluir, sincronizar) atualizam o rodapé das janelas. */
 function reportStorage(json: unknown): void {
   const parsed = storageSchema.safeParse(json)
   if (!parsed.success) return
-  for (const win of BrowserWindow.getAllWindows()) win.webContents.send(IpcChannels.cloudStorageChanged, parsed.data.storageBytes)
+  const change: CloudUsageChange = { storageBytes: parsed.data.storageBytes, storedFiles: parsed.data.storedFiles ?? null }
+  for (const win of BrowserWindow.getAllWindows()) win.webContents.send(IpcChannels.cloudStorageChanged, change)
 }
 
 /** Chama a API. Com auth=true envia o token; 401 encerra a sessão local. */
@@ -334,9 +341,9 @@ export function registerAccountHandlers(): void {
     await api('POST', '/v1/folders', { auth: true, body: { path: cloudPathSchema.parse(raw) } })
   })
 
-  handle(IpcChannels.cloudStorage, async (): Promise<number> => {
-    const res = await api<unknown>('GET', '/v1/me/storage', { auth: true })
-    return storageSchema.parse(res).storageBytes
+  handle(IpcChannels.cloudStorage, async (): Promise<CloudUsage> => {
+    const res = usageSchema.parse(await api<unknown>('GET', '/v1/me/storage', { auth: true }))
+    return { storageBytes: res.storageBytes, storedFiles: res.storedFiles ?? null, plan: res.plan ?? null }
   })
 
   handle(IpcChannels.cloudDeleteFolder, async (_e, raw: unknown) => {

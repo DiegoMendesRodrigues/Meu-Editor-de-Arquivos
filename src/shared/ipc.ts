@@ -354,6 +354,26 @@ export interface AccountStatus {
   rememberSession: boolean
 }
 
+/** Plano (grupo) do usuário na nuvem: nome e limites. */
+export interface CloudPlan {
+  name: string
+  maxFiles: number
+  maxSizeMb: number
+}
+
+/** Uso da nuvem informado pelo servidor. Servidores anteriores à 1.1.0 só informam storageBytes. */
+export interface CloudUsage {
+  /** Espaço usado, em bytes (arquivos + textos não salvos da área de trabalho). */
+  storageBytes: number
+  /** Arquivos guardados na nuvem; null = o servidor não informa. */
+  storedFiles: number | null
+  /** null = o servidor não informa o plano. */
+  plan: CloudPlan | null
+}
+
+/** O que as respostas de gravação/exclusão trazem (o plano não muda nelas). */
+export type CloudUsageChange = Pick<CloudUsage, 'storageBytes' | 'storedFiles'>
+
 export interface CloudFileMeta {
   id: string
   path: string
@@ -461,10 +481,10 @@ export interface EditorApi {
   cloudDeleteFolder(path: string): Promise<void>
   /** Renomeia uma pasta da nuvem (e tudo o que há dentro dela). */
   cloudRenameFolder(from: string, to: string): Promise<void>
-  /** Espaço usado na nuvem, em bytes (arquivos + textos não salvos da área de trabalho). */
-  cloudStorage(): Promise<number>
-  /** O Main avisa quando o servidor informa um novo espaço usado (depois de salvar, excluir ou sincronizar). */
-  onCloudStorageChanged(listener: (bytes: number) => void): () => void
+  /** Uso da nuvem: espaço (arquivos + textos não salvos), quantidade de arquivos e o plano do usuário. */
+  cloudStorage(): Promise<CloudUsage>
+  /** O Main avisa quando o servidor informa um novo uso (depois de salvar, excluir ou sincronizar). */
+  onCloudStorageChanged(listener: (usage: CloudUsageChange) => void): () => void
 
   /** Avisa o processo principal do idioma da interface (diálogos nativos e mensagens de erro). */
   setLocale(locale: Locale): Promise<void>

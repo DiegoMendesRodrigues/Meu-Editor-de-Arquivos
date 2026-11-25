@@ -1421,4 +1421,11 @@ export const es: Messages = {
   "menu.view.showApiHistory": "Mostrar Historial",
   "sidebar.removeArea": "Quitar el área {name} de la barra lateral",
   "menu.tools.apiSubmenu": "Probar solicitudes y API",
+  "status.cloudFiles": "Archivos: {n}",
+  "status.cloudStorage": "Almacenamiento: {size}",
+  "storage.files": "Archivos guardados en la nube",
+  "storage.filesLimit": "{n} de {max} archivos del plan {plan}",
+  "storage.sizeLimit": "{used} de {max} MB del plan {plan} (archivos y textos aún no guardados)",
+  "cloud.open.summary": "{n} archivos almacenados con un tamaño de {size} MB sincronizados en tu cuenta.",
+  "cloud.open.plan": "Tu plan: {plan} - Cantidad máxima de archivos: {maxFiles} - Almacenamiento máximo: {maxSizeMb} MB",
 }

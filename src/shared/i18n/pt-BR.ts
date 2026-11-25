@@ -1420,6 +1420,13 @@ export const ptBR = {
   "menu.view.showApiHistory": "Exibir Histórico",
   "sidebar.removeArea": "Remover a área {name} da barra lateral",
   "menu.tools.apiSubmenu": "Testar requisições e APIs",
+  "status.cloudFiles": "Arquivos: {n}",
+  "status.cloudStorage": "Armazenamento: {size}",
+  "storage.files": "Arquivos guardados na nuvem",
+  "storage.filesLimit": "{n} de {max} arquivos do plano {plan}",
+  "storage.sizeLimit": "{used} de {max} MB do plano {plan} (arquivos e textos ainda não salvos)",
+  "cloud.open.summary": "{n} arquivos armazenados com o tamanho {size} MB sincronizados na sua conta.",
+  "cloud.open.plan": "Seu Plano: {plan} - Quantidade máxima de arquivos: {maxFiles} - Armazenamento máximo: {maxSizeMb} MB",
 }
 
 export type Messages = typeof ptBR

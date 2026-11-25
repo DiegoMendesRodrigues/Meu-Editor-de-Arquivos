@@ -1,6 +1,7 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { randomUUID } from 'node:crypto'
 import mysql, { type Pool, type PoolConnection, type ResultSetHeader, type RowDataPacket } from 'mysql2/promise'
+import { ADMIN_UPSERT_SQL, adminSeed } from './admin.js'
 import type { DeleteFolderResult, FileMeta, MoveResult, PutWorkspaceResult, RemoteFile, RenameFolderResult, Store, UpsertResult, User, Workspace } from './store.js'
 
 /**
@@ -19,7 +20,8 @@ export function createMysqlStore(uri: string): Store {
     email: r.email,
     name: r.name,
     passwordHash: r.password_hash,
-    createdAt: r.created_at
+    createdAt: r.created_at,
+    lastAccess: r.last_access ?? undefined
   })
   const toMeta = (r: RowDataPacket): FileMeta => ({
     id: r.id,
@@ -52,12 +54,12 @@ export function createMysqlStore(uri: string): Store {
       const id = randomUUID()
       const createdAt = new Date()
       try {
-        await pool.execute('INSERT INTO users (id, email, name, password_hash, created_at) VALUES (?, ?, ?, ?, ?)', [id, email, name, passwordHash, createdAt])
+        await pool.execute('INSERT INTO users (id, email, name, password_hash, created_at, last_access) VALUES (?, ?, ?, ?, ?, ?)', [id, email, name, passwordHash, createdAt, createdAt])
       } catch (err) {
         if ((err as { code?: string }).code === 'ER_DUP_ENTRY') return null
         throw err
       }
-      return { id, email, name, passwordHash, createdAt }
+      return { id, email, name, passwordHash, createdAt, lastAccess: createdAt }
     },
     async findUserByEmail(email) {
       const [rows] = await pool.execute<RowDataPacket[]>('SELECT * FROM users WHERE email = ?', [email])
@@ -72,6 +74,10 @@ export function createMysqlStore(uri: string): Store {
     },
     async setPassword(id, passwordHash) {
       await pool.execute('UPDATE users SET password_hash = ? WHERE id = ?', [passwordHash, id])
+    },
+
+    async touchLastAccess(userId, at) {
+      await pool.execute('UPDATE users SET last_access = ? WHERE id = ?', [at, userId])
     },
 
     async createSession(userId, tokenHash, expiresAt) {
@@ -231,14 +237,24 @@ export function createMysqlStore(uri: string): Store {
         return { ok: true, workspace: { data, version: baseVersion + 1, updatedAt: now } }
       })
     },
-    async getStorageBytes(userId) {
-      const [rows] = await pool.execute<RowDataPacket[]>('SELECT storage_bytes FROM users WHERE id = ?', [userId])
-      return Number(rows[0]?.storage_bytes ?? 0)
+    async getUsage(userId) {
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `SELECT u.storage_bytes, u.stored_files, g.name, g.max_files, g.max_size_mb
+           FROM users u JOIN users_groups g ON g.id = u.users_groups_id WHERE u.id = ?`,
+        [userId]
+      )
+      const r = rows[0]
+      return {
+        storageBytes: Number(r?.storage_bytes ?? 0),
+        storedFiles: Number(r?.stored_files ?? 0),
+        plan: { name: String(r?.name ?? 'Gratuito'), maxFiles: Number(r?.max_files ?? 100), maxSizeMb: Number(r?.max_size_mb ?? 5) }
+      }
     },
-    async refreshStorageBytes(userId) {
-      // Recalculado a partir dos dados (e não somado aos poucos): o total nunca se desencontra.
-      await pool.execute(`UPDATE users SET storage_bytes = ${STORAGE_SUM} WHERE id = ?`, [userId, userId, userId])
-      return this.getStorageBytes(userId)
+    async refreshUsage(userId) {
+      // Recalculado a partir dos dados (e não somado aos poucos): os totais nunca se desencontram.
+      await pool.execute(`UPDATE users SET storage_bytes = ${STORAGE_SUM}, stored_files = ${FILE_COUNT} WHERE id = ?`, [userId, userId, userId, userId])
+      const [rows] = await pool.execute<RowDataPacket[]>('SELECT storage_bytes, stored_files FROM users WHERE id = ?', [userId])
+      return { storageBytes: Number(rows[0]?.storage_bytes ?? 0), storedFiles: Number(rows[0]?.stored_files ?? 0) }
     },
     async close() {
       await pool.end()
@@ -246,19 +262,45 @@ export function createMysqlStore(uri: string): Store {
   }
 }
 
+const FILE_COUNT = '(SELECT COUNT(*) FROM files WHERE user_id = ?)'
+
+async function columnExists(conn: mysql.Connection, table: string, column: string): Promise<boolean> {
+  const [rows] = await conn.query<RowDataPacket[]>(
+    'SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?',
+    [table, column]
+  )
+  return rows.length > 0
+}
+
 /**
  * Aplica o esquema (CREATE TABLE IF NOT EXISTS) e as colunas novas em bancos já existentes
- * (storage_bytes, da versão 1.1.0), recalculando o espaço usado de todos os usuários.
+ * (storage_bytes, da 1.1.0; last_access, users_groups_id e stored_files, dos planos), de forma idempotente,
+ * recalculando o uso de todos os usuários. Se ADMIN_NAME, ADMIN_EMAIL e ADMIN_PASSWORD estiverem
+ * definidos, cadastra (ou atualiza) o administrador. Devolve se o administrador foi gravado.
  */
-export async function migrate(uri: string, sql: string): Promise<void> {
+export async function migrate(uri: string, sql: string, env: Record<string, string | undefined> = process.env): Promise<{ adminSaved: boolean }> {
   const conn = await mysql.createConnection({ uri, multipleStatements: true })
   try {
     await conn.query(sql)
-    const [cols] = await conn.query<RowDataPacket[]>(
-      "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'storage_bytes'"
+    if (!(await columnExists(conn, 'users', 'storage_bytes'))) await conn.query('ALTER TABLE users ADD COLUMN storage_bytes BIGINT NOT NULL DEFAULT 0')
+    if (!(await columnExists(conn, 'users', 'last_access'))) {
+      await conn.query('ALTER TABLE users ADD COLUMN last_access DATETIME(3) NULL')
+      // Usuários que já existiam: o último acesso conhecido é agora (UTC, como o pool usa timezone Z).
+      await conn.query('UPDATE users SET last_access = UTC_TIMESTAMP(3) WHERE last_access IS NULL')
+    }
+    // A coluna nova com DEFAULT 1 já preenche as linhas existentes com o grupo Gratuito.
+    if (!(await columnExists(conn, 'users', 'users_groups_id'))) await conn.query('ALTER TABLE users ADD COLUMN users_groups_id INT UNSIGNED NOT NULL DEFAULT 1')
+    if (!(await columnExists(conn, 'users', 'stored_files'))) await conn.query('ALTER TABLE users ADD COLUMN stored_files INT UNSIGNED NOT NULL DEFAULT 0')
+    const [fks] = await conn.query<RowDataPacket[]>(
+      "SELECT 1 FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND CONSTRAINT_NAME = 'fk_users_group' AND CONSTRAINT_TYPE = 'FOREIGN KEY'"
     )
-    if (cols.length === 0) await conn.query('ALTER TABLE users ADD COLUMN storage_bytes BIGINT NOT NULL DEFAULT 0')
-    await conn.query(`UPDATE users u SET u.storage_bytes = ${STORAGE_SUM.replace(/\?/g, 'u.id')}`)
+    if (fks.length === 0) {
+      await conn.query('ALTER TABLE users ADD CONSTRAINT fk_users_group FOREIGN KEY (users_groups_id) REFERENCES users_groups (id)')
+    }
+    await conn.query(`UPDATE users u SET u.storage_bytes = ${STORAGE_SUM.replace(/\?/g, 'u.id')}, u.stored_files = ${FILE_COUNT.replace(/\?/g, 'u.id')}`)
+    const admin = adminSeed(env)
+    if (admin) await conn.execute(ADMIN_UPSERT_SQL, [admin.name, admin.email, admin.passwordHash])
+    return { adminSaved: admin !== null }
   } finally {
     await conn.end()
   }

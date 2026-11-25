@@ -1,6 +1,33 @@
 -- Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 -- Esquema para MySQL 8+ / MariaDB 10.6+. Aplique com: npm run migrate
 
+-- Administradores do sistema (o e-mail é o login). Não são expostos por nenhuma rota da API.
+-- ATENÇÃO: password_hash guarda SHA-256 em hexadecimal (64 caracteres), a pedido do projeto. SHA-256 simples,
+-- sem sal, é fraco contra força bruta e tabelas prontas; o recomendado é scrypt (como em users) ou argon2.
+CREATE TABLE IF NOT EXISTS admins (
+  id            INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name          VARCHAR(200) NOT NULL COMMENT 'Nome do Administrador',
+  email         VARCHAR(200) NOT NULL COMMENT 'E-mail (login do administrador)',
+  password_hash VARCHAR(64)  NOT NULL COMMENT 'SHA-256 em hexadecimal (fraco: prefira scrypt)',
+  UNIQUE KEY uq_admins_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Grupos (planos) de usuários, com os limites de cada um. Os limites ainda não são aplicados pela API.
+CREATE TABLE IF NOT EXISTS users_groups (
+  id                         INT UNSIGNED       NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name                       VARCHAR(20)        NOT NULL COMMENT 'Nome do grupo',
+  max_files                  MEDIUMINT UNSIGNED NOT NULL COMMENT 'Máximo de arquivos',
+  max_size_mb                MEDIUMINT UNSIGNED NOT NULL COMMENT 'Espaço máximo (MB)',
+  waiting_time_for_deletion  SMALLINT UNSIGNED  NOT NULL DEFAULT 30 COMMENT 'Dias de espera para excluir',
+  monthly_amount             DECIMAL(5,2)       NOT NULL DEFAULT 0.00 COMMENT 'Valor mensal',
+  annual_value               DECIMAL(5,2)       NOT NULL DEFAULT 0.00 COMMENT 'Valor anual',
+  visible_to_the_user        TINYINT(1)         NOT NULL DEFAULT 1 COMMENT 'Visível ao usuário'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Grupo padrão de todo usuário novo (idempotente).
+INSERT IGNORE INTO users_groups (id, name, max_files, max_size_mb, waiting_time_for_deletion, monthly_amount, annual_value, visible_to_the_user)
+VALUES (1, 'Gratuito', 100, 5, 30, 0.00, 0.00, 1);
+
 CREATE TABLE IF NOT EXISTS users (
   id            CHAR(36)     NOT NULL PRIMARY KEY,
   email         VARCHAR(254) NOT NULL,
@@ -9,7 +36,13 @@ CREATE TABLE IF NOT EXISTS users (
   created_at    DATETIME(3)  NOT NULL,
   -- Espaço usado na nuvem, em bytes: arquivos + área de trabalho (textos não salvos). Recalculado a cada gravação.
   storage_bytes BIGINT       NOT NULL DEFAULT 0,
-  UNIQUE KEY uq_users_email (email)
+  -- Último acesso (UTC): cadastro, login e qualquer requisição autenticada.
+  last_access   DATETIME(3)  NULL,
+  users_groups_id INT UNSIGNED NOT NULL DEFAULT 1,
+  -- Número de arquivos do usuário na nuvem. Recalculado junto com storage_bytes.
+  stored_files  INT UNSIGNED NOT NULL DEFAULT 0,
+  UNIQUE KEY uq_users_email (email),
+  CONSTRAINT fk_users_group FOREIGN KEY (users_groups_id) REFERENCES users_groups (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS sessions (

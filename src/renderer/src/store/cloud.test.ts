@@ -1,7 +1,7 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { CloudFileMeta } from '@shared/ipc'
-import { allFolders, buildCloudTree, isValidCloudName } from './cloud'
+import { allFolders, buildCloudTree, isValidCloudName, usageLevel } from './cloud'
 import { useDocuments } from './documents'
 
 const meta = (id: string, path: string): CloudFileMeta => ({ id, path, version: 1, size: 1, encoding: 'UTF-8', updatedAt: '2026-01-01T00:00:00Z' }) as CloudFileMeta
@@ -37,5 +37,22 @@ describe('documento salvo na nuvem', () => {
     s.updateCloudPath('c1', 'arquivo/ata.md', 2)
     doc = useDocuments.getState().documents[0]
     expect(doc.cloud).toEqual({ id: 'c1', path: 'arquivo/ata.md', version: 2 })
+  })
+})
+
+describe('alerta de uso do plano', () => {
+  it('fica laranja a partir de 90% e vermelho a partir de 100%', () => {
+    expect(usageLevel(89, 100)).toBe('ok')
+    expect(usageLevel(90, 100)).toBe('warn')
+    expect(usageLevel(99, 100)).toBe('warn')
+    expect(usageLevel(100, 100)).toBe('full')
+    expect(usageLevel(150, 100)).toBe('full')
+    const mb = 1024 * 1024
+    expect(usageLevel(4.5 * mb, 5 * mb)).toBe('warn')
+  })
+
+  it('sem plano conhecido não alerta', () => {
+    expect(usageLevel(1000, null)).toBe('ok')
+    expect(usageLevel(1000, 0)).toBe('ok')
   })
 })

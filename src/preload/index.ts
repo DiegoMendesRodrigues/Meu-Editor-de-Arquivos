@@ -1,6 +1,6 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { contextBridge, ipcRenderer, webUtils, type IpcRendererEvent } from 'electron'
-import { IpcChannels, type EditorApi, type FileChange } from '@shared/ipc'
+import { IpcChannels, type CloudUsageChange, type EditorApi, type FileChange } from '@shared/ipc'
 
 /**
  * Única ponte entre o Renderer e o sistema operacional.
@@ -72,7 +72,7 @@ const api: EditorApi = {
   cloudRenameFolder: (from, to) => ipcRenderer.invoke(IpcChannels.cloudRenameFolder, from, to),
   cloudStorage: () => ipcRenderer.invoke(IpcChannels.cloudStorage),
   onCloudStorageChanged: (listener) => {
-    const handler = (_e: unknown, bytes: number) => listener(bytes)
+    const handler = (_e: unknown, usage: CloudUsageChange) => listener(usage)
     ipcRenderer.on(IpcChannels.cloudStorageChanged, handler)
     return () => void ipcRenderer.off(IpcChannels.cloudStorageChanged, handler)
   },

@@ -1,6 +1,6 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 /** Arquivos e pastas da nuvem na barra lateral: abrir, criar pasta, excluir e arrastar entre pastas. */
-import { useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { ChevronRight, Cloud, Trash2 } from 'lucide-react'
 import type { CloudFileMeta } from '@shared/ipc'
 import { copyDocumentToCloud, createCloudFolder, deleteCloudFile, deleteCloudFolder, moveCloudFile, openFromCloud } from '@/cloud'
@@ -51,31 +51,51 @@ function useDrop(folder: string, files: CloudFileMeta[]) {
   }
 }
 
+/** Modo da janela "Abrir da nuvem": duplo clique abre, mostra versão/tamanho/data e não arrasta nem tem lixeira. */
+export interface CloudRowsMode {
+  onOpen: (file: CloudFileMeta) => void
+  info: (file: CloudFileMeta) => string
+}
+const ModeContext = createContext<CloudRowsMode | null>(null)
+
 const rowButton = 'flex min-w-0 flex-1 items-center gap-1.5 truncate py-0.5 text-left'
 const trashButton = 'mr-1 rounded p-0.5 text-zinc-500 opacity-0 hover:bg-zinc-300 group-hover:opacity-100 focus:opacity-100'
 
 function FileRow({ file, depth, active }: { file: CloudFileMeta; depth: number; active: boolean }) {
   const t = useT()
   const name = file.path.split('/').pop() ?? file.path
+  const mode = useContext(ModeContext)
   const target: SidebarTarget = { source: 'cloud', kind: 'file', path: file.path, name, cloudId: file.id }
   return (
     <EntryMenu target={target}>
     <div
-      draggable
+      draggable={!mode}
       onDragStart={(e) => {
         e.dataTransfer.setData(DRAG_TYPE, file.id)
         e.dataTransfer.effectAllowed = 'move'
       }}
       className={`group flex items-center hover:bg-zinc-200 ${active ? 'bg-zinc-200 font-medium' : ''}`}
     >
-      <button type="button" title={file.path} onClick={() => void openFromCloud(file.id)} style={{ paddingLeft: depth * 12 + 8 }} className={rowButton}>
+      <button
+        type="button"
+        title={file.path}
+        // No modo janela: Enter e duplo clique abrem; um clique (ou Espaço) só seleciona.
+        onClick={mode ? undefined : () => void openFromCloud(file.id)}
+        onKeyDown={mode ? (e) => e.key === 'Enter' && !e.repeat && (e.preventDefault(), mode.onOpen(file)) : undefined}
+        onDoubleClick={mode ? () => mode.onOpen(file) : undefined}
+        style={{ paddingLeft: depth * 12 + 8 }}
+        className={`${rowButton} ${mode ? 'focus:bg-zinc-200' : ''}`}
+      >
         <span className="w-3.5 shrink-0" />
         <FileIcon name={name} />
         <span className="truncate">{name}</span>
+        {mode && <span className="shrink-0 whitespace-pre text-xs text-zinc-500">{' ' + mode.info(file)}</span>}
       </button>
-      <button type="button" title={t('common.delete')} aria-label={`${t('common.delete')} ${file.path}`} onClick={() => void deleteCloudFile(file)} className={trashButton}>
-        <Trash2 size={12} />
-      </button>
+      {!mode && (
+        <button type="button" title={t('common.delete')} aria-label={`${t('common.delete')} ${file.path}`} onClick={() => void deleteCloudFile(file)} className={trashButton}>
+          <Trash2 size={12} />
+        </button>
+      )}
     </div>
     </EntryMenu>
   )
@@ -93,11 +113,12 @@ function FolderRow({ node, depth, files, activeCloudId }: NodeProps) {
   const [open, setOpen] = useState(true)
   const target = useCloud((s) => s.targetFolder)
   const setTarget = useCloud((s) => s.setTargetFolder)
+  const mode = useContext(ModeContext)
   const { over, handlers } = useDrop(node.path, files)
   const empty = node.folders.length === 0 && node.files.length === 0
   const menuTarget: SidebarTarget = { source: 'cloud', kind: 'folder', path: node.path, name: node.name }
   return (
-    <div role="treeitem" aria-expanded={open} {...handlers}>
+    <div role="treeitem" aria-expanded={open} {...(mode ? {} : handlers)}>
       <EntryMenu target={menuTarget} isEmpty={() => empty} onDelete={() => void deleteCloudFolder(node.path)}>
       <div className={`group flex items-center hover:bg-zinc-200 ${over ? 'bg-sky-100 ring-1 ring-sky-400' : target === node.path ? 'bg-zinc-200' : ''}`}>
         <button
@@ -114,7 +135,7 @@ function FolderRow({ node, depth, files, activeCloudId }: NodeProps) {
           <FolderIcon colorKey={cloudFolderKey(node.path)} open={open} />
           <span className="truncate">{node.name}</span>
         </button>
-        {empty && (
+        {empty && !mode && (
           <button type="button" title={t('cloud.deleteFolder')} aria-label={`${t('cloud.deleteFolder')} ${node.path}`} onClick={() => void deleteCloudFolder(node.path)} className={trashButton}>
             <Trash2 size={12} />
           </button>
@@ -126,7 +147,7 @@ function FolderRow({ node, depth, files, activeCloudId }: NodeProps) {
   )
 }
 
-function FolderChildren({ node, depth, files, activeCloudId }: NodeProps) {
+export function FolderChildren({ node, depth, files, activeCloudId }: NodeProps) {
   return (
     <div role="group">
       {node.folders.map((f) => (
@@ -136,6 +157,15 @@ function FolderChildren({ node, depth, files, activeCloudId }: NodeProps) {
         <FileRow key={f.id} file={f} depth={depth} active={f.id === activeCloudId} />
       ))}
     </div>
+  )
+}
+
+/** Árvore da nuvem para a janela "Abrir da nuvem": mesmas pastas, ícones e menu da barra lateral. */
+export function CloudRows({ node, files, mode }: { node: CloudFolderNode; files: CloudFileMeta[]; mode: CloudRowsMode }) {
+  return (
+    <ModeContext.Provider value={mode}>
+      <FolderChildren node={node} depth={0} files={files} />
+    </ModeContext.Provider>
   )
 }
 

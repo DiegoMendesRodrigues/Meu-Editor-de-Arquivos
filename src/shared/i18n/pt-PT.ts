@@ -1421,4 +1421,11 @@ export const ptPT: Messages = {
   "menu.view.showApiHistory": "Mostrar Histórico",
   "sidebar.removeArea": "Remover a área {name} da barra lateral",
   "menu.tools.apiSubmenu": "Testar pedidos e APIs",
+  "status.cloudFiles": "Ficheiros: {n}",
+  "status.cloudStorage": "Armazenamento: {size}",
+  "storage.files": "Ficheiros guardados na nuvem",
+  "storage.filesLimit": "{n} de {max} ficheiros do plano {plan}",
+  "storage.sizeLimit": "{used} de {max} MB do plano {plan} (ficheiros e textos ainda não guardados)",
+  "cloud.open.summary": "{n} ficheiros armazenados com o tamanho de {size} MB sincronizados na sua conta.",
+  "cloud.open.plan": "O seu plano: {plan} - Quantidade máxima de ficheiros: {maxFiles} - Armazenamento máximo: {maxSizeMb} MB",
 }
