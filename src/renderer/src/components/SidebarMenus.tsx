@@ -97,6 +97,14 @@ export function EntryMenu({
               </ContextMenu.Item>
             </>
           )}
+          {target.kind === 'file' && onDelete && (
+            <>
+              <ContextMenu.Separator className="my-1 h-px bg-zinc-200" />
+              <ContextMenu.Item onSelect={() => onDelete()} className={itemClass}>
+                <Trash2 size={14} /> {t('common.delete')}
+              </ContextMenu.Item>
+            </>
+          )}
         </ContextMenu.Content>
       </ContextMenu.Portal>
     </ContextMenu.Root>

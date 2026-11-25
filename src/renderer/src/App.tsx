@@ -20,6 +20,7 @@ import * as cmd from '@/commands'
 import { AboutDialog, ShortcutsDialog, UpdateDialog } from '@/components/AboutDialogs'
 import { AccountDialog } from '@/components/AccountDialog'
 import { CloudLimitAlert, CloudOpenDialog, CloudSaveDialog } from '@/components/CloudDialogs'
+import { SidebarDialogs } from '@/components/SidebarMenus'
 import { MacrosDialog } from '@/components/MacrosDialog'
 import { SnippetsDialog } from '@/components/SnippetsDialog'
 import { HashDialog } from '@/components/HashDialog'
@@ -158,6 +159,8 @@ export function App() {
       {dialog === 'cloudOpen' && <CloudOpenDialog />}
       {dialog === 'cloudSave' && <CloudSaveDialog />}
       <CloudLimitAlert />
+      {/* Renomear e cor da pasta: abertas pelo botão direito na barra lateral ou na janela "Abrir da nuvem". */}
+      <SidebarDialogs />
       {dialog === 'shortcuts' && <ShortcutsDialog />}
       {dialog === 'about' && <AboutDialog />}
       {dialog === 'update' && <UpdateDialog />}

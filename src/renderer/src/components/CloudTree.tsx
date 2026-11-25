@@ -9,10 +9,12 @@ import { useAccount } from '@/store/account'
 import { buildCloudTree, isValidCloudName, joinPath, useCloud, type CloudFolderNode } from '@/store/cloud'
 import { useDocuments } from '@/store/documents'
 import { cloudFolderKey } from '@/store/folderColors'
-import type { SidebarTarget } from '@/sidebarActions'
+import { moveCloudFolder, type SidebarTarget } from '@/sidebarActions'
 import { EntryMenu, FileIcon, FolderIcon } from './SidebarMenus'
 
 const DRAG_TYPE = 'application/x-cloud-file'
+/** Pasta da nuvem arrastada (o valor é o caminho da pasta). */
+const FOLDER_DRAG_TYPE = 'application/x-cloud-folder'
 /** Documento aberto (do computador) arrastado da lista "Documentos abertos". */
 export const DOC_DRAG_TYPE = 'application/x-editor-doc'
 
@@ -23,10 +25,11 @@ function useDrop(folder: string, files: CloudFileMeta[]) {
     over,
     handlers: {
       onDragOver: (e: React.DragEvent) => {
-        if (!e.dataTransfer.types.includes(DRAG_TYPE) && !e.dataTransfer.types.includes(DOC_DRAG_TYPE)) return
+        const types = e.dataTransfer.types
+        if (!types.includes(DRAG_TYPE) && !types.includes(DOC_DRAG_TYPE) && !types.includes(FOLDER_DRAG_TYPE)) return
         e.preventDefault()
         e.stopPropagation()
-        e.dataTransfer.dropEffect = e.dataTransfer.types.includes(DRAG_TYPE) ? 'move' : 'copy'
+        e.dataTransfer.dropEffect = types.includes(DOC_DRAG_TYPE) ? 'copy' : 'move'
         setOver(true)
       },
       onDragLeave: () => setOver(false),
@@ -40,6 +43,13 @@ function useDrop(folder: string, files: CloudFileMeta[]) {
           if (doc) void copyDocumentToCloud(doc, folder)
           return
         }
+        const folderPath = e.dataTransfer.getData(FOLDER_DRAG_TYPE)
+        if (folderPath) {
+          e.preventDefault()
+          e.stopPropagation()
+          void moveCloudFolder(folderPath, folder)
+          return
+        }
         const id = e.dataTransfer.getData(DRAG_TYPE)
         if (!id) return
         e.preventDefault()
@@ -51,7 +61,7 @@ function useDrop(folder: string, files: CloudFileMeta[]) {
   }
 }
 
-/** Modo da janela "Abrir da nuvem": duplo clique abre, mostra versão/tamanho/data e não arrasta nem tem lixeira. */
+/** Modo da janela "Abrir da nuvem": duplo clique abre, mostra versão/tamanho/data e não tem lixeira (exclui pelo botão direito). */
 export interface CloudRowsMode {
   onOpen: (file: CloudFileMeta) => void
   info: (file: CloudFileMeta) => string
@@ -67,10 +77,11 @@ function FileRow({ file, depth, active }: { file: CloudFileMeta; depth: number; 
   const mode = useContext(ModeContext)
   const target: SidebarTarget = { source: 'cloud', kind: 'file', path: file.path, name, cloudId: file.id }
   return (
-    <EntryMenu target={target}>
+    <EntryMenu target={target} onDelete={() => void deleteCloudFile(file)}>
     <div
-      draggable={!mode}
+      draggable
       onDragStart={(e) => {
+        e.stopPropagation()
         e.dataTransfer.setData(DRAG_TYPE, file.id)
         e.dataTransfer.effectAllowed = 'move'
       }}
@@ -118,9 +129,16 @@ function FolderRow({ node, depth, files, activeCloudId }: NodeProps) {
   const empty = node.folders.length === 0 && node.files.length === 0
   const menuTarget: SidebarTarget = { source: 'cloud', kind: 'folder', path: node.path, name: node.name }
   return (
-    <div role="treeitem" aria-expanded={open} {...(mode ? {} : handlers)}>
+    <div role="treeitem" aria-expanded={open} {...handlers}>
       <EntryMenu target={menuTarget} isEmpty={() => empty} onDelete={() => void deleteCloudFolder(node.path)}>
-      <div className={`group flex items-center hover:bg-zinc-200 ${over ? 'bg-sky-100 ring-1 ring-sky-400' : target === node.path ? 'bg-zinc-200' : ''}`}>
+      <div
+        draggable
+        onDragStart={(e) => {
+          e.stopPropagation()
+          e.dataTransfer.setData(FOLDER_DRAG_TYPE, node.path)
+          e.dataTransfer.effectAllowed = 'move'
+        }}
+        className={`group flex items-center hover:bg-zinc-200 ${over ? 'bg-sky-100 ring-1 ring-sky-400' : target === node.path ? 'bg-zinc-200' : ''}`}>
         <button
           type="button"
           title={node.path}
@@ -162,9 +180,18 @@ export function FolderChildren({ node, depth, files, activeCloudId }: NodeProps)
 
 /** Árvore da nuvem para a janela "Abrir da nuvem": mesmas pastas, ícones e menu da barra lateral. */
 export function CloudRows({ node, files, mode }: { node: CloudFolderNode; files: CloudFileMeta[]; mode: CloudRowsMode }) {
+  const t = useT()
+  // Soltar fora das pastas leva o arquivo ou a pasta para a raiz, como na barra lateral.
+  const root = useDrop('', files)
   return (
     <ModeContext.Provider value={mode}>
-      <FolderChildren node={node} depth={0} files={files} />
+      <div {...root.handlers} data-testid="cloud-open-root" className={`min-h-16 ${root.over ? 'bg-sky-50' : ''}`}>
+        <div className="flex items-center gap-1.5 px-2 py-0.5 text-zinc-500">
+          <Cloud size={14} className="shrink-0 text-sky-600" />
+          <span className="truncate">{t('cloud.root')}</span>
+        </div>
+        <FolderChildren node={node} depth={1} files={files} />
+      </div>
     </ModeContext.Provider>
   )
 }

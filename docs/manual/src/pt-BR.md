@@ -337,7 +337,7 @@ Com uma conta, você guarda arquivos na nuvem e os abre em outros computadores. 
 ![Lista de arquivos na nuvem](img/s17-cloud-open.png)
 
 5. **Salvar na nuvem:** **{{menu.file}} → {{menu.file.saveCloud}}**. Escolha o caminho, por exemplo `trabalho/ata.md`.
-6. **Abrir da nuvem:** **{{menu.file}} → {{menu.file.openCloud}}**. No topo aparecem quantos arquivos você guarda, o tamanho total e os limites do seu plano. Os arquivos ficam organizados por pasta, como na barra lateral, com a versão, o tamanho e a data da última alteração em cinza. Clique duas vezes num arquivo para abri-lo; o botão direito traz as mesmas ações da barra lateral. Em um documento aberto da nuvem, **Ctrl+S** grava de volta na nuvem.
+6. **Abrir da nuvem:** **{{menu.file}} → {{menu.file.openCloud}}**. No topo aparecem quantos arquivos você guarda, o tamanho total e os limites do seu plano. Os arquivos ficam organizados por pasta, como na barra lateral, com a versão, o tamanho e a data da última alteração em cinza. Clique duas vezes num arquivo para abri-lo; arraste arquivos e pastas para outra pasta (ou para **{{cloud.root}}**), como na barra lateral, e use o botão direito para **{{sidebar.rename}}**, **{{sidebar.folderColor}}** e **{{common.delete}}**. Em um documento aberto da nuvem, **Ctrl+S** grava de volta na nuvem.
 
 Se o arquivo mudou na nuvem desde a última vez, o aplicativo avisa e pergunta se você quer sobrescrever. Cada arquivo pode ter até 10 MB. Se o seu sistema não tem cofre de credenciais, o aplicativo avisa que você precisará entrar a cada abertura.
 

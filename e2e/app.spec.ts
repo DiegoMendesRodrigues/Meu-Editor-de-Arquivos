@@ -624,6 +624,74 @@ test.describe('janela Abrir da nuvem', () => {
   })
 })
 
+test.describe('janela Abrir da nuvem: organizar', () => {
+  test('arrasta arquivos e pastas, renomeia, muda a cor e exclui pelo botão direito', async ({ page }) => {
+    const api = await signInToTestApi(page)
+    try {
+      await page.evaluate(async () => {
+        const w = window as unknown as { api: { cloudSave(r: object): Promise<unknown> } }
+        await w.api.cloudSave({ path: 'docs/nota.md', content: '# nota', encoding: 'UTF-8', baseVersion: null, force: false })
+        await w.api.cloudSave({ path: 'outra/x.md', content: 'x', encoding: 'UTF-8', baseVersion: null, force: false })
+        await w.api.cloudSave({ path: 'raiz.txt', content: 'abc', encoding: 'UTF-8', baseVersion: null, force: false })
+      })
+      const cloudPaths = (): Promise<string[]> =>
+        page.evaluate(async () => {
+          const w = window as unknown as { api: { cloudList(): Promise<{ path: string }[]> } }
+          return (await w.api.cloudList()).map((f) => f.path).sort()
+        })
+      await page.getByRole('button', { name: pt('menu.file'), exact: true }).click()
+      await page.getByRole('menuitem', { name: pt('menu.file.openCloud') }).click()
+      const dialog = page.getByRole('dialog', { name: pt('cloud.open.title') })
+      const tree = dialog.getByTestId('cloud-open-tree')
+      const folder = (name: string) => tree.getByRole('button', { name, exact: true })
+      const file = (name: string) => tree.getByRole('button', { name: new RegExp(`^${name.replace('.', '\\.')}`) })
+      await expect(folder('docs')).toBeVisible()
+
+      // Arquivo para dentro de uma pasta.
+      await file('raiz.txt').dragTo(folder('docs'))
+      await expect.poll(cloudPaths).toEqual(['docs/nota.md', 'docs/raiz.txt', 'outra/x.md'])
+
+      // Pasta para dentro de outra e, depois, de volta para a raiz.
+      await folder('outra').dragTo(folder('docs'))
+      await expect.poll(cloudPaths).toEqual(['docs/nota.md', 'docs/outra/x.md', 'docs/raiz.txt'])
+      await folder('outra').dragTo(dialog.getByTestId('cloud-open-root').getByText(pt('cloud.root')))
+      await expect.poll(cloudPaths).toEqual(['docs/nota.md', 'docs/raiz.txt', 'outra/x.md'])
+
+      // Botão direito no arquivo: Renomear e Excluir.
+      await file('nota.md').click({ button: 'right' })
+      await page.getByRole('menuitem', { name: pt('sidebar.rename') }).click()
+      const rename = page.getByRole('dialog', { name: pt('rename.fileTitle') })
+      await rename.getByLabel(pt('rename.newName')).fill('ideias.md')
+      await rename.getByRole('button', { name: pt('rename.submit') }).click()
+      await expect(file('ideias.md')).toBeVisible()
+      await expect(dialog).toBeVisible()
+      page.once('dialog', (d) => void d.accept())
+      await file('raiz.txt').click({ button: 'right' })
+      await page.getByRole('menuitem', { name: pt('common.delete') }).click()
+      await expect.poll(cloudPaths).toEqual(['docs/ideias.md', 'outra/x.md'])
+
+      // Botão direito na pasta: Renomear, cor e Excluir (só vazia).
+      await folder('outra').click({ button: 'right' })
+      await expect(page.getByRole('menuitem', { name: pt('common.delete') })).toHaveAttribute('data-disabled', '')
+      await page.getByRole('menuitem', { name: pt('sidebar.rename') }).click()
+      const renameFolder = page.getByRole('dialog', { name: pt('rename.folderTitle') })
+      await renameFolder.getByLabel(pt('rename.newName')).fill('textos')
+      await renameFolder.getByRole('button', { name: pt('rename.submit') }).click()
+      await expect(folder('textos')).toBeVisible()
+      await folder('textos').click({ button: 'right' })
+      await page.getByRole('menuitem', { name: pt('sidebar.folderColor') }).click()
+      const colors = page.getByRole('dialog', { name: pt('folderColor.title') })
+      await colors.getByRole('radio', { name: pt('folderColor.blue'), exact: true }).click()
+      await colors.getByRole('button', { name: pt('folderColor.submit') }).click()
+      await expect(folder('textos').locator('svg[data-color]')).toHaveAttribute('data-color', 'blue')
+      await expect(dialog).toBeVisible()
+      expect(await cloudPaths()).toEqual(['docs/ideias.md', 'textos/x.md'])
+    } finally {
+      await api.close()
+    }
+  })
+})
+
 test.describe('limites do plano na nuvem', () => {
   test('armazenamento cheio: salvar mostra o aviso e não grava; quantidade cheia recusa arquivo novo', async ({ page }) => {
     const api = await signInToTestApi(page)

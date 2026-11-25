@@ -337,7 +337,7 @@ Com uma conta, guarda ficheiros na nuvem e abre-os noutros computadores. Abra o 
 ![Lista de ficheiros na nuvem](img/s17-cloud-open.png)
 
 5. **Guardar na nuvem:** **{{menu.file}} → {{menu.file.saveCloud}}**. Escolha o caminho, por exemplo `trabalho/ata.md`.
-6. **Abrir da nuvem:** **{{menu.file}} → {{menu.file.openCloud}}**. No topo aparecem quantos ficheiros guarda, o tamanho total e os limites do seu plano. Os ficheiros ficam organizados por pasta, como na barra lateral, com a versão, o tamanho e a data da última alteração a cinzento. Faça duplo clique num ficheiro para o abrir; o botão direito apresenta as mesmas ações da barra lateral. Num documento aberto da nuvem, **Ctrl+S** volta a guardar na nuvem.
+6. **Abrir da nuvem:** **{{menu.file}} → {{menu.file.openCloud}}**. No topo aparecem quantos ficheiros guarda, o tamanho total e os limites do seu plano. Os ficheiros ficam organizados por pasta, como na barra lateral, com a versão, o tamanho e a data da última alteração a cinzento. Faça duplo clique num ficheiro para o abrir; arraste ficheiros e pastas para outra pasta (ou para **{{cloud.root}}**), como na barra lateral, e use o botão direito para **{{sidebar.rename}}**, **{{sidebar.folderColor}}** e **{{common.delete}}**. Num documento aberto da nuvem, **Ctrl+S** volta a guardar na nuvem.
 
 Se o ficheiro tiver mudado na nuvem desde a última vez, a aplicação avisa e pergunta se quer substituí-lo. Cada ficheiro pode ter até 10 MB. Se o seu sistema não tiver cofre de credenciais, a aplicação avisa que terá de iniciar sessão sempre que a abrir.
 

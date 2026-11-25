@@ -10,7 +10,7 @@ import { useCloud, useStorageMode } from '@/store/cloud'
 import { localFolderKey } from '@/store/folderColors'
 import { deleteLocalFolder, isLocalFolderEmpty, useSidebarDialog, type SidebarTarget } from '@/sidebarActions'
 import { CloudTree, DOC_DRAG_TYPE, NewCloudFolder } from './CloudTree'
-import { EntryMenu, FileIcon, FolderIcon, SidebarDialogs } from './SidebarMenus'
+import { EntryMenu, FileIcon, FolderIcon } from './SidebarMenus'
 import { IconButton, Section, VisibleSectionsContext } from './SidebarSection'
 import { ApiCollectionsSection, ApiEnvironmentSection, ApiHistorySection } from '@/api/ApiSidebar'
 import { useSectionVisible } from '@/sidebarVisibility'
@@ -227,7 +227,6 @@ export function Sidebar() {
 
   return (
     <aside className="h-full overflow-y-auto bg-chrome pt-2">
-      <SidebarDialogs />
       <VisibleSectionsContext.Provider value={visible}>
         {visible.map((id) => (
           <Fragment key={id}>{sections[id]}</Fragment>

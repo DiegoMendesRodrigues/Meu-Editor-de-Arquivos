@@ -80,6 +80,7 @@ async function renameLocal(target: SidebarTarget, name: string): Promise<boolean
 
 async function renameCloud(target: SidebarTarget, name: string): Promise<boolean> {
   const newPath = joinPath(parentOf(target.path), name)
+  if (target.kind === 'folder') return relocateCloudFolder(target.path, newPath)
   try {
     if (target.kind === 'file') {
       const moved = await window.api.cloudMove(target.cloudId!, newPath)
@@ -87,22 +88,40 @@ async function renameCloud(target: SidebarTarget, name: string): Promise<boolean
       useDocuments.getState().updateCloudPath(moved.id, moved.path, moved.version)
       return true
     }
-    await window.api.cloudRenameFolder(target.path, newPath)
   } catch (err) {
     report('rename.error', errorMessage(err))
     void useAccount.getState().load() // a sessão pode ter expirado
     return false
   }
-  // Pasta: os arquivos dentro dela mudaram de caminho (e de versão); as abas abertas acompanham.
+  return true
+}
+
+/** Arrastar uma pasta da nuvem para dentro de outra (folder = '' é a raiz). Ignora soltar nela mesma ou dentro dela. */
+export function moveCloudFolder(path: string, folder: string): Promise<boolean> {
+  const name = path.split('/').pop() ?? path
+  if (folder === parentOf(path) || isInsidePath(path, folder)) return Promise.resolve(false)
+  return relocateCloudFolder(path, joinPath(folder, name))
+}
+
+/** Renomeia ou move uma pasta da nuvem: os arquivos dentro dela, as abas abertas e a cor acompanham. */
+async function relocateCloudFolder(from: string, newPath: string): Promise<boolean> {
+  try {
+    await window.api.cloudRenameFolder(from, newPath)
+  } catch (err) {
+    report('rename.error', errorMessage(err))
+    void useAccount.getState().load() // a sessão pode ter expirado
+    return false
+  }
+  // Os arquivos dentro dela mudaram de caminho (e de versão); as abas abertas acompanham.
   await useCloud.getState().load()
   const files = new Map(useCloud.getState().files.map((f) => [f.id, f]))
   for (const d of useDocuments.getState().documents) {
-    const f = d.cloud && isInsidePath(target.path, d.cloud.path) ? files.get(d.cloud.id) : undefined
+    const f = d.cloud && isInsidePath(from, d.cloud.path) ? files.get(d.cloud.id) : undefined
     if (f) useDocuments.getState().updateCloudPath(f.id, f.path, f.version)
   }
-  useFolderColors.getState().rename(cloudFolderKey(target.path), cloudFolderKey(newPath))
+  useFolderColors.getState().rename(cloudFolderKey(from), cloudFolderKey(newPath))
   const selected = useCloud.getState().targetFolder
-  if (isInsidePath(target.path, selected)) useCloud.getState().setTargetFolder(newPath + selected.slice(target.path.length))
+  if (isInsidePath(from, selected)) useCloud.getState().setTargetFolder(newPath + selected.slice(from.length))
   return true
 }
 

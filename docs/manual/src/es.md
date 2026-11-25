@@ -337,7 +337,7 @@ Con una cuenta guardas archivos en la nube y los abres en otros equipos. Abre el
 ![Lista de archivos en la nube](img/s17-cloud-open.png)
 
 5. **Guardar en la nube:** **{{menu.file}} → {{menu.file.saveCloud}}**. Elige la ruta, por ejemplo `trabajo/acta.md`.
-6. **Abrir desde la nube:** **{{menu.file}} → {{menu.file.openCloud}}**. Arriba aparecen cuántos archivos guarda, el tamaño total y los límites de su plan. Los archivos se organizan por carpeta, como en la barra lateral, con la versión, el tamaño y la fecha de la última modificación en gris. Haga doble clic en un archivo para abrirlo; el botón derecho ofrece las mismas acciones que la barra lateral. En un documento abierto desde la nube, **Ctrl+S** vuelve a guardar en la nube.
+6. **Abrir desde la nube:** **{{menu.file}} → {{menu.file.openCloud}}**. Arriba aparecen cuántos archivos guarda, el tamaño total y los límites de su plan. Los archivos se organizan por carpeta, como en la barra lateral, con la versión, el tamaño y la fecha de la última modificación en gris. Haga doble clic en un archivo para abrirlo; arrastre archivos y carpetas a otra carpeta (o a **{{cloud.root}}**), como en la barra lateral, y use el botón derecho para **{{sidebar.rename}}**, **{{sidebar.folderColor}}** y **{{common.delete}}**. En un documento abierto desde la nube, **Ctrl+S** vuelve a guardar en la nube.
 
 Si el archivo ha cambiado en la nube desde la última vez, la aplicación te avisa y pregunta si quieres sobrescribirlo. Cada archivo puede tener hasta 10 MB. Si tu sistema no tiene almacén de credenciales, la aplicación te avisa de que tendrás que iniciar sesión cada vez que la abras.
 

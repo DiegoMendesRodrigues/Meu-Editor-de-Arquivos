@@ -337,7 +337,7 @@ With an account you can keep files in the cloud and open them on other computers
 ![List of files in the cloud](img/s17-cloud-open.png)
 
 5. **Save to the cloud:** **{{menu.file}} → {{menu.file.saveCloud}}**. Pick the path, for example `work/minutes.md`.
-6. **Open from the cloud:** **{{menu.file}} → {{menu.file.openCloud}}**. The top shows how many files you store, their total size and your plan's limits. Files are organized by folder, as in the sidebar, with the version, size and last-modified date in grey. Double-click a file to open it; right-click offers the same actions as the sidebar. In a document opened from the cloud, **Ctrl+S** saves back to the cloud.
+6. **Open from the cloud:** **{{menu.file}} → {{menu.file.openCloud}}**. The top shows how many files you store, their total size and your plan's limits. Files are organized by folder, as in the sidebar, with the version, size and last-modified date in grey. Double-click a file to open it; drag files and folders to another folder (or to **{{cloud.root}}**), as in the sidebar, and right-click to **{{sidebar.rename}}**, **{{sidebar.folderColor}}** or **{{common.delete}}**. In a document opened from the cloud, **Ctrl+S** saves back to the cloud.
 
 If the file has changed in the cloud since you last synced, the application warns you and asks whether to overwrite it. Each file can be up to 10 MB. If your system has no credential vault, the application warns you that you will need to sign in every time you open it.
 
