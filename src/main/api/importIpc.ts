@@ -23,7 +23,7 @@ const inputSchema = z.object({
 
 function runInWorker(text: string, format: z.infer<typeof inputSchema>['format'], wsdl?: WsdlFilesOption): Promise<ApiImportResponse> {
   return new Promise((done) => {
-    const worker = createImportWorker({})
+    const worker = createImportWorker({ resourceLimits: { maxOldGenerationSizeMb: 256 } })
     let finished = false
     const finish = (result: ApiImportResponse): void => {
       if (finished) return

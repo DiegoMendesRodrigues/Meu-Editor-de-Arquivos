@@ -75,7 +75,7 @@ sudo ln -s /etc/nginx/sites-available/meu-editor-api /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-Keep `TRUST_PROXY=true` in `api.env` behind a proxy, so rate limits use the client's real IP.
+Keep `TRUST_PROXY=1` in `api.env` behind the nginx proxy (one proxy hop), so rate limits use the client's real IP. Use `true` only if every proxy in front replaces `X-Forwarded-For`.
 
 ## 5. Check
 
@@ -100,7 +100,7 @@ The configuration in `/etc/meu-editor-api` and the database are not deleted.
 
 ## Current limitations
 
-- **Simulated e-mail:** the password-reset code is only written to the log (`journalctl -u meu-editor-api`). For this reason the API cannot run with `NODE_ENV=production`: in that mode it refuses to start until a real e-mail service is wired to the `Mailer` in `src/app.ts`.
+- **E-mail:** configure `SMTP_*` in `api.env` for password resets. Without SMTP no e-mail is sent, and the reset code is only printed to the console when `MEA_DEV=true` (development). With `NODE_ENV=production` the API refuses to start without SMTP and `DATABASE_URL`.
 - Rate limiting is in memory: run a single instance.
 - The MySQL layer has not yet been tested against a real server. Run a full test (sign-up, sign-in, sync) before opening it to users.
 - Back up the database regularly (for example a scheduled `mysqldump`).

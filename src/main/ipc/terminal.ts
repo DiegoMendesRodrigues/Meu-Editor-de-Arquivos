@@ -73,6 +73,18 @@ function watchOwner(owner: WebContents): void {
   })
 }
 
+/** Ambiente do shell sem as variáveis que mudam o comportamento do Electron/Node (ELECTRON_*, NODE_OPTIONS). */
+export function shellEnv(env: NodeJS.ProcessEnv = process.env): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [k, v] of Object.entries(env)) {
+    if (v === undefined) continue
+    const up = k.toUpperCase()
+    if (up.startsWith('ELECTRON_') || up === 'NODE_OPTIONS' || up === 'NODE_PATH') continue
+    out[k] = v
+  }
+  return out
+}
+
 export function killAllTerminals(): void {
   for (const id of [...sessions.keys()]) kill(id)
 }
@@ -89,7 +101,7 @@ export function registerTerminalHandlers(): void {
       cols,
       rows,
       cwd: homedir(),
-      env: { ...process.env, TERM: 'xterm-256color', COLORTERM: 'truecolor' } as Record<string, string>
+      env: { ...shellEnv(), TERM: 'xterm-256color', COLORTERM: 'truecolor' }
     })
     sessions.set(id, { pty: proc, owner })
     proc.onData((data) => {

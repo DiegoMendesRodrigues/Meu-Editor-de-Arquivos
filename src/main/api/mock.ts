@@ -22,6 +22,12 @@ export interface MockOptions {
 
 export type MockStarted = { ok: true; port: number; url: string; stop: () => void } | { ok: false; code: 'portInUse' | 'unknown' }
 
+/** Origem de loopback (páginas deste computador): só a elas o CORS curinga é liberado. */
+export const isLoopbackOrigin = (origin: string | undefined): boolean => origin === undefined || /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i.test(origin)
+
+/** Cabeçalhos de proteção em toda resposta: o corpo do mock é de terceiros e nunca deve rodar como página. */
+const HARDENING: Record<string, string> = { 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': 'sandbox' }
+
 const CORS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS',
@@ -101,7 +107,12 @@ export function startMockServer(opts: MockOptions): Promise<MockStarted> {
 
   const finish = (res: ServerResponse, status: number, headers: Record<string, string>, body: string | Buffer, method: string): void => {
     if (res.destroyed) return
-    for (const [k, v] of Object.entries(headers)) {
+    const out: Record<string, string> = { ...headers, ...HARDENING }
+    const origin = res.req.headers.origin
+    if (!isLoopbackOrigin(Array.isArray(origin) ? origin[0] : origin)) {
+      for (const k of Object.keys(out)) if (k.toLowerCase().startsWith('access-control-')) delete out[k]
+    }
+    for (const [k, v] of Object.entries(out)) {
       try {
         res.setHeader(k, v)
       } catch {

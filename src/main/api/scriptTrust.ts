@@ -16,6 +16,7 @@ import { parseApiRequest } from '@shared/api/schema'
  */
 const trustPath = (): string => join(app.getPath('userData'), 'api-script-trust.json')
 
+const TRUST_VERSION = 2
 const MAX_KEYS = 2000
 const MAX_HASHES_PER_KEY = 5000
 const MAX_REQUEST_FILES = 5000
@@ -35,7 +36,7 @@ const isPathLike = (k: string): boolean => /^([A-Za-z]:[\\/]|[\\/])/.test(k)
 export const requestKeyOf = (key: string): string => `req:${isPathLike(key) ? normPath(key) : key}`
 export const collectionKeyOf = (dir: string): string => `dir:${normPath(dir)}`
 
-export const scriptHash = (pre: string, post: string): string => createHash('sha256').update(`${pre}\0${post}`, 'utf8').digest('hex')
+export const scriptHash = (pre: string, post: string): string => createHash('sha256').update(JSON.stringify([pre, post]), 'utf8').digest('hex')
 
 function load(): Promise<Map<string, string[]>> {
   if (cache) return Promise.resolve(cache)
@@ -45,8 +46,9 @@ function load(): Promise<Map<string, string[]>> {
 async function read(): Promise<Map<string, string[]>> {
   const map = new Map<string, string[]>()
   try {
-    const data = JSON.parse(await readFile(trustPath(), 'utf8')) as { keys?: unknown }
-    if (data.keys && typeof data.keys === 'object') {
+    const data = JSON.parse(await readFile(trustPath(), 'utf8')) as { version?: unknown; keys?: unknown }
+    // Versão antiga usava outro formato de hash: as confianças antigas são ignoradas (confirma-se de novo).
+    if (data.version === TRUST_VERSION && data.keys && typeof data.keys === 'object') {
       for (const [key, hashes] of Object.entries(data.keys as Record<string, unknown>).slice(0, MAX_KEYS)) {
         if (key === '__proto__' || !Array.isArray(hashes)) continue
         map.set(key, hashes.filter((h): h is string => typeof h === 'string' && /^[0-9a-f]{64}$/.test(h)).slice(-MAX_HASHES_PER_KEY))
@@ -63,7 +65,7 @@ async function read(): Promise<Map<string, string[]>> {
 function persist(): Promise<void> {
   const keys: Record<string, string[]> = {}
   for (const [k, v] of cache ?? []) keys[k] = v
-  const text = JSON.stringify({ version: 1, keys })
+  const text = JSON.stringify({ version: TRUST_VERSION, keys })
   writing = writing
     .then(async () => {
       const tmp = `${trustPath()}.tmp`

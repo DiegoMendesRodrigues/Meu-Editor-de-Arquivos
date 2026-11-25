@@ -47,12 +47,23 @@ const versionSchema = z.object({
   websiteLink: z.string().optional()
 })
 
+/** O link é https e tem exatamente a origem do site? (startsWith aceitaria "site.com.malicioso") */
+function isSiteLink(raw: string | undefined): boolean {
+  if (!raw) return false
+  try {
+    const u = new URL(raw)
+    return u.protocol === 'https:' && u.origin === new URL(SITE_URL).origin && u.username === '' && u.password === ''
+  } catch {
+    return false
+  }
+}
+
 async function checkUpdate(): Promise<UpdateInfo> {
   const locale = currentLocale()
-  const response = await fetch(versionUrl(locale), { signal: AbortSignal.timeout(10_000), headers: { Accept: 'application/json' } })
+  const response = await fetch(versionUrl(locale), { redirect: 'error', signal: AbortSignal.timeout(10_000), headers: { Accept: 'application/json' } })
   if (!response.ok) throw new Error(`HTTP ${response.status}`)
   const data = versionSchema.parse(await response.json())
-  const link = data.websiteLink && data.websiteLink.startsWith(SITE_URL) ? data.websiteLink : siteUrl(locale)
+  const link = isSiteLink(data.websiteLink) ? data.websiteLink! : siteUrl(locale)
   return { version: data.version, websiteLink: link }
 }
 

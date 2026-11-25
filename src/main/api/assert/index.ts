@@ -14,5 +14,5 @@ export type { EvaluationResult } from './runner'
  */
 export async function evaluateResponse(tests: Assertion[], extract: Extraction[], response: ResponseForAssertions): Promise<EvaluationResult> {
   if (tests.length === 0 && extract.length === 0) return { tests: [], extracted: [] }
-  return runInWorker(() => createAssertWorker({}) as unknown as WorkerLike, { tests, extract, response }, API_LIMITS.assertTimeoutMs)
+  return runInWorker(() => createAssertWorker({ resourceLimits: { maxOldGenerationSizeMb: 256 } }) as unknown as WorkerLike, { tests, extract, response }, API_LIMITS.assertTimeoutMs)
 }

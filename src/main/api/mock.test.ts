@@ -59,6 +59,19 @@ describe('servidor mock', () => {
     expect(m.logs).toEqual([expect.objectContaining({ method: 'GET', path: '/produtos/5?q=1', status: 201, route: 0 })])
   })
 
+  it('cabeçalhos de proteção sempre; CORS curinga só para origem ausente ou de loopback', async () => {
+    const m = await boot([route({ path: '/x', body: '<script>1</script>' })])
+    const a = await call(m.port, 'GET', '/x')
+    expect(a.headers['x-content-type-options']).toBe('nosniff')
+    expect(a.headers['content-security-policy']).toBe('sandbox')
+    expect(a.headers['access-control-allow-origin']).toBe('*')
+    const b = await call(m.port, 'GET', '/x', { headers: { Origin: 'http://localhost:5173' } })
+    expect(b.headers['access-control-allow-origin']).toBe('*')
+    const c = await call(m.port, 'GET', '/x', { headers: { Origin: 'https://site-mau.example' } })
+    expect(c.headers['access-control-allow-origin']).toBeUndefined()
+    expect(c.headers['x-content-type-options']).toBe('nosniff')
+  })
+
   it('recusa outro nome de host sem a opção de rede local (DNS rebinding)', async () => {
     const m = await boot([route({ path: '/x', body: 'ok' })])
     const r = await call(m.port, 'GET', '/x', { headers: { host: 'site-malicioso.exemplo.com.br' } })

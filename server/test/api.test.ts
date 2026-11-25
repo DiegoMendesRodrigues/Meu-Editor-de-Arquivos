@@ -462,3 +462,65 @@ describe('limites do plano', () => {
     expect((await ctx.call('PUT', '/v1/workspace', { token, body: { data: '012', baseVersion: 1 } })).status).toBe(200)
   })
 })
+
+describe('proteções de segurança', () => {
+  const put = (path: string, content: string) => ({ path, content, encoding: 'UTF-8', baseVersion: null, force: true })
+
+  it('bloqueia tentativas contra o mesmo e-mail vindas de IPs diferentes', async () => {
+    const ctx = setup({ loginAttempts: 2, authRequestsPerWindow: 1000 })
+    await ctx.register()
+    for (let i = 0; i < 8; i++) {
+      const r = await ctx.app.inject({ method: 'POST', url: '/v1/auth/login', remoteAddress: `10.0.0.${i}`, payload: { email: 'ana@exemplo.com', password: 'errada-errada' } })
+      expect(r.statusCode).toBe(401)
+    }
+    const r = await ctx.app.inject({ method: 'POST', url: '/v1/auth/login', remoteAddress: '10.0.1.1', payload: { email: 'ana@exemplo.com', password: PASSWORD } })
+    expect(r.statusCode).toBe(429)
+  })
+
+  it('só o código de redefinição mais recente vale, e no máximo 3 e-mails por janela', async () => {
+    const ctx = setup()
+    await ctx.register()
+    for (let i = 0; i < 5; i++) expect((await ctx.call('POST', '/v1/auth/password-reset/request', { body: { email: 'ana@exemplo.com' } })).status).toBe(202)
+    expect(ctx.sent).toHaveLength(3)
+    const novo = 'senha-redefinida-789'
+    expect((await ctx.call('POST', '/v1/auth/password-reset/confirm', { body: { token: ctx.sent[0].token, newPassword: novo } })).status).toBe(400)
+    expect((await ctx.call('POST', '/v1/auth/password-reset/confirm', { body: { token: ctx.sent[2].token, newPassword: novo } })).status).toBe(204)
+  })
+
+  it('sem sessão, recusa antes de ler um corpo grande; rotas de conta aceitam só corpo pequeno', async () => {
+    const ctx = setup()
+    const big = 'x'.repeat(200 * 1024)
+    expect((await ctx.call('PUT', '/v1/files', { body: put('a.txt', big) })).status).toBe(401)
+    const r = await ctx.call('POST', '/v1/auth/login', { body: { email: 'ana@exemplo.com', password: big } })
+    expect(r.status).toBe(413)
+    const token = await ctx.register()
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('a.txt', big) })).status).toBe(200)
+  })
+
+  it('gravações em paralelo não passam do limite de arquivos do plano', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    for (let i = 0; i < 95; i++) await ctx.call('PUT', '/v1/files', { token, body: put(`a${i}.txt`, 'x') })
+    const results = await Promise.all(Array.from({ length: 20 }, (_, i) => ctx.call('PUT', '/v1/files', { token, body: put(`p${i}.txt`, 'x') })))
+    expect(results.filter((r) => r.status === 200)).toHaveLength(5)
+    expect((await ctx.call('GET', '/v1/files', { token })).body.files).toHaveLength(100)
+  })
+
+  it('recusa nomes com espaço nas pontas e pastas aninhadas demais', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('docs /a.txt', 'x') })).status).toBe(400)
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('a.txt ', 'x') })).status).toBe(400)
+    const deep = Array.from({ length: 40 }, () => 'p').join('/')
+    expect((await ctx.call('POST', '/v1/folders', { token, body: { path: deep } })).status).toBe(400)
+  })
+
+  it('troca de senha: bloqueia depois de várias senhas atuais erradas', async () => {
+    const ctx = setup({ loginAttempts: 2 })
+    const token = await ctx.register()
+    const body = { currentPassword: 'errada-errada', newPassword: 'outra-senha-forte-1' }
+    expect((await ctx.call('POST', '/v1/me/password', { token, body })).status).toBe(403)
+    expect((await ctx.call('POST', '/v1/me/password', { token, body })).status).toBe(403)
+    expect((await ctx.call('POST', '/v1/me/password', { token, body: { ...body, currentPassword: PASSWORD } })).status).toBe(429)
+  })
+})

@@ -192,7 +192,7 @@ describe('executeRequest com scripts', () => {
     expect(h.store.get('env1')?.get('novo')).toBe('zzz-segredo')
     if (r.ok) {
       expect(JSON.stringify(r)).not.toContain('S3GR3D0-LONGO')
-      expect(r.scriptLogs?.[0]?.text).toBe('chave=••••••')
+      expect(r.scriptLogs?.[0]?.text).toBe('••••••')
       expect(r.extracted).toEqual([{ to: 'novo', secret: true, ok: true }])
     }
   })

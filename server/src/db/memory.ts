@@ -60,6 +60,7 @@ export function createMemoryStore(): Store {
     },
 
     async createReset(userId, tokenHash, expiresAt) {
+      for (const [h, r] of resets) if (r.userId === userId) resets.delete(h)
       resets.set(tokenHash, { userId, expiresAt, used: false })
     },
     async consumeReset(tokenHash) {
@@ -180,6 +181,10 @@ export function createMemoryStore(): Store {
       const total = { storageBytes, storedFiles }
       usage.set(userId, total)
       return { ...total }
+    },
+    async purgeExpired(now) {
+      for (const [h, s] of sessions) if (s.expiresAt < now) sessions.delete(h)
+      for (const [h, r] of resets) if (r.expiresAt < now || r.used) resets.delete(h)
     },
     async close() {}
   }

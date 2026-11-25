@@ -23,7 +23,7 @@ import { CookieJar, getJar } from './cookies'
 import { ApiFail, toApiErrorCode } from './errors'
 import { readAuthorizedFile } from './files'
 import { sendHttp } from './http'
-import { chooseProxy } from './proxy'
+import { chooseProxy, manualProxyHost } from './proxy'
 import { buildResolver, type Resolver } from './resolve'
 import { runScriptPhase } from './script/phase'
 import type { ScriptRequestView } from './script/types'
@@ -340,7 +340,8 @@ export async function executeRequest(input: ParsedSendInput, options: ExecuteOpt
       docPath,
       (name) => r.lookup(name)
     )
-    const proxySettings = { proxy: s.proxy, proxyUrl: r.resolve(s.proxyUrl) }
+    // A URL do proxy nunca passa pelo resolvedor (um documento de terceiros poderia embutir {{segredo}} nela).
+    const proxySettings = { proxy: s.proxy, proxyUrl: s.proxyUrl }
 
     // Segredo só vai para um host que o usuário já confirmou para o escopo dele (um .apireq de terceiros
     // não pode mandar {{token}} para qualquer lugar). A confirmação vem com o reenvio (confirmSecretHost).
@@ -349,6 +350,15 @@ export async function executeRequest(input: ParsedSendInput, options: ExecuteOpt
       if (!(await isHostTrusted(r.secretScopes, host))) {
         if (input.confirmSecretHost?.trim().toLowerCase() !== host) return fail('secretHostNotConfirmed', host)
         await trustHost(r.secretScopes, host)
+      }
+    }
+
+    // Proxy informado pelo documento: também precisa ser um host confirmado quando a requisição usa segredo.
+    if (r.secretScopes.size > 0 && s.proxy === 'manual') {
+      const proxyHost = manualProxyHost(s.proxyUrl)
+      if (proxyHost && !(await isHostTrusted(r.secretScopes, proxyHost))) {
+        if (input.confirmSecretHost?.trim().toLowerCase() !== proxyHost) return fail('secretHostNotConfirmed', proxyHost)
+        await trustHost(r.secretScopes, proxyHost)
       }
     }
 
@@ -372,6 +382,7 @@ export async function executeRequest(input: ParsedSendInput, options: ExecuteOpt
       signal: options.signal,
       saveToPath: input.saveToFile ? options.saveToPath : undefined,
       stripOnRedirect: [...stripOnRedirect],
+      noCrossHostRedirect: r.secrets.size > 0,
       cookieHeader: s.sendCookies && !userCookie ? cookieFor : undefined,
       onSetCookie: (u, list) => {
         // Sem "enviar cookies", os recebidos aparecem na resposta mas não ficam no pote.

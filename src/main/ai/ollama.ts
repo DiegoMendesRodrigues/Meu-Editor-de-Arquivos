@@ -22,7 +22,7 @@ const MAX_MODELS = 500
 /** Janela de contexto pedida ao modelo (o padrão do Ollama, 2048 a 4096 tokens, corta documentos médios). */
 const NUM_CTX = 8192
 
-const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]'])
+export const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]'])
 
 export type HostCheck = { ok: true; origin: string } | { ok: false; code: AiErrorCode }
 

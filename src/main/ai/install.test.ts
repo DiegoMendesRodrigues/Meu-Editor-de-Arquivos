@@ -10,6 +10,7 @@ import {
   ALLOWED_DOWNLOAD_HOSTS,
   downloadFile,
   findOllama,
+  isAllowedUrl,
   OFFICIAL_INSTALLER_URL,
   resolveDownloadConfig,
   runInstall,
@@ -104,7 +105,7 @@ describe('detecção do Ollama', () => {
     expect(await findOllama({ platform: 'win32', env: {}, exists: async () => true })).toBeNull()
   })
 
-  it('Linux: procura no PATH, em /usr/local/bin e em /usr/bin, ignorando entradas relativas', async () => {
+  it('Linux: procura só em /usr/local/bin e /usr/bin, ignorando o PATH', async () => {
     const seen: string[] = []
     const found = await findOllama({
       platform: 'linux',
@@ -115,7 +116,7 @@ describe('detecção do Ollama', () => {
       }
     })
     expect(found).toBe('/usr/bin/ollama')
-    expect(seen).toEqual(['/opt/x/ollama', '/usr/bin/ollama'])
+    expect(seen).toEqual(['/usr/local/bin/ollama', '/usr/bin/ollama'])
     expect(await findOllama({ platform: 'linux', env: { PATH: '/usr/local/bin' }, exists: async (p) => p === '/usr/local/bin/ollama' })).toBe('/usr/local/bin/ollama')
   })
 
@@ -137,6 +138,13 @@ describe('URL do download', () => {
     expect(c).toEqual({ url: 'http://127.0.0.1:9/x.exe', allowHttp: true, allowedHosts: ['127.0.0.1'] })
     expect(resolveDownloadConfig(false, { [TEST_URL_ENV]: 'http://exemplo.com.br/x.exe' }).url).toBe(OFFICIAL_INSTALLER_URL)
     expect(resolveDownloadConfig(false, {}).url).toBe(OFFICIAL_INSTALLER_URL)
+  })
+
+  it('github.com só vale para as releases do Ollama', () => {
+    const ok = (u: string): boolean => isAllowedUrl(new URL(u), ALLOWED_DOWNLOAD_HOSTS, false)
+    expect(ok('https://github.com/ollama/ollama/releases/download/v1/OllamaSetup.exe')).toBe(true)
+    expect(ok('https://github.com/outro/repo/releases/download/v1/x.exe')).toBe(false)
+    expect(ok('https://ollama.com/download/OllamaSetup.exe')).toBe(true)
   })
 
   it('a lista de hosts é a combinada', () => {
@@ -204,9 +212,12 @@ describe('download', () => {
 })
 
 describe('assinatura digital (simulada)', () => {
-  it('aceita só Status Valid com assinante contendo Ollama', async () => {
+  it('aceita só Status Valid com CN e O iguais a Ollama Inc.', async () => {
     expect(await verifySignature('x.exe', async () => ({ status: 'Valid', subject: 'CN="Ollama Inc.", O="Ollama Inc."' }))).toBe(true)
     expect(await verifySignature('x.exe', async () => ({ status: 'Valid', subject: 'CN=Outra Empresa' }))).toBe(false)
+    expect(await verifySignature('x.exe', async () => ({ status: 'Valid', subject: 'CN=Ollama Inc. Falso, O=Ollama Inc.' }))).toBe(false)
+    expect(await verifySignature('x.exe', async () => ({ status: 'Valid', subject: 'CN=Outro, O=Outro, OU=Ollama Inc.' }))).toBe(false)
+    expect(await verifySignature('x.exe', async () => ({ status: 'Valid', subject: 'CN=Ollama Inc., O=Ollama Inc., L=Palo Alto' }))).toBe(true)
     expect(await verifySignature('x.exe', async () => ({ status: 'NotSigned', subject: '' }))).toBe(false)
     expect(await verifySignature('x.exe', async () => ({ status: 'HashMismatch', subject: 'CN=Ollama Inc.' }))).toBe(false)
   })

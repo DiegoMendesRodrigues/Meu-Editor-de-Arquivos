@@ -1,7 +1,7 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { tm } from '../i18n'
-import { realpath } from 'node:fs/promises'
-import { isAbsolute, relative, resolve } from 'node:path'
+import { lstat, readlink, realpath } from 'node:fs/promises'
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
 
 /**
  * Controle de acesso ao disco. O Renderer só lê ou grava:
@@ -29,16 +29,39 @@ export function isInside(root: string, target: string): boolean {
   return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel))
 }
 
-/** Resolve links simbólicos para que um link dentro da pasta não aponte para fora dela. */
-async function real(p: string): Promise<string> {
+/**
+ * Resolve links simbólicos para que um link dentro da pasta não aponte para fora dela.
+ * Se o destino ainda não existe, resolve o ancestral existente mais próximo e reanexa o resto
+ * (assim `pasta/link/novo.txt` com `link` apontando para fora é reconhecido como fora). Um link
+ * pendente (destino inexistente) como último componente também é seguido.
+ */
+export async function real(p: string, depth = 0): Promise<string> {
+  const abs = resolve(p)
   try {
-    return await realpath(p)
+    return await realpath(abs)
   } catch {
-    return resolve(p)
+    // segue adiante
   }
+  if (depth > 16) return abs
+  try {
+    if ((await lstat(abs)).isSymbolicLink()) {
+      const alvo = resolve(dirname(abs), await readlink(abs))
+      return await real(alvo, depth + 1)
+    }
+  } catch {
+    // não existe
+  }
+  const pai = dirname(abs)
+  if (pai === abs) return abs
+  return join(await real(pai, depth + 1), basename(abs))
 }
 
+/** No Windows, `:` depois da letra da unidade indica fluxo alternativo de dados (NTFS). */
+const hasAlternateStream = (p: string): boolean =>
+  process.platform === 'win32' && resolve(p).slice(2).includes(':')
+
 export async function isAuthorized(target: string): Promise<boolean> {
+  if (hasAlternateStream(target)) return false
   if (authorizedFiles.has(norm(target))) return true
   const realTarget = await real(target)
   for (const root of authorizedRoots) {

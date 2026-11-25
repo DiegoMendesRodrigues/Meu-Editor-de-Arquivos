@@ -66,13 +66,20 @@ function createWindow(): void {
 
   // Links externos abrem no navegador do sistema; nenhuma janela nova no app.
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:\/\//.test(url)) void shell.openExternal(url)
+    try {
+      const u = new URL(url)
+      if (u.protocol === 'http:' || u.protocol === 'https:') void shell.openExternal(u.href)
+    } catch {
+      /* endereço inválido: ignora */
+    }
     return { action: 'deny' }
   })
   // Impede que o conteúdo navegue a janela para outro endereço.
   win.webContents.on('will-navigate', (event, url) => {
     if (url !== win.webContents.getURL()) event.preventDefault()
   })
+  // Subquadros (iframes) também não navegam para fora.
+  win.webContents.on('will-frame-navigate', (event) => event.preventDefault())
 
   // F12 abre as ferramentas de desenvolvimento apenas fora do pacote final.
   if (!app.isPackaged) {

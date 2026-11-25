@@ -223,8 +223,11 @@ describe('máscara de segredos', () => {
     expect(raw.logs[0]!.text).toContain('S3GR3D0-LONGO')
     const out = maskOutput(raw, ['S3GR3D0-LONGO'])
     expect(JSON.stringify(out)).not.toContain('S3GR3D0')
-    expect(out.logs[0]!.text).toBe('token=••••••')
-    expect(out.tests[0]!.name).toBe('usa ••••••')
-    expect(out.tests[0]!.error).toBe('falhou com ••••••')
+    // Script que leu segredo: console e testes viram só o marcador.
+    expect(out.logs[0]!.text).toBe('••••••')
+    expect(out.tests[0]!.name).toBe('••••••')
+    expect(out.tests[0]!.error).toBe('••••••')
+    // Sem segredo lido, a troca é literal.
+    expect(maskOutput({ ...raw, secretsRead: [] }, ['S3GR3D0-LONGO']).logs[0]!.text).toBe('token=••••••')
   })
 })

@@ -19,7 +19,7 @@ npm start            # escuta em 127.0.0.1:3000 (HOST e PORT configuráveis)
 
 Num banco já existente, rode `npm run migrate` de novo ao atualizar: ele acrescenta a coluna `users.storage_bytes` (espaço usado na nuvem por usuário) e calcula o valor de todos os usuários.
 
-O esquema também traz as tabelas `users_groups` (planos; o grupo 1, `Gratuito`, com 100 arquivos e 5 MB, é criado sozinho e é o de todo usuário) e `admins` (administradores; nenhuma rota da API os expõe). A tabela `users` ganha `last_access` (cadastro, login e cada requisição autenticada), `users_groups_id` e `stored_files` (número de arquivos na nuvem, recalculado junto com `storage_bytes`). Os limites do plano ainda **não são aplicados**. O `npm run migrate` é idempotente e acrescenta tudo isso a um banco existente; para colar no phpMyAdmin há o script `src/db/migrations/2026-11-planos.sql`.
+O esquema também traz as tabelas `users_groups` (planos; o grupo 1, `Gratuito`, com 100 arquivos e 5 MB, é criado sozinho e é o de todo usuário) e `admins` (administradores; nenhuma rota da API os expõe). A tabela `users` ganha `last_access` (cadastro, login e cada requisição autenticada), `users_groups_id` e `stored_files` (número de arquivos na nuvem, recalculado junto com `storage_bytes`). Os limites do plano são aplicados: arquivo novo no limite de arquivos e qualquer gravação que aumente o espaço além do limite recebem 403 (`plan_file_limit`/`plan_storage_limit`). O `npm run migrate` é idempotente e acrescenta tudo isso a um banco existente; para colar no phpMyAdmin há o script `src/db/migrations/2026-11-planos.sql`.
 
 Para cadastrar um administrador na migração, defina `ADMIN_NAME`, `ADMIN_EMAIL` e `ADMIN_PASSWORD` (os três) no ambiente antes de `npm run migrate` (ou com `AUTO_MIGRATE=true`); o e-mail é o login e a linha é atualizada se o e-mail já existir. Nada disso fica em arquivo nem em log. Atenção: a senha do administrador é guardada como **SHA-256 simples, sem sal**, a pedido do projeto; isso é fraco contra força bruta e o **scrypt é o recomendado**.
 
@@ -31,15 +31,19 @@ No app: menu **Conta → Entrar ou criar conta**, informe o endereço da API (`h
 
 - Publique **somente atrás de HTTPS** (proxy reverso). O app recusa `http://` fora de localhost.
 - Senhas com scrypt + sal; tokens de sessão guardados só como SHA-256; sessão de 30 dias.
-- Login com limite de tentativas (por IP + e-mail); respostas iguais para e-mail inexistente.
+- Login com limite de tentativas por IP + e-mail e também por e-mail (de qualquer IP); respostas iguais para e-mail inexistente.
+- Recuperação de senha: no máximo 3 e-mails por conta a cada 15 minutos; só o código mais recente vale; o envio não é aguardado (o tempo de resposta não revela a conta).
+- Troca de senha: bloqueio depois de várias senhas atuais erradas.
 - Limite por IP nas rotas de conta (cadastro, login e recuperação de senha); contadores vencidos são limpos a cada minuto.
-- Atrás de proxy reverso, defina `TRUST_PROXY=true` para os limites usarem o IP real do cliente.
-- Cabeçalhos de segurança em todas as respostas (`nosniff`, `no-store`, `no-referrer`, `DENY`).
-- O envio de e-mail é simulado (o código aparece no console, sem o e-mail da pessoa). Com `NODE_ENV=production`
-  o servidor não inicia até ser configurado um serviço de e-mail real e o `DATABASE_URL`.
+- Atrás de proxy reverso, defina `TRUST_PROXY` com o número de proxies (ex.: `1`) ou a lista de IPs deles, para os limites usarem o IP real do cliente. `true` confia em todos e só é seguro se o proxy substituir o `X-Forwarded-For` (o nginx do instalador faz isso).
+- Corpo das requisições limitado a 64 KB (10 MB só ao gravar arquivos e a área de trabalho); sessão e limite são conferidos antes de ler o corpo.
+- Gravações do mesmo usuário em fila: os limites do plano não são ultrapassados por gravações simultâneas. Até 2.000 pastas por usuário.
+- O log não guarda a query string; sessões e códigos vencidos são removidos de hora em hora.
+- Cabeçalhos de segurança em todas as respostas (`nosniff`, `no-store`, `no-referrer`, `DENY`, HSTS).
+- E-mail por SMTP (`SMTP_*`). Sem SMTP, o código de redefinição só aparece no console com `MEA_DEV=true` (desenvolvimento). Com `NODE_ENV=production`
+  o servidor não inicia sem SMTP e `DATABASE_URL`.
 - Trocar ou redefinir a senha encerra as outras sessões.
 - Arquivos isolados por usuário; sincronização com controle de versão (409 em conflito).
-- **Recuperação de senha:** o código é apenas escrito no log do servidor. Ligue `Mailer` (`src/app.ts`) a um serviço de e-mail.
 - O limite de tentativas é em memória (uma instância). Com várias instâncias, mova-o para um armazenamento compartilhado.
 
 ## Testes

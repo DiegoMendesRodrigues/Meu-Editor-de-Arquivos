@@ -39,6 +39,8 @@ export interface HttpOptions {
   saveToPath?: string
   /** Nomes (minúsculos) de cabeçalhos que não acompanham um redirecionamento para outro host. */
   stripOnRedirect?: string[]
+  /** Requisição com segredo: um redirecionamento para outro host não é seguido (a resposta 3xx é devolvida como está). */
+  noCrossHostRedirect?: boolean
   /** Cookies a enviar numa nova URL (redirecionamento). Sem a função, os cabeçalhos ficam como estão. */
   cookieHeader?: (url: URL) => string | undefined
   /** Recebe os Set-Cookie de cada resposta (inclusive as de redirecionamento). */
@@ -420,7 +422,16 @@ async function run(o: HttpOptions, ctx: Ctx): Promise<HttpResult> {
     if (setCookies.length > 0) o.onSetCookie?.(url, setCookies)
 
     const location = header(raw.headers, 'location')
-    if (o.settings.followRedirects && REDIRECTS.has(raw.status) && location) {
+    let blockedCross = false
+    if (o.noCrossHostRedirect && o.settings.followRedirects && REDIRECTS.has(raw.status) && location) {
+      try {
+        const n = new URL(location, url)
+        blockedCross = n.host !== url.host || (url.protocol === 'https:' && n.protocol === 'http:')
+      } catch {
+        // Local inválido: segue o fluxo normal (badUrl).
+      }
+    }
+    if (o.settings.followRedirects && REDIRECTS.has(raw.status) && location && !blockedCross) {
       raw.stream.resume()
       if (redirects.length >= o.settings.maxRedirects) throw new ApiFail('tooManyRedirects')
       let next: URL

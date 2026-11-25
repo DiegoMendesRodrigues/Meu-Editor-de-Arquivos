@@ -3,6 +3,11 @@ import type { Messages } from './pt-BR'
 
 export const fr: Messages = {
   "dlg.openFiles": "Ouvrir des fichiers",
+  "security.remoteAi.title": "Serveur d'IA distant",
+  "security.remoteAi.message": "Autoriser l'assistant d'IA à utiliser un serveur extérieur à cet ordinateur ?",
+  "security.remoteAi.detail": "Le texte de vos conversations et de vos fichiers sera envoyé sur le réseau à {host}. Ne confirmez que si vous faites confiance à ce serveur et à ce réseau.",
+  "security.remoteAi.allow": "Autoriser",
+  "security.remoteAi.cancel": "Annuler",
   "dlg.openFolder": "Ouvrir un dossier",
   "dlg.saveAs": "Enregistrer sous",
   "dlg.filter.all": "Tous les fichiers",
@@ -1433,5 +1438,6 @@ export const fr: Messages = {
   "cloud.limit.storage": "Le stockage total en Mo de tous les fichiers stockés dans le cloud autorisé par votre forfait a été dépassé. Vous ne pouvez plus stocker d’informations dans cet environnement.",
   "cloud.limit.ok": "Compris",
   "api.plan_file_limit": "Le nombre maximal de fichiers de votre forfait a été dépassé.",
+  "api.folder_limit": "La limite de dossiers dans le cloud est atteinte. Supprimez des dossiers vides pour en créer de nouveaux.",
   "api.plan_storage_limit": "Le stockage maximal de votre forfait a été dépassé.",
 }

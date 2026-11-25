@@ -41,7 +41,15 @@ let user: AccountUser | null = null
 let rememberSession = false
 
 const storePath = (): string => join(app.getPath('userData'), 'cloud.json')
-const canRemember = (): Promise<boolean> => safeStorage.isAsyncEncryptionAvailable()
+/** No Linux, `basic_text`/`unknown` cifram com chave fixa (sem cofre real): nesse caso a sessão não é lembrada. */
+async function canRemember(): Promise<boolean> {
+  if (!(await safeStorage.isAsyncEncryptionAvailable())) return false
+  if (process.platform === 'linux') {
+    const backend = safeStorage.getSelectedStorageBackend()
+    if (backend === 'basic_text' || backend === 'unknown') return false
+  }
+  return true
+}
 
 let persisting: Promise<void> = Promise.resolve()
 /** Gravações em fila: nunca duas ao mesmo tempo no mesmo arquivo temporário. */
@@ -71,8 +79,10 @@ export async function loadAccount(): Promise<void> {
   rememberSession = await canRemember().catch(() => false)
   try {
     const data = JSON.parse(await readFile(storePath(), 'utf8')) as Partial<Persisted>
-    serverUrl = typeof data.serverUrl === 'string' ? data.serverUrl : null
-    if (data.tokenEnc && rememberSession) {
+    // O endereço gravado é revalidado (o arquivo pode ter sido editado): inválido, descarta.
+    const savedUrl = serverUrlSchema.safeParse(data.serverUrl)
+    serverUrl = savedUrl.success ? savedUrl.data : null
+    if (data.tokenEnc && rememberSession && serverUrl) {
       // Os dados da API síncrona antiga são lidos normalmente pela assíncrona.
       token = (await safeStorage.decryptStringAsync(Buffer.from(data.tokenEnc, 'base64'))).result
       user = data.user ?? null
@@ -111,7 +121,7 @@ function check<T>(schema: z.ZodType<T>, value: unknown): T {
 }
 
 /** Códigos de erro da API que têm mensagem traduzida. */
-const API_CODES = new Set(['invalid_request', 'email_in_use', 'invalid_credentials', 'too_many_attempts', 'wrong_password', 'invalid_token', 'not_found', 'too_large', 'internal', 'path_in_use', 'folder_not_empty', 'folder_in_use', 'plan_file_limit', 'plan_storage_limit'])
+const API_CODES = new Set(['invalid_request', 'email_in_use', 'invalid_credentials', 'too_many_attempts', 'wrong_password', 'invalid_token', 'not_found', 'too_large', 'internal', 'path_in_use', 'folder_not_empty', 'folder_in_use', 'plan_file_limit', 'plan_storage_limit', 'folder_limit'])
 const passwordSchema = z.string().min(1).max(200)
 /** Caminho na nuvem: relativo, com "/", sem "..", "." nem segmentos vazios. */
 const cloudPathSchema = z

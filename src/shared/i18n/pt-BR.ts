@@ -2,6 +2,11 @@
 /** Português do Brasil: idioma de referência. As chaves daqui definem o que os demais idiomas precisam ter. */
 export const ptBR = {
   "dlg.openFiles": "Abrir arquivos",
+  "security.remoteAi.title": "Servidor de IA remoto",
+  "security.remoteAi.message": "Permitir que o assistente de IA use um servidor fora deste computador?",
+  "security.remoteAi.detail": "O texto das suas conversas e dos seus arquivos será enviado pela rede para {host}. Confirme apenas se você confia nesse servidor e nessa rede.",
+  "security.remoteAi.allow": "Permitir",
+  "security.remoteAi.cancel": "Cancelar",
   "dlg.openFolder": "Abrir pasta",
   "dlg.saveAs": "Salvar como",
   "dlg.filter.all": "Todos os arquivos",
@@ -1432,6 +1437,7 @@ export const ptBR = {
   "cloud.limit.storage": "O armazenamento total em MB, referente a todos os arquivos armazenados na nuvem, permitidos pelo seu plano foi excedido. Você não pode armazenar mais informações nesse ambiente.",
   "cloud.limit.ok": "Entendido",
   "api.plan_file_limit": "A quantidade máxima de arquivos do seu plano foi excedida.",
+  "api.folder_limit": "O limite de pastas na nuvem foi atingido. Exclua pastas vazias para criar novas.",
   "api.plan_storage_limit": "O armazenamento máximo do seu plano foi excedido.",
 }
 

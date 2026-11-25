@@ -1,5 +1,5 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
+import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest, type FastifyServerOptions } from 'fastify'
 import { z } from 'zod'
 import type { Store, User } from './db/store.js'
 import { hashPassword, hashToken, newToken, verifyPassword } from './security.js'
@@ -20,11 +20,15 @@ export interface AppOptions {
   /** Requisições às rotas de conta (cadastro, login, recuperação de senha) permitidas por IP e por janela. */
   authRequestsPerWindow?: number
   /** Confiar no cabeçalho X-Forwarded-For (só atrás de um proxy reverso de confiança). */
-  trustProxy?: boolean
+  /** true (confia em todos os proxies), número de saltos ou lista de IPs/CIDRs dos proxies de confiança. */
+  trustProxy?: boolean | number | string[]
   logger?: boolean
 }
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024
+/** Pastas por usuário e profundidade máxima de uma pasta. */
+const MAX_FOLDERS = 2000
+const MAX_FOLDER_DEPTH = 32
 
 const emailSchema = z.string().trim().toLowerCase().email().max(254)
 const passwordSchema = z.string().min(10, 'A senha deve ter ao menos 10 caracteres.').max(200)
@@ -41,9 +45,12 @@ const cloudPathSchema = z
       !p.includes('\\') &&
       // eslint-disable-next-line no-control-regex
       !/[\u0000-\u001f]/.test(p) &&
-      p.split('/').every((seg) => seg !== '' && seg !== '.' && seg !== '..'),
+      // Sem espaços nas pontas dos nomes: o banco ignora espaços finais ao comparar e trataria nomes diferentes como iguais.
+      p.split('/').every((seg) => seg !== '' && seg !== '.' && seg !== '..' && seg.trim() === seg),
     'Caminho inválido.'
   )
+  // Mesma forma Unicode (NFC) para o mesmo nome digitado em sistemas diferentes.
+  .transform((p) => p.normalize('NFC'))
 
 const registerSchema = z.object({ email: emailSchema, name: nameSchema, password: passwordSchema })
 const loginSchema = z.object({ email: emailSchema, password: z.string().min(1).max(200) })
@@ -96,7 +103,20 @@ export function buildApp(opts: AppOptions): FastifyInstance {
 
   const maxAuthRequests = opts.authRequestsPerWindow ?? 30
 
-  const app = Fastify({ logger: opts.logger ?? false, bodyLimit: MAX_FILE_BYTES + 1024 * 1024, trustProxy: opts.trustProxy ?? false })
+  // Corpo pequeno por padrão; só as rotas que gravam arquivos aceitam até 10 MB (fileBody).
+  const app = Fastify({
+    logger: opts.logger
+      ? {
+          // O log não guarda a query string (nomes de pastas e arquivos são dados do usuário).
+          serializers: {
+            req: (req: { method: string; url: string }) => ({ method: req.method, url: req.url.split('?')[0] })
+          }
+        }
+      : false,
+    bodyLimit: 64 * 1024,
+    trustProxy: opts.trustProxy ?? false
+  } as FastifyServerOptions)
+  const fileBody = { bodyLimit: MAX_FILE_BYTES * 2 + 1024 * 1024 }
 
   // Cabeçalhos de segurança: a API só devolve JSON, que não deve ser interpretado nem guardado em cache.
   app.addHook('onSend', async (_req, reply) => {
@@ -104,6 +124,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     reply.header('Cache-Control', 'no-store')
     reply.header('Referrer-Policy', 'no-referrer')
     reply.header('X-Frame-Options', 'DENY')
+    reply.header('Strict-Transport-Security', 'max-age=31536000')
   })
 
   // Padrão de erro: { error: { code, message } }, sem detalhes internos.
@@ -136,23 +157,51 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     if (!f || f.resetAt < Date.now()) map.set(key, { count: 1, resetAt: Date.now() + windowMs })
     else f.count++
   }
-  const blocked = (key: string): boolean => over(failures, key, maxAttempts)
-  const fail = (key: string): void => count(failures, key)
+  // Erros de login por e-mail, de qualquer IP: segura tentativas distribuídas (ou com IP forjado) contra uma conta.
+  const emailFailures = new Map<string, { count: number; resetAt: number }>()
+  const resetRequests = new Map<string, { count: number; resetAt: number }>()
+  const blocked = (key: string, email: string): boolean => over(failures, key, maxAttempts) || over(emailFailures, email, maxAttempts * 4)
+  const fail = (key: string, email: string): void => {
+    count(failures, key)
+    count(emailFailures, email)
+  }
   const tooMany = (): HttpError => new HttpError(429, 'too_many_attempts', 'Muitas tentativas. Aguarde alguns minutos e tente de novo.')
   /** Limite por IP nas rotas de conta: segura cadastros em massa, envio de e-mails e tentativas com vários e-mails. */
   const limitAuth = async (req: FastifyRequest): Promise<void> => {
     if (over(authRequests, req.ip, maxAuthRequests)) throw tooMany()
     count(authRequests, req.ip)
   }
-  const authLimited = { preHandler: limitAuth }
+  // onRequest: o limite vale antes de ler o corpo da requisição.
+  const authLimited = { onRequest: limitAuth }
 
   // Limpa os contadores vencidos (sem isso, a memória cresceria com cada IP/e-mail novo).
   const prune = setInterval(() => {
     const now = Date.now()
-    for (const map of [failures, authRequests]) for (const [key, f] of map) if (f.resetAt < now) map.delete(key)
+    for (const map of [failures, authRequests, emailFailures, resetRequests]) for (const [key, f] of map) if (f.resetAt < now) map.delete(key)
+    for (const [id, at] of lastTouch) if (now - at > 60_000) lastTouch.delete(id)
   }, 60_000)
   prune.unref()
   app.addHook('onClose', async () => clearInterval(prune))
+
+  // Sessões e códigos de redefinição vencidos saem do banco de hora em hora.
+  const purge = setInterval(() => {
+    store.purgeExpired(new Date()).catch((err) => app.log.error({ err }, 'Falha ao remover sessões vencidas'))
+  }, 3600_000)
+  purge.unref()
+  app.addHook('onClose', async () => clearInterval(purge))
+
+  // Gravações do mesmo usuário em fila: a conferência dos limites do plano e a gravação não se intercalam.
+  const userLocks = new Map<string, Promise<unknown>>()
+  function withUserLock<T>(userId: string, fn: () => Promise<T>): Promise<T> {
+    const prev = userLocks.get(userId) ?? Promise.resolve()
+    const run = prev.then(fn, fn)
+    const tail = run.catch(() => undefined)
+    userLocks.set(userId, tail)
+    void tail.then(() => {
+      if (userLocks.get(userId) === tail) userLocks.delete(userId)
+    })
+    return run
+  }
 
   async function issueSession(userId: string): Promise<string> {
     const token = newToken()
@@ -160,8 +209,12 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return token
   }
 
-  /** Registra o último acesso. Uma falha (coluna ainda não migrada, por exemplo) não pode derrubar a requisição. */
+  /** Registra o último acesso (no máximo uma vez por minuto por usuário). Uma falha não pode derrubar a requisição. */
+  const lastTouch = new Map<string, number>()
   async function touchAccess(userId: string, req: FastifyRequest): Promise<void> {
+    const now = Date.now()
+    if (now - (lastTouch.get(userId) ?? 0) < 60_000) return
+    lastTouch.set(userId, now)
     try {
       await store.touchLastAccess(userId, new Date())
     } catch (err) {
@@ -186,7 +239,8 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     req.tokenHash = tokenHash
     await touchAccess(user.id, req)
   }
-  const auth = { preHandler: authenticate }
+  // onRequest: sem sessão válida, o corpo nem é lido.
+  const auth = { onRequest: authenticate }
 
   // Hash "falso" para gastar o mesmo tempo quando o e-mail não existe (evita enumerar contas pelo tempo de resposta).
   const dummyHash = hashPassword('senha-que-nunca-sera-usada')
@@ -204,11 +258,12 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   app.post('/v1/auth/login', authLimited, async (req) => {
     const body = loginSchema.parse(req.body)
     const key = attemptKey(req, body.email)
-    if (blocked(key)) throw tooMany()
+    const email = body.email.toLowerCase()
+    if (blocked(key, email)) throw tooMany()
     const user = await store.findUserByEmail(body.email)
     const ok = await verifyPassword(body.password, user?.passwordHash ?? (await dummyHash))
     if (!user || !ok) {
-      fail(key)
+      fail(key, email)
       throw new HttpError(401, 'invalid_credentials', 'E-mail ou senha incorretos.')
     }
     failures.delete(key)
@@ -224,11 +279,16 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   // Recuperar senha: a resposta é sempre a mesma, exista ou não a conta.
   app.post('/v1/auth/password-reset/request', authLimited, async (req, reply) => {
     const body = resetRequestSchema.parse(req.body)
-    const user = await store.findUserByEmail(body.email)
+    const email = body.email.toLowerCase()
+    // No máximo 3 e-mails por conta a cada janela, de qualquer IP (a resposta continua a mesma).
+    const limited = over(resetRequests, email, 3)
+    count(resetRequests, email)
+    const user = limited ? null : await store.findUserByEmail(body.email)
     if (user) {
       const token = newToken()
       await store.createReset(user.id, hashToken(token), new Date(Date.now() + resetMs))
-      await mailer.sendPasswordReset(user.email, token).catch((err) => req.log.error(err))
+      // Sem esperar o envio: o tempo de resposta não revela se a conta existe.
+      void mailer.sendPasswordReset(user.email, token).catch((err) => req.log.error({ err }, 'Falha ao enviar o e-mail de redefinição'))
     }
     return reply.status(202).send({ ok: true })
   })
@@ -269,9 +329,13 @@ export function buildApp(opts: AppOptions): FastifyInstance {
 
   app.post('/v1/me/password', auth, async (req, reply) => {
     const body = changePasswordSchema.parse(req.body)
+    const key = `senha|${req.user!.id}`
+    if (over(failures, key, maxAttempts)) throw tooMany()
     if (!(await verifyPassword(body.currentPassword, req.user!.passwordHash))) {
+      count(failures, key)
       throw new HttpError(403, 'wrong_password', 'A senha atual está incorreta.')
     }
+    failures.delete(key)
     await store.setPassword(req.user!.id, await hashPassword(body.newPassword))
     await store.deleteSessionsExcept(req.user!.id, req.tokenHash!) // os outros computadores precisam entrar de novo
     return reply.status(204).send()
@@ -299,8 +363,12 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return { ...usage, limitBytes: usage.plan.maxSizeMb * 1024 * 1024 }
   }
 
-  app.put('/v1/files', auth, async (req, reply) => {
+  app.put('/v1/files', { ...auth, ...fileBody }, async (req, reply) => {
     const body = putFileSchema.parse(req.body)
+    return withUserLock(req.user!.id, () => saveFile(req, reply, body))
+  })
+
+  async function saveFile(req: FastifyRequest, reply: FastifyReply, body: z.infer<typeof putFileSchema>) {
     const bytes = Buffer.byteLength(body.content, 'utf8')
     if (bytes > MAX_FILE_BYTES) {
       throw new HttpError(413, 'too_large', 'O arquivo passa de 10 MB.')
@@ -323,7 +391,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
       })
     }
     return { file: fileMeta(result.file), ...(await refreshUsage(req.user!.id)) }
-  })
+  }
 
   // Mover ou renomear: muda o caminho do arquivo (pasta e/ou nome).
   app.patch('/v1/files/:id', auth, async (req) => {
@@ -341,8 +409,12 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return w ? { data: w.data, version: w.version, updatedAt: w.updatedAt.toISOString() } : { data: null, version: 0, updatedAt: null }
   })
 
-  app.put('/v1/workspace', auth, async (req) => {
+  app.put('/v1/workspace', { ...auth, ...fileBody }, async (req) => {
     const body = z.object({ data: z.string().max(MAX_FILE_BYTES), baseVersion: z.number().int().min(0) }).parse(req.body)
+    return withUserLock(req.user!.id, () => saveWorkspace(req, body))
+  })
+
+  async function saveWorkspace(req: FastifyRequest, body: { data: string; baseVersion: number }) {
     const bytes = Buffer.byteLength(body.data, 'utf8')
     if (bytes > MAX_FILE_BYTES) throw new HttpError(413, 'too_large', 'O arquivo passa de 10 MB.')
     // Os textos não salvos também ocupam o espaço do plano: acima do limite, a área de trabalho não cresce.
@@ -357,7 +429,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
       updatedAt: result.workspace.updatedAt.toISOString(),
       ...(await refreshUsage(req.user!.id))
     }
-  })
+  }
 
   app.get('/v1/folders', auth, async (req) => ({ folders: await store.listFolders(req.user!.id) }))
 
@@ -366,7 +438,14 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     const user = req.user!.id
     // Cria também as pastas acima (a/b/c cria a e a/b), para a árvore ficar completa.
     const parts = body.path.split('/')
-    for (let i = 1; i <= parts.length; i++) await store.createFolder(user, parts.slice(0, i).join('/'))
+    if (parts.length > MAX_FOLDER_DEPTH) throw new HttpError(400, 'invalid_request', 'Pastas aninhadas demais.')
+    await withUserLock(user, async () => {
+      // Limite de pastas por usuário: pastas não contam no plano, mas não podem crescer sem fim.
+      const existing = new Set((await store.listFolders(user)).map((f) => f.toLowerCase()))
+      const missing = parts.map((_, i) => parts.slice(0, i + 1).join('/')).filter((p) => !existing.has(p.toLowerCase()))
+      if (existing.size + missing.length > MAX_FOLDERS) throw new HttpError(403, 'folder_limit', 'Limite de pastas atingido.')
+      for (const p of missing) await store.createFolder(user, p)
+    })
     return reply.status(201).send({ path: body.path })
   })
 

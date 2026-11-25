@@ -11,6 +11,16 @@ export function maskText(text: string, secrets: string[]): string {
 
 /** Console, nomes e mensagens dos testes saem sem os valores secretos. */
 export function maskOutput(out: ScriptOutput, secrets: string[]): ScriptOutput {
+  // Script que leu algum segredo: a saída pode conter o valor transformado (base64, fatias), o que a troca
+  // literal não pega. Console e testes viram o marcador e todo env.set vai para o cofre.
+  if (out.secretsRead.length > 0) {
+    return {
+      ...out,
+      logs: out.logs.map((l) => ({ ...l, text: MASK })),
+      tests: out.tests.map((t) => ({ ...t, name: MASK, ...(t.error !== undefined ? { error: MASK } : {}) })),
+      envSets: out.envSets.map((e) => ({ ...e, secret: true }))
+    }
+  }
   const m = (t: string): string => maskText(t, secrets)
   return {
     ...out,

@@ -3,6 +3,11 @@ import type { Messages } from './pt-BR'
 
 export const en: Messages = {
   "dlg.openFiles": "Open files",
+  "security.remoteAi.title": "Remote AI server",
+  "security.remoteAi.message": "Allow the AI assistant to use a server outside this computer?",
+  "security.remoteAi.detail": "The text of your conversations and files will be sent over the network to {host}. Confirm only if you trust that server and network.",
+  "security.remoteAi.allow": "Allow",
+  "security.remoteAi.cancel": "Cancel",
   "dlg.openFolder": "Open folder",
   "dlg.saveAs": "Save as",
   "dlg.filter.all": "All files",
@@ -1433,5 +1438,6 @@ export const en: Messages = {
   "cloud.limit.storage": "The total storage in MB for all files stored in the cloud allowed by your plan has been exceeded. You cannot store more information in this environment.",
   "cloud.limit.ok": "Got it",
   "api.plan_file_limit": "Your plan's maximum number of files has been exceeded.",
+  "api.folder_limit": "The cloud folder limit has been reached. Delete empty folders to create new ones.",
   "api.plan_storage_limit": "Your plan's maximum storage has been exceeded.",
 }

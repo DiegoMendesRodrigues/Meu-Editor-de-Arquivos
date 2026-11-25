@@ -64,3 +64,14 @@ export function proxyAuthHeader(proxy: URL): string | undefined {
   const pass = decodeURIComponent(proxy.password)
   return `Basic ${Buffer.from(`${user}:${pass}`).toString('base64')}`
 }
+
+/** Host (com porta) de um proxy manual, em minúsculas; undefined se o texto estiver vazio ou inválido. */
+export function manualProxyHost(proxyUrl: string): string | undefined {
+  const text = proxyUrl.trim()
+  if (!text) return undefined
+  try {
+    return new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(text) ? text : `http://${text}`).host.toLowerCase() || undefined
+  } catch {
+    return undefined
+  }
+}

@@ -74,6 +74,8 @@ export function createMysqlStore(uri: string): Store {
     },
     async setPassword(id, passwordHash) {
       await pool.execute('UPDATE users SET password_hash = ? WHERE id = ?', [passwordHash, id])
+      // Senha nova: códigos de redefinição pendentes deixam de valer.
+      await pool.execute('DELETE FROM password_resets WHERE user_id = ?', [id])
     },
 
     async touchLastAccess(userId, at) {
@@ -96,6 +98,8 @@ export function createMysqlStore(uri: string): Store {
     },
 
     async createReset(userId, tokenHash, expiresAt) {
+      // Só o código mais recente vale.
+      await pool.execute('DELETE FROM password_resets WHERE user_id = ?', [userId])
       await pool.execute('INSERT INTO password_resets (token_hash, user_id, expires_at) VALUES (?, ?, ?)', [tokenHash, userId, expiresAt])
     },
     async consumeReset(tokenHash) {
@@ -255,6 +259,10 @@ export function createMysqlStore(uri: string): Store {
       await pool.execute(`UPDATE users SET storage_bytes = ${STORAGE_SUM}, stored_files = ${FILE_COUNT} WHERE id = ?`, [userId, userId, userId, userId])
       const [rows] = await pool.execute<RowDataPacket[]>('SELECT storage_bytes, stored_files FROM users WHERE id = ?', [userId])
       return { storageBytes: Number(rows[0]?.storage_bytes ?? 0), storedFiles: Number(rows[0]?.stored_files ?? 0) }
+    },
+    async purgeExpired(now) {
+      await pool.execute('DELETE FROM sessions WHERE expires_at < ?', [now])
+      await pool.execute('DELETE FROM password_resets WHERE expires_at < ? OR used_at IS NOT NULL', [now])
     },
     async close() {
       await pool.end()

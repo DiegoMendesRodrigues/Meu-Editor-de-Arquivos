@@ -88,6 +88,28 @@ describe('histórico', () => {
     expect(m.headers.map((x) => x.value)).toEqual([MASK, 'a'])
   })
 
+  it('mascara OAuth, usuário e senha do proxy e chaves sensíveis nos corpos', () => {
+    const r = apiRequestSchema.parse({
+      $schema: 'meu-editor/api-request@1',
+      id: 'r3',
+      url: 'https://api.exemplo.com.br/x',
+      auth: { type: 'oauth2', flow: 'password', tokenUrl: 'https://a.exemplo.com.br/t', clientId: 'c', username: 'joao', password: 'pw', clientSecret: 'cs' },
+      settings: { proxy: 'manual', proxyUrl: 'http://usr:pwd@proxy.exemplo.com.br:3128' },
+      body: { type: 'raw', language: 'json', text: '{"password":"abc","user":"x","n":{"client_secret":"y","ref":"{{r}}","api_key":"{{k}}"}}' }
+    })
+    const m = maskRequestForHistory(r)
+    expect(m.auth).toMatchObject({ password: MASK, username: MASK, clientSecret: MASK })
+    expect(m.settings.proxyUrl).toBe(`http://${MASK}@proxy.exemplo.com.br:3128`)
+    const raw = JSON.parse((m.body as { text: string }).text)
+    expect(raw).toEqual({ password: MASK, user: 'x', n: { client_secret: MASK, ref: '{{r}}', api_key: '{{k}}' } })
+    const o1 = maskRequestForHistory({ ...r, auth: { type: 'oauth1', consumerKey: 'k', consumerSecret: 'a', token: 't', tokenSecret: 's', signature: 'HMAC-SHA1', placement: 'header' } })
+    expect(o1.auth).toMatchObject({ consumerSecret: MASK, token: MASK, tokenSecret: MASK })
+    const f = maskRequestForHistory({ ...r, body: { type: 'urlencoded', fields: [{ key: 'password', value: 'z', enabled: true }, { key: 'a', value: 'b', enabled: true }] } })
+    expect((f.body as { fields: { value: string }[] }).fields.map((x) => x.value)).toEqual([MASK, 'b'])
+    const g = maskRequestForHistory({ ...r, body: { type: 'graphql', query: 'q', variables: '{"token":"t","id":1}' } })
+    expect(JSON.parse((g.body as { variables: string }).variables)).toEqual({ token: MASK, id: 1 })
+  })
+
   const request = apiRequestSchema.parse({
     $schema: 'meu-editor/api-request@1',
     id: 'r1',

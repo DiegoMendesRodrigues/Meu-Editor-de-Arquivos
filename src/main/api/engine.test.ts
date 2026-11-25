@@ -399,12 +399,19 @@ describe('segurança dos segredos', () => {
         { url: `${base}/c`, headers: [{ key: 'X-Api-Key', value: 'literal' }, { key: 'X-Meu', value: 'a-{{senha}}' }, { key: 'X-Livre', value: 'ok' }] }
       )
     )
-    expect(r.ok && r.body.text).toBe('fim')
-    expect(last.headers['x-api-key']).toBeUndefined()
-    expect(last.headers['x-meu']).toBeUndefined()
-    expect(last.headers['x-livre']).toBe('ok')
+    // Com segredo em uso, o redirecionamento para outro host não é seguido: nada chega ao outro servidor.
+    expect(r.ok && r.status).toBe(302)
+    expect(r.ok && r.body.text).not.toBe('fim')
     other.closeAllConnections()
     other.close()
+  })
+
+  it('proxy manual do documento também precisa ser host confirmado quando há segredo', async () => {
+    h.store.set('e1', new Map([['senha', 'S3gredo!']]))
+    last = undefined as unknown as Seen
+    const req = { headers: [{ key: 'X-Custom', value: '{{senha}}' }], settings: { proxy: 'manual', proxyUrl: 'proxy.exemplo.com.br:3128' } }
+    expect(await run(make({ environment: env, confirmSecretHost: hostOf() }, req))).toMatchObject({ ok: false, code: 'secretHostNotConfirmed', host: 'proxy.exemplo.com.br:3128' })
+    expect(last).toBeUndefined()
   })
 
   it('saveToFile: acima do teto, apaga o arquivo e devolve tooLarge', async () => {

@@ -3,6 +3,11 @@ import type { Messages } from './pt-BR'
 
 export const ptPT: Messages = {
   "dlg.openFiles": "Abrir ficheiros",
+  "security.remoteAi.title": "Servidor de IA remoto",
+  "security.remoteAi.message": "Permitir que o assistente de IA utilize um servidor fora deste computador?",
+  "security.remoteAi.detail": "O texto das suas conversas e dos seus ficheiros será enviado pela rede para {host}. Confirme apenas se confia nesse servidor e nessa rede.",
+  "security.remoteAi.allow": "Permitir",
+  "security.remoteAi.cancel": "Cancelar",
   "dlg.openFolder": "Abrir pasta",
   "dlg.saveAs": "Guardar como",
   "dlg.filter.all": "Todos os ficheiros",
@@ -1433,5 +1438,6 @@ export const ptPT: Messages = {
   "cloud.limit.storage": "O armazenamento total em MB, referente a todos os ficheiros armazenados na nuvem, permitidos pelo seu plano foi excedido. Não pode armazenar mais informações neste ambiente.",
   "cloud.limit.ok": "Entendido",
   "api.plan_file_limit": "A quantidade máxima de ficheiros do seu plano foi excedida.",
+  "api.folder_limit": "O limite de pastas na nuvem foi atingido. Elimine pastas vazias para criar novas.",
   "api.plan_storage_limit": "O armazenamento máximo do seu plano foi excedido.",
 }

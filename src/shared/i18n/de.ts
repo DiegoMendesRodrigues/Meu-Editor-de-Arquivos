@@ -3,6 +3,11 @@ import type { Messages } from './pt-BR'
 
 export const de: Messages = {
   "dlg.openFiles": "Dateien öffnen",
+  "security.remoteAi.title": "Entfernter KI-Server",
+  "security.remoteAi.message": "Soll der KI-Assistent einen Server außerhalb dieses Computers verwenden dürfen?",
+  "security.remoteAi.detail": "Der Text Ihrer Unterhaltungen und Dateien wird über das Netzwerk an {host} gesendet. Bestätigen Sie nur, wenn Sie diesem Server und Netzwerk vertrauen.",
+  "security.remoteAi.allow": "Erlauben",
+  "security.remoteAi.cancel": "Abbrechen",
   "dlg.openFolder": "Ordner öffnen",
   "dlg.saveAs": "Speichern unter",
   "dlg.filter.all": "Alle Dateien",
@@ -1433,5 +1438,6 @@ export const de: Messages = {
   "cloud.limit.storage": "Der von Ihrem Tarif erlaubte Gesamtspeicher in MB für alle Dateien in der Cloud wurde überschritten. Sie können in dieser Umgebung keine weiteren Informationen speichern.",
   "cloud.limit.ok": "Verstanden",
   "api.plan_file_limit": "Die maximale Dateianzahl Ihres Tarifs wurde überschritten.",
+  "api.folder_limit": "Die Höchstzahl an Cloud-Ordnern ist erreicht. Löschen Sie leere Ordner, um neue anzulegen.",
   "api.plan_storage_limit": "Der maximale Speicher Ihres Tarifs wurde überschritten.",
 }

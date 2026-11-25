@@ -101,7 +101,8 @@ export function createScriptSender(r: Resolver, signal?: AbortSignal): ScriptSen
         settings: { timeoutMs: L.scriptSendTimeoutMs, followRedirects: true, maxRedirects: 5, verifyTls: true, minTlsVersion: 'TLSv1.2', http2: false },
         proxy: (u) => chooseProxy({ proxy: 'system', proxyUrl: '' }, u),
         signal,
-        stripOnRedirect: [...stripOnRedirect]
+        stripOnRedirect: [...stripOnRedirect],
+        noCrossHostRedirect: r.secrets.size > 0
       })
       const slice = result.body.length > L.displayBytes ? result.body.subarray(0, L.displayBytes) : result.body
       // Binário não vira texto para o script.

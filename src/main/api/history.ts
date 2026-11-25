@@ -6,7 +6,7 @@ import { app } from 'electron'
 import log from 'electron-log/main'
 import { API_LIMITS } from '@shared/api/limits'
 import { MASK, type ApiErrorCode, type ApiHistoryEntry } from '@shared/api/protocol'
-import { apiRequestSchema, type ApiRequest, type Auth } from '@shared/api/schema'
+import { apiRequestSchema, type ApiRequest, type Auth, type Body } from '@shared/api/schema'
 import { findVariables } from '@shared/api/variables'
 
 /** Histórico de envios em userData/api-history.json: o mais novo primeiro, sem o corpo da resposta. */
@@ -40,9 +40,9 @@ function maskAuth(auth: Auth): Auth {
     case 'bearer':
       return { ...auth, token: maskLiteral(auth.token) ?? '' }
     case 'oauth1':
-      return { ...auth, consumerSecret: maskLiteral(auth.consumerSecret) ?? '', tokenSecret: maskLiteral(auth.tokenSecret) }
+      return { ...auth, consumerSecret: maskLiteral(auth.consumerSecret) ?? '', token: maskLiteral(auth.token), tokenSecret: maskLiteral(auth.tokenSecret) }
     case 'oauth2':
-      return { ...auth, clientSecret: maskLiteral(auth.clientSecret) }
+      return { ...auth, clientSecret: maskLiteral(auth.clientSecret), username: maskLiteral(auth.username), password: maskLiteral(auth.password) }
     default:
       return auth
   }
@@ -78,6 +78,54 @@ function maskUrl(url: string): string {
   return out
 }
 
+/** Mascara valores de chaves sensíveis num JSON (em qualquer nível); texto que não é JSON cai para um padrão chave:valor. */
+function maskJsonText(text: string): string {
+  if (text.trim() === '') return text
+  const walk = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(walk)
+    if (v && typeof v === 'object') {
+      const o: Record<string, unknown> = {}
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+        if (isSensitiveName(k) && val !== null && typeof val !== 'object') o[k] = typeof val === 'string' && (val === '' || isReference(val)) ? val : MASK
+        else o[k] = walk(val)
+      }
+      return o
+    }
+    return v
+  }
+  try {
+    return JSON.stringify(walk(JSON.parse(text)), null, 2)
+  } catch {
+    // Não é JSON (XML, texto, JSON com {{variáveis}} soltas): troca pares "chave": valor, chave=valor e <chave>valor</chave>.
+    return text
+      .replace(/("([^"\\]{1,100})"\s*:\s*)("(?:[^"\\]|\\.)*"|[^\s,}\]]+)/g, (m, head: string, key: string, val: string) => (isSensitiveName(key) && !isReference(val.replace(/^"|"$/g, '')) && val !== '""' ? `${head}"${MASK}"` : m))
+      .replace(/(^|[&\s])([A-Za-z0-9_.-]{1,100})=([^&\s]+)/g, (m, pre: string, key: string, val: string) => (isSensitiveName(key) && !isReference(val) ? `${pre}${key}=${MASK}` : m))
+      .replace(/<([A-Za-z0-9_.:-]{1,100})>([^<]+)<\/\1>/g, (m, key: string, val: string) => (isSensitiveName(key) && !isReference(val) ? `<${key}>${MASK}</${key}>` : m))
+  }
+}
+
+function maskBody(body: Body): Body {
+  switch (body.type) {
+    case 'raw':
+      return { ...body, text: maskJsonText(body.text) }
+    case 'urlencoded':
+      return { ...body, fields: body.fields.map(maskRow) }
+    case 'multipart':
+      return { ...body, parts: body.parts.map((p) => (p.kind === 'text' && isSensitiveName(p.key) && p.value !== '' && !isReference(p.value) ? { ...p, value: MASK } : p)) }
+    case 'graphql':
+      return { ...body, variables: maskJsonText(body.variables) }
+    case 'soap':
+      return { ...body, envelope: maskJsonText(body.envelope) }
+    default:
+      return body
+  }
+}
+
+/** Troca usuário e senha de "usuario:senha@" na URL do proxy (referências {{variável}} ficam). */
+function maskProxyUrl(url: string): string {
+  return url.replace(/^([a-z][a-z0-9+.-]*:\/\/)([^/@?#]*)@/i, (m, head: string, info: string) => (info === '' || isReference(info) ? m : `${head}${MASK}@`))
+}
+
 /** A requisição como estava, com os valores sensíveis (URL, params, cabeçalhos e autorização digitados) mascarados. */
 export function maskRequestForHistory(request: ApiRequest): ApiRequest {
   return {
@@ -85,7 +133,9 @@ export function maskRequestForHistory(request: ApiRequest): ApiRequest {
     url: maskUrl(request.url),
     params: request.params.map(maskRow),
     headers: request.headers.map(maskRow),
-    auth: maskAuth(request.auth)
+    auth: maskAuth(request.auth),
+    body: maskBody(request.body),
+    settings: { ...request.settings, proxyUrl: maskProxyUrl(request.settings.proxyUrl) }
   }
 }
 

@@ -111,5 +111,8 @@ export interface Store {
    */
   refreshUsage(userId: string): Promise<Usage>
 
+  /** Remove sessões e códigos de redefinição vencidos (ou já usados). */
+  purgeExpired(now: Date): Promise<void>
+
   close(): Promise<void>
 }

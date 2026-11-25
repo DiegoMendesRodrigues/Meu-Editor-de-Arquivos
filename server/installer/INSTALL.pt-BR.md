@@ -75,7 +75,7 @@ sudo ln -s /etc/nginx/sites-available/meu-editor-api /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-Mantenha `TRUST_PROXY=true` no `api.env` quando houver proxy na frente, para os limites de tentativas usarem o IP real de quem acessa.
+Mantenha `TRUST_PROXY=1` no `api.env` atrás do nginx (um proxy), para os limites de tentativas usarem o IP real de quem acessa. Use `true` só se todos os proxies na frente substituírem o `X-Forwarded-For`.
 
 ## 5. Conferir
 
@@ -100,7 +100,7 @@ A configuração em `/etc/meu-editor-api` e o banco não são apagados.
 
 ## Limitações atuais
 
-- **E-mail simulado:** o código de recuperação de senha aparece só no log (`journalctl -u meu-editor-api`). Por isso a API não pode usar `NODE_ENV=production`: nesse modo ela se recusa a iniciar até haver um serviço de e-mail real ligado ao `Mailer` em `src/app.ts`.
+- **E-mail:** configure `SMTP_*` no `api.env` para a recuperação de senha. Sem SMTP nenhum e-mail é enviado, e o código só aparece no console com `MEA_DEV=true` (desenvolvimento). Com `NODE_ENV=production` a API não inicia sem SMTP e `DATABASE_URL`.
 - O limite de tentativas fica na memória: rode uma instância só.
 - A camada MySQL ainda não foi testada contra um servidor real. Faça um teste completo (cadastro, login, sincronização) antes de abrir para usuários.
 - Faça backup do banco com regularidade (por exemplo `mysqldump` agendado).

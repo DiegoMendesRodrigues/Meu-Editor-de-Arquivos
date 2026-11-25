@@ -1,7 +1,8 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { execFile, spawn as nodeSpawn } from 'node:child_process'
-import { stat, statfs, mkdir, open, rm } from 'node:fs/promises'
-import { dirname, posix, win32 } from 'node:path'
+import { stat, statfs, mkdir, open, rm, mkdtemp, copyFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { dirname, join, posix, win32 } from 'node:path'
 import type { AiErrorCode } from '@shared/ai'
 
 /**
@@ -68,15 +69,15 @@ export const realDetectDeps = (): DetectDeps => ({
   }
 })
 
-/** Caminho do executável do Ollama, ou null. Windows: %LOCALAPPDATA%\Programs\Ollama; Linux: PATH, /usr/local/bin, /usr/bin. */
+/** Caminho do executável do Ollama, ou null. Windows: %LOCALAPPDATA%\Programs\Ollama; Linux: /usr/local/bin, /usr/bin. */
 export async function findOllama(deps: DetectDeps = realDetectDeps()): Promise<string | null> {
   const candidates: string[] = []
   if (deps.platform === 'win32') {
     const local = deps.env['LOCALAPPDATA']
     if (local) candidates.push(win32.join(local, 'Programs', 'Ollama', 'ollama.exe'))
   } else if (deps.platform === 'linux') {
-    const dirs = [...(deps.env['PATH'] ?? '').split(':'), '/usr/local/bin', '/usr/bin']
-    for (const d of dirs) if (d.startsWith('/')) candidates.push(posix.join(d, 'ollama'))
+    // Só diretórios do sistema: um PATH alterado não pode apontar para um "ollama" qualquer.
+    for (const d of ['/usr/local/bin', '/usr/bin']) candidates.push(posix.join(d, 'ollama'))
   }
   for (const c of new Set(candidates)) if (await deps.exists(c)) return c
   return null
@@ -166,11 +167,16 @@ async function defaultFreeBytes(dir: string): Promise<number> {
   return Number(s.bavail) * Number(s.bsize)
 }
 
+const GITHUB_RELEASES_PREFIX = '/ollama/ollama/releases/'
+
 /** A URL é aceitável? https (ou http só em teste) e host da lista fixa. */
 export function isAllowedUrl(url: URL, allowedHosts: readonly string[], allowHttp: boolean): boolean {
   if (url.protocol !== 'https:' && !(allowHttp && url.protocol === 'http:')) return false
   if (url.username !== '' || url.password !== '') return false
-  return allowedHosts.includes(url.hostname.toLowerCase())
+  const host = url.hostname.toLowerCase()
+  // No github.com só vale a página de releases do próprio Ollama (não qualquer repositório).
+  if (host === 'github.com' && !url.pathname.startsWith(GITHUB_RELEASES_PREFIX)) return false
+  return allowedHosts.includes(host)
 }
 
 /** Baixa o arquivo seguindo redirecionamentos só para hosts permitidos. Em qualquer falha, apaga o arquivo parcial. */
@@ -306,11 +312,57 @@ export const powershellSignature: SignatureRunner = (file) =>
     )
   })
 
-/** Assinatura válida (Status = Valid) e assinante contendo "Ollama". Qualquer falha na consulta conta como inválida. */
+/** Valor exato esperado nos campos CN e O do certificado do editor. */
+export const OLLAMA_PUBLISHER = 'Ollama Inc.'
+
+/** Separa o Subject (RFC 2253/Windows) em pares RDN, respeitando aspas e barra invertida. */
+export function parseSubject(subject: string): [string, string][] {
+  const out: [string, string][] = []
+  let i = 0
+  while (i < subject.length) {
+    while (i < subject.length && (subject[i] === ' ' || subject[i] === ',')) i++
+    let key = ''
+    while (i < subject.length && subject[i] !== '=' && subject[i] !== ',') key += subject[i++]
+    if (subject[i] !== '=') break
+    i++
+    let value = ''
+    if (subject[i] === '"') {
+      i++
+      while (i < subject.length) {
+        if (subject[i] === '"') {
+          if (subject[i + 1] === '"') {
+            value += '"'
+            i += 2
+            continue
+          }
+          i++
+          break
+        }
+        value += subject[i++]
+      }
+      while (i < subject.length && subject[i] !== ',') i++
+    } else {
+      while (i < subject.length && subject[i] !== ',') {
+        if (subject[i] === '\\' && i + 1 < subject.length) i++
+        value += subject[i++]
+      }
+      value = value.trim()
+    }
+    out.push([key.trim().toUpperCase(), value])
+  }
+  return out
+}
+
+/** Assinatura válida (Status = Valid) e CN e O do assinante iguais a "Ollama Inc.". Falha na consulta conta como inválida. */
 export async function verifySignature(file: string, run: SignatureRunner = powershellSignature): Promise<boolean> {
   try {
     const info = await run(file)
-    return info.status === 'Valid' && info.subject.includes('Ollama')
+    if (info.status !== 'Valid') return false
+    const rdns = parseSubject(info.subject)
+    const values = (k: string): string[] => rdns.filter(([key]) => key === k).map(([, v]) => v)
+    const cn = values('CN')
+    const org = values('O')
+    return cn.length === 1 && org.length === 1 && cn[0] === OLLAMA_PUBLISHER && org[0] === OLLAMA_PUBLISHER
   } catch {
     return false
   }
@@ -350,6 +402,8 @@ export interface InstallDeps {
   progress(stage: 'download' | 'verify' | 'installer' | 'waiting', completed: number, total: number): void
   download(o: DownloadOptions): Promise<DownloadOutcome>
   verify(file: string): Promise<boolean>
+  /** Copia o instalador para uma pasta nova e exclusiva (mkdtemp), de onde ele será executado. */
+  stage?(file: string): Promise<{ path: string; cleanup(): Promise<void> }>
   runInstaller(file: string, signal: AbortSignal): Promise<'ok' | 'failed' | 'cancelled'>
   /** Procura o executável instalado. */
   find(): Promise<string | null>
@@ -390,9 +444,27 @@ export async function runInstall(d: InstallDeps): Promise<{ ok: true } | { ok: f
     }
     if (d.signal.aborted) return cancelled()
 
-    d.progress('installer', 0, 0)
-    d.log('IA: abrindo o instalador do Ollama')
-    const ran = await d.runInstaller(d.dest, d.signal)
+    // Copia para uma pasta nova e confere a assinatura de novo logo antes de executar (evita troca do arquivo no meio).
+    let staged: { path: string; cleanup(): Promise<void> } | undefined
+    let toRun = d.dest
+    let ran: 'ok' | 'failed' | 'cancelled'
+    try {
+      if (d.stage) {
+        staged = await d.stage(d.dest)
+        toRun = staged.path
+      }
+      if (!(await d.verify(toRun))) {
+        d.log('IA: assinatura do instalador inválida na conferência final; arquivo apagado')
+        return { ok: false, code: 'signatureInvalid' }
+      }
+      if (d.signal.aborted) return cancelled()
+
+      d.progress('installer', 0, 0)
+      d.log('IA: abrindo o instalador do Ollama')
+      ran = await d.runInstaller(toRun, d.signal)
+    } finally {
+      await staged?.cleanup().catch(() => undefined)
+    }
     if (ran === 'cancelled') return cancelled()
     if (ran === 'failed') {
       d.log('IA: o instalador terminou sem sucesso')
@@ -419,4 +491,17 @@ export async function runInstall(d: InstallDeps): Promise<{ ok: true } | { ok: f
   } finally {
     await d.remove(d.dest)
   }
+}
+
+/** Copia o arquivo para um diretório temporário novo (mkdtemp) e devolve o caminho e a limpeza. */
+export async function stageInstaller(file: string): Promise<{ path: string; cleanup(): Promise<void> }> {
+  const dir = await mkdtemp(join(tmpdir(), 'mea-ollama-'))
+  const path = join(dir, 'OllamaSetup.exe')
+  try {
+    await copyFile(file, path)
+  } catch (err) {
+    await rm(dir, { recursive: true, force: true }).catch(() => undefined)
+    throw err
+  }
+  return { path, cleanup: () => rm(dir, { recursive: true, force: true }) }
 }
