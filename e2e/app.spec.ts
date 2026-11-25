@@ -52,16 +52,34 @@ test.describe('seleção por coluna e cores do editor', () => {
     expect(l2.indexOf('#')).toBe(l1.indexOf('#'))
   })
 
-  test('a coluna dos números de linha tem fundo cinza nos dois modos', async ({ app, page, workspace }) => {
+  test('a coluna dos números de linha tem fundo cinza claro, números em cinza escuro', async ({ app, page, workspace }) => {
     await stubOpenDialog(app, [workspace.file('notas.txt')])
     await page.keyboard.press('Control+O')
     await expect(page.locator('.view-lines')).toContainText('primeira laranja')
     const cor = (): Promise<string> => page.locator('.margin').first().evaluate((el) => getComputedStyle(el).backgroundColor)
     await page.screenshot({ path: process.env.SHOT_DIR ? `${process.env.SHOT_DIR}/claro.png` : undefined })
-    expect(await cor()).toBe('rgb(228, 228, 233)')
+    expect(await cor()).toBe('rgb(241, 241, 244)')
+    // Números do mesmo tamanho do texto (14 px) e em cinza médio.
+    const numeros = await page.evaluate(() => {
+      const todos = document.querySelectorAll('.monaco-editor .line-numbers:not(.active-line-number)')
+      const num = todos[todos.length - 1] as HTMLElement
+      const texto = document.querySelector('.monaco-editor .view-line') as HTMLElement
+      return { num: parseFloat(getComputedStyle(num).fontSize), texto: parseFloat(getComputedStyle(texto).fontSize), cor: getComputedStyle(num).color }
+    })
+    expect(numeros.num).toBe(numeros.texto)
+    expect(numeros.cor).toBe('rgb(113, 113, 122)')
     await page.getByRole('button', { name: 'Exibir' }).click()
     await page.getByRole('menuitem', { name: 'Alterar entre o modo claro e escuro' }).click()
     await expect.poll(cor).toBe('rgb(45, 45, 49)')
+    // No escuro, os números ficam em cinza claro.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const todos = document.querySelectorAll('.monaco-editor .line-numbers:not(.active-line-number)')
+          return getComputedStyle(todos[todos.length - 1] as HTMLElement).color
+        }),
+      )
+      .toBe('rgb(212, 212, 216)')
     await page.screenshot({ path: process.env.SHOT_DIR ? `${process.env.SHOT_DIR}/escuro.png` : undefined })
   })
 })
