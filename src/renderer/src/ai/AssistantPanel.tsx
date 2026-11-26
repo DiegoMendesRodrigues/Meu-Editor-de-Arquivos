@@ -13,9 +13,6 @@ import { splitBlocks, splitInline } from './markdown'
 import { buildQuickPrompt, QUICK_ACTIONS, QUICK_CONTEXT_CHARS, type QuickAction } from './prompts'
 import { useAi, type ChatMessage } from './store'
 
-const OLLAMA_URL = 'https://ollama.com/download'
-const PULL_EXAMPLE = 'ollama pull llama3.2'
-
 function NoModelHelp() {
   const t = useT()
   return (

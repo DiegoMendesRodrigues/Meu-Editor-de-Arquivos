@@ -193,6 +193,12 @@ export interface Store {
    */
   expireSubscriptions(now: Date, graceMs: number): Promise<number>
   /**
+   * Encerra a assinatura de um usuário agora (webhook da Stripe com o período já vencido), do mesmo jeito que
+   * expireSubscriptions: guarda o plano anterior, volta ao Gratuito e marca last_access com o instante da mudança
+   * (o prazo da limpeza por inatividade começa aí, com o prazo do plano anterior).
+   */
+  endSubscription(userId: string, now: Date): Promise<void>
+  /**
    * Contas sem plano pago (grupo 1, assinatura inativa) com last_access depois de 2026-01-01 01:01:01 e há mais
    * dias sem acesso que o waiting_time_for_deletion do plano anterior (ou do Gratuito): apaga arquivos, pastas e
    * área de trabalho, zera o uso, marca last_access = 2000-01-01 01:01:01 e deixa o aviso para o aplicativo.

@@ -108,14 +108,18 @@ export function createMysqlStore(uri: string): Store {
       await pool.execute('INSERT INTO password_resets (token_hash, user_id, expires_at) VALUES (?, ?, ?)', [tokenHash, userId, expiresAt])
     },
     async consumeReset(tokenHash) {
-      // UPDATE condicional: só um pedido consegue consumir o token.
+      // Lê o dono antes e consome com UPDATE condicional: só um pedido consegue usar o token.
+      const now = new Date()
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        'SELECT user_id FROM password_resets WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?',
+        [tokenHash, now]
+      )
+      if (!rows[0]) return null
       const [res] = await pool.execute<ResultSetHeader>(
         'UPDATE password_resets SET used_at = ? WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?',
-        [new Date(), tokenHash, new Date()]
+        [now, tokenHash, now]
       )
-      if (res.affectedRows !== 1) return null
-      const [rows] = await pool.execute<RowDataPacket[]>('SELECT user_id FROM password_resets WHERE token_hash = ?', [tokenHash])
-      return rows[0]?.user_id ?? null
+      return res.affectedRows === 1 ? (rows[0].user_id as string) : null
     },
 
     async listFiles(userId) {
@@ -323,6 +327,15 @@ export function createMysqlStore(uri: string): Store {
       )
       return res.affectedRows
     },
+    async endSubscription(userId, now) {
+      await pool.execute(
+        `UPDATE users SET previous_users_groups_id = users_groups_id, users_groups_id = 1, subscription_active = 0,
+                subscription_status = 'ended', last_access = ?
+          WHERE id = ? AND users_groups_id > 1`,
+        [now, userId]
+      )
+      await pool.execute("UPDATE users SET subscription_active = 0, subscription_status = 'ended' WHERE id = ?", [userId])
+    },
     async purgeInactiveUsers(now) {
       const [rows] = await pool.execute<RowDataPacket[]>(
         `SELECT u.id, g.waiting_time_for_deletion AS days
@@ -417,13 +430,16 @@ export function createMysqlStore(uri: string): Store {
     },
     async consumeManageToken(tokenHash) {
       const now = new Date()
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        'SELECT user_id FROM manage_tokens WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?',
+        [tokenHash, now]
+      )
+      if (!rows[0]) return null
       const [res] = await pool.execute<ResultSetHeader>(
         'UPDATE manage_tokens SET used_at = ? WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?',
         [now, tokenHash, now]
       )
-      if (res.affectedRows === 0) return null
-      const [rows] = await pool.execute<RowDataPacket[]>('SELECT user_id FROM manage_tokens WHERE token_hash = ?', [tokenHash])
-      return rows[0]?.user_id ?? null
+      return res.affectedRows === 1 ? (rows[0].user_id as string) : null
     },
     async purgeExpired(now) {
       await pool.execute('DELETE FROM sessions WHERE expires_at < ?', [now])

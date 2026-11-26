@@ -85,8 +85,6 @@ export const authSchema = z.discriminatedUnion('type', [
   })
 ])
 export type Auth = z.infer<typeof authSchema>
-export type AuthType = Auth['type']
-
 /* ------------------------------------------------------------------ corpo */
 
 export const RAW_BODY_LANGUAGES = ['json', 'xml', 'text', 'html'] as const
@@ -127,8 +125,6 @@ export const bodySchema = z.discriminatedUnion('type', [
   })
 ])
 export type Body = z.infer<typeof bodySchema>
-export type BodyType = Body['type']
-
 /* ------------------------------------------------------------------ testes e extrações */
 
 export const ASSERTION_TARGETS = ['status', 'time', 'size', 'header', 'cookie', 'body', 'jsonPath', 'xPath', 'jsonSchema'] as const

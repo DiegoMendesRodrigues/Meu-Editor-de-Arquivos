@@ -17,6 +17,7 @@ import { createSmtpMailer, smtpConfigFromEnv } from './mailer.js'
  *   NODE_ENV      "production" exige DATABASE_URL e SMTP configurado (não aceita o envio simulado).
  *   SITE_API_KEY  chave secreta compartilhada com o site (cadastro pela página de planos); sem ela, a rota fica desligada.
  *   STRIPE_WEBHOOK_SECRET  segredo do endpoint de webhook da Stripe (whsec_...); sem ele, o webhook fica desligado.
+ *   ALLOW_REGISTER  "true" liga POST /v1/auth/register (cadastro direto na API; o padrão é o cadastro só pelo site).
  *   SITE_URL      endereço https do site, usado nos links dos e-mails (padrão: https://meueditordearquivos.aplicativoia.online).
  */
 const databaseUrl = process.env.DATABASE_URL
@@ -33,11 +34,15 @@ const consoleMailer: Mailer = {
     if (devMailer) console.log(`[e-mail simulado] Código de redefinição de senha: ${token}`)
     else console.warn('Pedido de redefinição de senha recebido, mas o SMTP não está configurado: nenhum e-mail foi enviado.')
   },
-  async sendPlanExpiring(_to, mail) {
-    // O texto leva um link de uso único: só aparece no console em desenvolvimento.
-    if (devMailer) console.log(`[e-mail simulado] ${mail.subject}\n${mail.text}`)
-    else console.warn('Aviso de plano perto de expirar não enviado: o SMTP não está configurado.')
-  }
+  // Sem SMTP fora do desenvolvimento, o aviso por e-mail fica desligado (a reserva do e-mail não é gasta à toa).
+  ...(devMailer
+    ? {
+        async sendPlanExpiring(_to: string, mail: { subject: string; text: string }) {
+          // O texto leva um link de uso único: só aparece no console em desenvolvimento.
+          console.log(`[e-mail simulado] ${mail.subject}\n${mail.text}`)
+        }
+      }
+    : {})
 }
 
 /** SITE_URL: só https (ou http em loopback, para testes); sem ela, o endereço público do site. */
@@ -81,7 +86,8 @@ const app = buildApp({
   trustProxy: trustProxyFromEnv(process.env.TRUST_PROXY),
   siteKey,
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || undefined,
-  siteUrl: siteUrlFromEnv(process.env.SITE_URL)
+  siteUrl: siteUrlFromEnv(process.env.SITE_URL),
+  allowRegister: process.env.ALLOW_REGISTER === 'true'
 })
 
 const shutdown = async (): Promise<void> => {

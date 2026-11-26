@@ -15,7 +15,7 @@ import { EntryMenu, FileIcon, FolderIcon, itemClass } from '@/components/Sidebar
 import { IconButton, Section } from '@/components/SidebarSection'
 import { METHOD_CLASS } from './ApiRequestView'
 import { COLLECTION_FILE, discoverDiskCollections, isCloudDir, joinDisk, readCollection, type CollectionTree } from './collections'
-import { createFolderIn, createRequestIn, documentCollection, documentCollectionWithAi, newCollectionFlow, openCollectionFile, openCollectionSettings } from './collectionActions'
+import { createRequestIn, documentCollection, documentCollectionWithAi, newCollectionFlow, openCollectionFile, openCollectionSettings } from './collectionActions'
 import { EnvironmentSelect } from './EnvironmentSelect'
 import { HistoryList } from './HistoryPanel'
 

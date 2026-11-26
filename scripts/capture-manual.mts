@@ -218,7 +218,7 @@ async function startApi(): Promise<ChildProcess> {
   API_PORT = await freePort() // porta nova a cada execução: nunca reaproveita um servidor antigo
   const child = spawn('npx', ['tsx', 'src/index.ts'], {
     cwd: resolve('server'),
-    env: { ...process.env, PORT: String(API_PORT), DATABASE_URL: '' },
+    env: { ...process.env, PORT: String(API_PORT), DATABASE_URL: '', ALLOW_REGISTER: 'true' },
     shell: true,
     stdio: 'ignore'
   })

@@ -25,8 +25,10 @@ export interface AppOptions {
   loginWindowMs?: number
   /** Requisições às rotas de conta (cadastro, login, recuperação de senha) permitidas por IP e por janela. */
   authRequestsPerWindow?: number
-  /** Confiar no cabeçalho X-Forwarded-For (só atrás de um proxy reverso de confiança). */
-  /** true (confia em todos os proxies), número de saltos ou lista de IPs/CIDRs dos proxies de confiança. */
+  /**
+   * Confiar no cabeçalho X-Forwarded-For (só atrás de um proxy reverso de confiança): true (todos os proxies),
+   * número de saltos ou lista de IPs/CIDRs dos proxies de confiança.
+   */
   trustProxy?: boolean | number | string[]
   logger?: boolean
   /** Chave que o site envia (X-Site-Key) para cadastrar usuários e consultar assinaturas. Sem ela, essas rotas ficam desligadas. */
@@ -37,6 +39,11 @@ export interface AppOptions {
   subscriptionGraceMs?: number
   /** Endereço do site (links dos e-mails para a página de gestão da assinatura). */
   siteUrl?: string
+  /**
+   * POST /v1/auth/register (cadastro direto na API). O aplicativo não cria contas (isso é feito no site), então em
+   * produção fica desligado (ALLOW_REGISTER=true liga, para servidores próprios); testes usam o padrão (ligado).
+   */
+  allowRegister?: boolean
 }
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024
@@ -206,6 +213,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   const emailFailures = new Map<string, { count: number; resetAt: number }>()
   const resetRequests = new Map<string, { count: number; resetAt: number }>()
   const siteRequests = new Map<string, { count: number; resetAt: number }>()
+  const manageLinks = new Map<string, { count: number; resetAt: number }>()
   const blocked = (key: string, email: string): boolean => over(failures, key, maxAttempts) || over(emailFailures, email, maxAttempts * 4)
   const fail = (key: string, email: string): void => {
     count(failures, key)
@@ -223,7 +231,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   // Limpa os contadores vencidos (sem isso, a memória cresceria com cada IP/e-mail novo).
   const prune = setInterval(() => {
     const now = Date.now()
-    for (const map of [failures, authRequests, emailFailures, resetRequests, siteRequests]) for (const [key, f] of map) if (f.resetAt < now) map.delete(key)
+    for (const map of [failures, authRequests, emailFailures, resetRequests, siteRequests, manageLinks]) for (const [key, f] of map) if (f.resetAt < now) map.delete(key)
     for (const [id, at] of lastTouch) if (now - at > 60_000) lastTouch.delete(id)
   }, 60_000)
   prune.unref()
@@ -309,6 +317,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   app.get('/v1/health', async () => ({ ok: true }))
 
   app.post('/v1/auth/register', authLimited, async (req, reply: FastifyReply) => {
+    if (opts.allowRegister === false) throw new HttpError(403, 'register_disabled', 'O cadastro é feito no site.')
     const body = registerSchema.parse(req.body)
     const user = await store.createUser({ email: body.email, name: body.name, passwordHash: await hashPassword(body.password) })
     if (!user) throw new HttpError(409, 'email_in_use', 'Já existe uma conta com este e-mail.')
@@ -321,13 +330,14 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     const key = attemptKey(req, body.email)
     const email = body.email.toLowerCase()
     if (blocked(key, email)) throw tooMany()
+    // A tentativa conta antes da verificação (que é lenta): pedidos em paralelo não passam do limite.
+    fail(key, email)
     const user = await store.findUserByEmail(body.email)
     const ok = await verifyPassword(body.password, user?.passwordHash ?? (await dummyHash))
-    if (!user || !ok) {
-      fail(key, email)
-      throw new HttpError(401, 'invalid_credentials', 'E-mail ou senha incorretos.')
-    }
+    if (!user || !ok) throw new HttpError(401, 'invalid_credentials', 'E-mail ou senha incorretos.')
     failures.delete(key)
+    const byEmail = emailFailures.get(email)
+    if (byEmail && byEmail.count > 0) byEmail.count--
     await touchAccess(user.id, req)
     return { token: await issueSession(user.id), user: publicUser(user) }
   })
@@ -397,6 +407,9 @@ export function buildApp(opts: AppOptions): FastifyInstance {
 
   // Link de uso único (15 minutos) para a página de gestão da assinatura no site (assinatura.php?token=...).
   app.post('/v1/me/manage-link', auth, async (req) => {
+    // Até 10 links por usuário a cada janela: cada um grava uma linha em manage_tokens.
+    if (over(manageLinks, req.user!.id, 10)) throw tooMany()
+    count(manageLinks, req.user!.id)
     const token = newToken()
     const expiresAt = new Date(Date.now() + 15 * 60_000)
     await store.createManageToken(req.user!.id, hashToken(token), expiresAt)

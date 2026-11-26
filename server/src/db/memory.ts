@@ -260,6 +260,13 @@ export function createMemoryStore(): Store {
       }
       return n
     },
+    async endSubscription(userId, now) {
+      const sub = subscriptionOf(userId)
+      if (sub.usersGroupsId > 1) previousGroup.set(userId, sub.usersGroupsId)
+      Object.assign(sub, { usersGroupsId: 1, active: false, status: 'ended' })
+      const u = users.get(userId)
+      if (u) u.lastAccess = now
+    },
     async purgeInactiveUsers(now) {
       let n = 0
       for (const u of users.values()) {

@@ -21,6 +21,13 @@ const norm = (p: string): string => {
 export const authorizeFile = (p: string): void => void authorizedFiles.add(norm(p))
 export const authorizeRoot = (p: string): void => void authorizedRoots.add(norm(p))
 
+/**
+ * Arquivos que só o Main lê (chaves privadas, certificados, PKCS#12 escolhidos no Cliente de API). Não entram em
+ * `authorizedFiles`: o `readFile` genérico do Renderer não os devolve, e o material das chaves fica no Main.
+ */
+const mainOnlyFiles = new Set<string>()
+export const authorizeMainOnlyFile = (p: string): void => void mainOnlyFiles.add(norm(p))
+
 /** A pasta foi aberta pelo usuário (é exatamente uma das pastas autorizadas)? */
 export const isAuthorizedRoot = (p: string): boolean => authorizedRoots.has(norm(p))
 
@@ -74,4 +81,11 @@ export async function assertAuthorized(target: string): Promise<string> {
   const abs = resolve(target)
   if (!(await isAuthorized(abs))) throw new Error(tm('err.notAuthorized'))
   return abs
+}
+
+/** Para leituras feitas só no Main (envio do Cliente de API): aceita também os arquivos de `authorizeMainOnlyFile`. */
+export async function assertAuthorizedForMain(target: string): Promise<string> {
+  const abs = resolve(target)
+  if (!hasAlternateStream(abs) && mainOnlyFiles.has(norm(abs))) return abs
+  return assertAuthorized(abs)
 }

@@ -30,8 +30,6 @@ export const CODEGEN_TARGETS: readonly CodegenTarget[] = [
   rustReqwest
 ]
 
-export type CodegenTargetId = (typeof CODEGEN_TARGETS)[number]['id']
-
 export function generateCode(request: ApiRequest, targetId: string): string {
   const target = CODEGEN_TARGETS.find((t) => t.id === targetId)
   if (!target) throw new Error(`unknown codegen target: ${targetId}`)

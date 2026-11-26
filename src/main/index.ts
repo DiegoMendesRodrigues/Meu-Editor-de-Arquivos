@@ -20,7 +20,8 @@ import { registerAiHandlers } from './ai/aiIpc'
 log.initialize()
 
 // Uma única instância: duas janelas gravariam a mesma sessão e os mesmos arquivos de dados.
-if (!app.requestSingleInstanceLock()) {
+const isPrimaryInstance = app.requestSingleInstanceLock()
+if (!isPrimaryInstance) {
   app.quit()
 } else {
   app.on('second-instance', () => {
@@ -100,6 +101,8 @@ function createWindow(): void {
 Menu.setApplicationMenu(null)
 
 app.whenReady().then(async () => {
+  // Segunda instância: só avisa a primeira (second-instance) e sai, sem abrir janela nem tocar nos dados.
+  if (!isPrimaryInstance) return
   // Editor de texto: nenhuma permissão (câmera, microfone, notificações, localização...) é concedida.
   session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false))
   session.defaultSession.setPermissionCheckHandler(() => false)

@@ -342,8 +342,6 @@ export interface Macro {
   steps: MacroStep[]
 }
 
-type LibraryKind = 'snippets' | 'macros'
-
 export interface AccountUser {
   id: string
   email: string

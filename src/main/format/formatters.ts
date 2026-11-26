@@ -52,9 +52,6 @@ const FORMATTERS: Record<string, Formatter> = {
   sql: async (text) => (await import('sql-formatter')).format(text, { language: 'sql', keywordCase: 'upper' })
 }
 
-/** Linguagens que a auto formatação sabe formatar (as demais só têm os espaços duplos removidos). */
-export const formattableLanguages = (): string[] => Object.keys(FORMATTERS)
-
 /** Linha do erro, quando o formatador informa: Prettier (loc.start.line) ou Ruff ("byte range 18..20"). */
 export function errorLine(err: unknown, text: string): number | undefined {
   const loc = (err as { loc?: { start?: { line?: unknown } } } | null)?.loc?.start?.line

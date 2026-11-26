@@ -12,7 +12,7 @@ const h = vi.hoisted(() => ({ store: new Map<string, Map<string, string>>(), tru
 
 vi.mock('electron', () => ({ app: { getVersion: () => '9.9.9', getPath: () => '.' }, session: {} }))
 vi.mock('electron-log/main', () => ({ default: { info: () => undefined, warn: () => undefined } }))
-vi.mock('../ipc/access', () => ({ assertAuthorized: async (p: string) => p }))
+vi.mock('../ipc/access', () => ({ assertAuthorized: async (p: string) => p, assertAuthorizedForMain: async (p: string) => p }))
 vi.mock('./vault', () => ({
   secretVault: {
     get: async (s: string, n: string) => h.store.get(s)?.get(n),

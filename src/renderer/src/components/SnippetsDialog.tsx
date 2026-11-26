@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import type { Snippet } from '@shared/ipc'
 import { allSnippets, insertSnippet } from '@/editor/snippets'
 import { useT } from '@/i18n'
-import { builtinSnippets, newId, useLibrary } from '@/store/library'
+import { newId, useLibrary } from '@/store/library'
 import { useDialogs } from '@/store/dialogs'
 import { Modal, buttonClass, fieldClass, primaryButtonClass } from './Modal'
 

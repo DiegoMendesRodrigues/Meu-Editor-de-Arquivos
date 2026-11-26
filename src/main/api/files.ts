@@ -1,7 +1,7 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { readFile, stat } from 'node:fs/promises'
 import { dirname, isAbsolute, resolve } from 'node:path'
-import { assertAuthorized } from '../ipc/access'
+import { assertAuthorizedForMain } from '../ipc/access'
 import { ApiFail } from './errors'
 
 /** Caminho do usuário: relativo vale em relação à pasta do documento (.apireq); sem documento, é recusado. */
@@ -15,7 +15,7 @@ export function resolveUserPath(path: string, documentPath: string | null): stri
 export async function authorizedPath(path: string, documentPath: string | null): Promise<string> {
   const abs = resolveUserPath(path, documentPath)
   try {
-    return await assertAuthorized(abs)
+    return await assertAuthorizedForMain(abs)
   } catch {
     throw new ApiFail('fileNotAuthorized')
   }

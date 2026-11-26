@@ -85,7 +85,10 @@ export async function applyStripeEvent(store: Store, event: unknown, log: Billin
         stripeSubscriptionId: idOf(data.subscription),
         period: meta.period
       }
-      if (data.payment_status === 'paid') {
+      // Evento repetido ou atrasado de uma assinatura que já terminou não religa o plano.
+      const current = await store.getSubscription(userId)
+      const replay = current?.status === 'ended' && !!update.stripeSubscriptionId && current.stripeSubscriptionId === update.stripeSubscriptionId
+      if (data.payment_status === 'paid' && !replay) {
         Object.assign(update, { usersGroupsId: await validGroup(meta.usersGroupsId), active: true, status: 'active', lastPaymentAt: date(data.created) ?? now })
       }
       await store.updateSubscription(userId, update)
@@ -103,6 +106,11 @@ export async function applyStripeEvent(store: Store, event: unknown, log: Billin
       const lines = Array.isArray(obj(data.lines).data) ? (obj(data.lines).data as unknown[]) : []
       const ends = lines.map((l) => date(obj(obj(l).period).end)).filter((d): d is Date => d !== null)
       const periodEnd = ends.length ? new Date(Math.max(...ends.map((d) => d.getTime()))) : null
+      // Fatura antiga (período já vencido) reenviada pela Stripe: não religa um plano encerrado.
+      if (!periodEnd || periodEnd <= now) {
+        const current = await store.getSubscription(userId)
+        if (current?.status === 'ended') return log.warn({ type }, 'Stripe: fatura de período já vencido ignorada')
+      }
       await store.updateSubscription(userId, {
         usersGroupsId: await validGroup(meta.usersGroupsId),
         period: meta.period,
@@ -139,7 +147,7 @@ export async function applyStripeEvent(store: Store, event: unknown, log: Billin
       if (type === 'customer.subscription.deleted') {
         // Encerrada: vale até o fim do período pago; se ele já passou, volta ao Gratuito agora.
         const end = sub.nextPaymentAt ?? periodEnd
-        if (!end || end <= now) await store.updateSubscription(userId, { usersGroupsId: 1, active: false, status: 'ended' })
+        if (!end || end <= now) await store.endSubscription(userId, now)
         else await store.updateSubscription(userId, { status: 'canceled' })
         return log.info({ type }, 'Stripe: assinatura encerrada')
       }

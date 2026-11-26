@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { API_LIMITS } from '@shared/api/limits'
 import { PICK_PURPOSES, sendInputSchema, type ApiPickPurpose, type ApiSendResult } from '@shared/api/protocol'
 import { IpcChannels } from '@shared/ipc'
-import { authorizeFile, isAuthorized, isAuthorizedRoot, isInside } from '../ipc/access'
+import { authorizeFile, authorizeMainOnlyFile, isAuthorized, isAuthorizedRoot, isInside } from '../ipc/access'
 import { handle } from '../ipc/secure'
 import { clearCookies, listCookies } from './cookies'
 import { executeRequest } from './engine'
@@ -219,7 +219,9 @@ export function registerSendHandlers(): void {
     const win = BrowserWindow.fromWebContents(e.sender)
     const r = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options)
     if (r.canceled) return []
-    for (const p of r.filePaths) authorizeFile(p)
+    // Chaves e certificados: só o Main lê (o Renderer não recebe o conteúdo pelo readFile genérico).
+    const mainOnly = purpose === 'certificate' || purpose === 'privateKey' || purpose === 'ca' || purpose === 'pfx'
+    for (const p of r.filePaths) (mainOnly ? authorizeMainOnlyFile : authorizeFile)(p)
     return r.filePaths
   })
 
