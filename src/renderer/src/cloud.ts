@@ -1,6 +1,7 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 /** Ações na nuvem (API intermediária): abrir, salvar, mover, excluir e pastas. */
-import type { CloudFileMeta } from '@shared/ipc'
+import type { CloudFileMeta, CloudSaveResult } from '@shared/ipc'
+import { toStoredText } from '@shared/eol'
 import type { MessageKey } from '@shared/i18n'
 import { t } from '@/i18n'
 import { useDocuments, type EditorDocument } from '@/store/documents'
@@ -13,6 +14,14 @@ function report(titleKey: MessageKey, err: unknown): void {
   void useAccount.getState().load() // a sessão pode ter expirado
 }
 
+/** O servidor recusou a gravação pelo limite do plano: mostra o aviso e atualiza o uso no rodapé. */
+export function planLimitReached(res: CloudSaveResult): boolean {
+  if (res.ok || !('limit' in res)) return false
+  useCloud.getState().showLimitAlert(res.limit)
+  void useCloud.getState().refreshStorage()
+  return true
+}
+
 /**
  * Envia o documento para a nuvem no caminho indicado.
  * Se a versão na nuvem mudou desde a última sincronização, pergunta antes de sobrescrever.
@@ -21,11 +30,13 @@ export async function pushToCloud(doc: EditorDocument, cloudPath: string): Promi
   const content = doc.content
   const baseVersion = doc.cloud && doc.cloud.path === cloudPath ? doc.cloud.version : null
   try {
-    let res = await window.api.cloudSave({ path: cloudPath, content, encoding: doc.encoding, baseVersion, force: false })
-    if (!res.ok) {
+    let res = await window.api.cloudSave({ path: cloudPath, content: toStoredText(content, doc.eol), encoding: doc.encoding, baseVersion, force: false })
+    if (planLimitReached(res)) return false
+    if (!res.ok && 'conflict' in res) {
       const overwrite = window.confirm(t('cloud.confirmOverwrite', { path: cloudPath, version: res.current.version }))
       if (!overwrite) return false
-      res = await window.api.cloudSave({ path: cloudPath, content, encoding: doc.encoding, baseVersion, force: true })
+      res = await window.api.cloudSave({ path: cloudPath, content: toStoredText(content, doc.eol), encoding: doc.encoding, baseVersion, force: true })
+      if (planLimitReached(res)) return false
     }
     if (!res.ok) return false
     useDocuments.getState().markCloudSaved(doc.id, { id: res.file.id, path: res.file.path, version: res.file.version }, content)
@@ -75,12 +86,14 @@ export function finishCloudSave(saved: boolean): void {
  */
 export async function copyDocumentToCloud(doc: EditorDocument, folder: string): Promise<boolean> {
   const path = joinPath(folder, doc.name)
-  const req = { path, content: doc.content, encoding: doc.encoding, baseVersion: null, force: false }
+  const req = { path, content: toStoredText(doc.content, doc.eol), encoding: doc.encoding, baseVersion: null, force: false }
   try {
     let res = await window.api.cloudSave(req)
-    if (!res.ok) {
+    if (planLimitReached(res)) return false
+    if (!res.ok && 'conflict' in res) {
       if (!window.confirm(t('cloud.confirmOverwrite', { path, version: res.current.version }))) return false
       res = await window.api.cloudSave({ ...req, force: true })
+      if (planLimitReached(res)) return false
     }
     if (!res.ok) return false
     useCloud.getState().upsertFile(res.file)

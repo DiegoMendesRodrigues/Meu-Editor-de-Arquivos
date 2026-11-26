@@ -21,7 +21,7 @@ export function AboutDialog() {
   }, [])
 
   const website = siteUrl(locale)
-  const link = 'break-all text-[#3b6f8f] underline hover:text-accent'
+  const link = 'break-all text-[#3b6f8f] dark:text-sky-300 underline hover:text-accent'
   return (
     <Modal title={t('menu.help.about')} onClose={close}>
       <div className="flex flex-col gap-5 text-sm">
@@ -44,11 +44,11 @@ export function AboutDialog() {
           </div>
         </div>
         <div>
-          <p className="font-semibold text-[#2f78c4]">{t('about.website')}</p>
+          <p className="font-semibold text-[#2f78c4] dark:text-sky-400">{t('about.website')}</p>
           <a href={website} target="_blank" rel="noreferrer" className={link}>{website}</a>
         </div>
         <div>
-          <p className="font-semibold text-[#2f78c4]">{t('about.github')}</p>
+          <p className="font-semibold text-[#2f78c4] dark:text-sky-400">{t('about.github')}</p>
           <a href={GITHUB_URL} target="_blank" rel="noreferrer" className={link}>{GITHUB_URL}</a>
         </div>
         <div className="flex justify-end">
@@ -124,7 +124,7 @@ export function UpdateDialog() {
             <p>{t('update.newText', { version: state.version })}</p>
             <p>
               {t('update.download')}{' '}
-              <a href={state.link} target="_blank" rel="noreferrer" className="break-all text-[#3b6f8f] underline hover:text-accent">
+              <a href={state.link} target="_blank" rel="noreferrer" className="break-all text-[#3b6f8f] dark:text-sky-300 underline hover:text-accent">
                 {state.link}
               </a>
               .

@@ -16,6 +16,17 @@ export const SITE_LANG: Record<Locale, string> = {
 
 export const supportUrl = (locale: Locale): string => `${SITE_URL}/suporte.php?lang=${SITE_LANG[locale]}`
 
+/** Página de gerenciamento da assinatura; o token de uso único (15 min) vem da API da conta. */
+export const manageSubscriptionUrl = (locale: Locale, token: string): string => {
+  const url = new URL('/assinatura.php', SITE_URL)
+  url.searchParams.set('token', token)
+  url.searchParams.set('lang', SITE_LANG[locale])
+  return url.href
+}
+
+/** Planos da nuvem no site, onde a conta é criada (o aplicativo não cria contas). */
+export const cloudPlansUrl = (locale: Locale): string => `${SITE_URL}/nuvem.php?lang=${SITE_LANG[locale]}`
+
 /** Página inicial do site no idioma do aplicativo. */
 export const siteUrl = (locale: Locale): string => `${SITE_URL}/?lang=${SITE_LANG[locale]}`
 

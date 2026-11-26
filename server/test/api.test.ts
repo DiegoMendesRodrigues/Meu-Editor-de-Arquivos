@@ -1,5 +1,5 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildApp, type Mailer } from '../src/app.js'
 import { createMemoryStore } from '../src/db/memory.js'
 
@@ -145,7 +145,7 @@ describe('arquivos na nuvem', () => {
     const updated = await put(token, { path: 'notas/a.md', content: '# Olá 2', baseVersion: 1 })
     expect(updated.body.file.version).toBe(2)
 
-    expect((await ctx.call('DELETE', `/v1/files/${id}`, { token })).status).toBe(204)
+    expect((await ctx.call('DELETE', `/v1/files/${id}`, { token })).status).toBe(200)
     expect((await ctx.call('GET', `/v1/files/${id}`, { token })).status).toBe(404)
   })
 
@@ -219,6 +219,36 @@ describe('pastas na nuvem', () => {
     expect((await ctx.call('PATCH', `/v1/files/${a.id}`, { token, body: { path: '../fora.md' } })).status).toBe(400)
   })
 
+  it('renomeia a pasta com os arquivos e as subpastas', async () => {
+    await ctx.call('POST', '/v1/folders', { token, body: { path: 'docs/vazia' } })
+    const a = (await put('docs/nota.md')).body.file
+    await put('docs/sub/b.md')
+    await put('documentos.md') // começa igual, mas não está na pasta
+    const res = await ctx.call('PATCH', '/v1/folders', { token, body: { from: 'docs', to: 'textos' } })
+    expect(res.status).toBe(200)
+    expect((await ctx.call('GET', '/v1/folders', { token })).body.folders).toEqual(['textos', 'textos/vazia'])
+    const paths = (await ctx.call('GET', '/v1/files', { token })).body.files.map((f: { path: string }) => f.path).sort()
+    expect(paths).toEqual(['documentos.md', 'textos/nota.md', 'textos/sub/b.md'])
+    const moved = (await ctx.call('GET', `/v1/files/${a.id}`, { token })).body.file
+    expect(moved.version).toBe(2)
+    // Só maiúsculas/minúsculas: permitido.
+    expect((await ctx.call('PATCH', '/v1/folders', { token, body: { from: 'textos', to: 'Textos' } })).status).toBe(200)
+  })
+
+  it('renomear pasta: destino ocupado, pasta inexistente e caminhos inválidos', async () => {
+    await put('a/x.md')
+    await put('b/y.md')
+    await put('c.md')
+    const rename = (from: string, to: string) => ctx.call('PATCH', '/v1/folders', { token, body: { from, to } })
+    expect((await rename('a', 'b')).status).toBe(409)
+    expect((await rename('a', 'c.md')).status).toBe(409)
+    expect((await rename('nada', 'z')).status).toBe(404)
+    expect((await rename('a', 'a/dentro')).status).toBe(400)
+    expect((await rename('a', '../fora')).status).toBe(400)
+    const other = await ctx.register('bia@exemplo.com', 'Bia')
+    expect((await ctx.call('PATCH', '/v1/folders', { token: other, body: { from: 'a', to: 'z' } })).status).toBe(404)
+  })
+
   it('pastas e arquivos de um usuário não aparecem para outro', async () => {
     await ctx.call('POST', '/v1/folders', { token, body: { path: 'privada' } })
     const a = (await put('privada/x.md')).body.file
@@ -240,5 +270,257 @@ describe('área de trabalho sincronizada', () => {
     const other = await ctx.register('bia@exemplo.com', 'Bia')
     expect((await ctx.call('GET', '/v1/workspace', { token: other })).body.version).toBe(0)
     expect((await ctx.call('GET', '/v1/workspace')).status).toBe(401)
+  })
+})
+
+describe('espaço usado na nuvem', () => {
+  it('soma os arquivos e os textos não salvos, por usuário, e acompanha cada gravação', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    const storage = async (t = token) => (await ctx.call('GET', '/v1/me/storage', { token: t })).body.storageBytes as number
+    expect(await storage()).toBe(0)
+
+    // "ç" tem 2 bytes em UTF-8: conta bytes, não caracteres.
+    const a = await ctx.call('PUT', '/v1/files', { token, body: { path: 'a.txt', content: 'açúcar', encoding: 'UTF-8', baseVersion: null, force: false } })
+    expect(a.body.storageBytes).toBe(8)
+    const b = await ctx.call('PUT', '/v1/files', { token, body: { path: 'b.txt', content: 'x'.repeat(100), encoding: 'UTF-8', baseVersion: null, force: false } })
+    expect(b.body.storageBytes).toBe(108)
+
+    const ws = await ctx.call('PUT', '/v1/workspace', { token, body: { data: '{"t":"não salvo"}', baseVersion: 0 } })
+    expect(ws.body.storageBytes).toBe(108 + Buffer.byteLength('{"t":"não salvo"}'))
+
+    // Regravar troca o tamanho antigo pelo novo; excluir tira o arquivo da soma.
+    await ctx.call('PUT', '/v1/files', { token, body: { path: 'a.txt', content: 'ab', encoding: 'UTF-8', baseVersion: 1, force: false } })
+    const del = await ctx.call('DELETE', `/v1/files/${b.body.file.id}`, { token })
+    expect(del.body.storageBytes).toBe(2 + Buffer.byteLength('{"t":"não salvo"}'))
+    expect(await storage()).toBe(del.body.storageBytes)
+
+    // Outro usuário não soma os arquivos do primeiro; sem sessão, não há resposta.
+    expect(await storage(await ctx.register('bia@exemplo.com', 'Bia'))).toBe(0)
+    expect((await ctx.call('GET', '/v1/me/storage')).status).toBe(401)
+  })
+
+  it('conflito não muda o espaço usado', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    await ctx.call('PUT', '/v1/files', { token, body: { path: 'a.txt', content: 'abc', encoding: 'UTF-8', baseVersion: null, force: false } })
+    const conflict = await ctx.call('PUT', '/v1/files', { token, body: { path: 'a.txt', content: 'muito maior', encoding: 'UTF-8', baseVersion: 7, force: false } })
+    expect(conflict.status).toBe(409)
+    expect((await ctx.call('GET', '/v1/me/storage', { token })).body.storageBytes).toBe(3)
+  })
+})
+
+describe('espaço usado na nuvem com falha no banco', () => {
+  it('a gravação continua valendo mesmo se o recálculo falhar', async () => {
+    const store = createMemoryStore()
+    store.refreshUsage = async () => {
+      throw new Error('coluna storage_bytes ausente')
+    }
+    const app = buildApp({ store, mailer: { async sendPasswordReset() {} } })
+    const reg = await app.inject({ method: 'POST', url: '/v1/auth/register', payload: { email: 'ana@exemplo.com', name: 'Ana', password: PASSWORD } })
+    const token = reg.json().token as string
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/v1/files',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { path: 'a.txt', content: 'abc', encoding: 'UTF-8', baseVersion: null, force: false }
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().file.version).toBe(1)
+    expect(res.json().storageBytes).toBeUndefined()
+    expect(res.json().storedFiles).toBeUndefined()
+  })
+})
+
+describe('uso da nuvem e plano', () => {
+  const put = (ctx: ReturnType<typeof setup>, token: string, path: string, content = 'abc') =>
+    ctx.call('PUT', '/v1/files', { token, body: { path, content, encoding: 'UTF-8', baseVersion: null, force: false } })
+
+  it('GET /v1/me/storage devolve espaço, número de arquivos e o plano Gratuito', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    const r = await ctx.call('GET', '/v1/me/storage', { token })
+    expect(r.status).toBe(200)
+    expect(r.body).toEqual({ storageBytes: 0, storedFiles: 0, plan: { name: 'Gratuito', maxFiles: 100, maxSizeMb: 5 } })
+  })
+
+  it('stored_files sobe e desce com as gravações e exclusões (recalculado, não somado)', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    const a = await put(ctx, token, 'a.txt')
+    expect(a.body.storedFiles).toBe(1)
+    const b = await put(ctx, token, 'b.txt', 'xy')
+    expect(b.body.storedFiles).toBe(2)
+    // Regravar o mesmo arquivo não aumenta a contagem.
+    const again = await ctx.call('PUT', '/v1/files', { token, body: { path: 'a.txt', content: 'novo', encoding: 'UTF-8', baseVersion: 1, force: false } })
+    expect(again.body.storedFiles).toBe(2)
+    const ws = await ctx.call('PUT', '/v1/workspace', { token, body: { data: '{}', baseVersion: 0 } })
+    expect(ws.body.storedFiles).toBe(2)
+    const del = await ctx.call('DELETE', `/v1/files/${a.body.file.id}`, { token })
+    expect(del.body.storedFiles).toBe(1)
+    expect((await ctx.call('GET', '/v1/me/storage', { token })).body).toMatchObject({ storedFiles: 1, storageBytes: 2 + 2 })
+    // Outro usuário tem a sua própria contagem.
+    const other = await ctx.register('bia@exemplo.com', 'Bia')
+    expect((await ctx.call('GET', '/v1/me/storage', { token: other })).body.storedFiles).toBe(0)
+  })
+
+  it('não expõe administradores em nenhuma rota', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    expect((await ctx.call('GET', '/v1/admins', { token })).status).toBe(404)
+    expect(JSON.stringify((await ctx.call('GET', '/v1/me', { token })).body)).not.toMatch(/admin|lastAccess|last_access/i)
+  })
+})
+
+describe('último acesso', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it('é gravado no cadastro e atualizado no login e em requisições autenticadas', async () => {
+    // Só o Date é simulado: timers reais mantêm o scrypt e o Fastify funcionando.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const t0 = new Date('2030-01-01T10:00:00.000Z')
+    vi.setSystemTime(t0)
+    const store = createMemoryStore()
+    const app = buildApp({ store, mailer: { async sendPasswordReset() {} } })
+    const reg = await app.inject({ method: 'POST', url: '/v1/auth/register', payload: { email: 'ana@exemplo.com', name: 'Ana', password: PASSWORD } })
+    const userId = reg.json().user.id as string
+    const token = reg.json().token as string
+    expect((await store.findUserById(userId))?.lastAccess).toEqual(t0)
+
+    const t1 = new Date('2030-01-02T10:00:00.000Z')
+    vi.setSystemTime(t1)
+    const login = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: { email: 'ana@exemplo.com', password: PASSWORD } })
+    expect(login.statusCode).toBe(200)
+    expect((await store.findUserById(userId))?.lastAccess).toEqual(t1)
+
+    const t2 = new Date('2030-01-03T10:00:00.000Z')
+    vi.setSystemTime(t2)
+    const me = await app.inject({ method: 'GET', url: '/v1/me', headers: { authorization: `Bearer ${token}` } })
+    expect(me.statusCode).toBe(200)
+    expect((await store.findUserById(userId))?.lastAccess).toEqual(t2)
+    await app.close()
+  })
+
+  it('falha ao gravar o último acesso não derruba a requisição', async () => {
+    const store = createMemoryStore()
+    store.touchLastAccess = async () => {
+      throw new Error('coluna last_access ausente')
+    }
+    const app = buildApp({ store, mailer: { async sendPasswordReset() {} } })
+    const reg = await app.inject({ method: 'POST', url: '/v1/auth/register', payload: { email: 'ana@exemplo.com', name: 'Ana', password: PASSWORD } })
+    const token = reg.json().token as string
+    const me = await app.inject({ method: 'GET', url: '/v1/me', headers: { authorization: `Bearer ${token}` } })
+    expect(me.statusCode).toBe(200)
+    const login = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: { email: 'ana@exemplo.com', password: PASSWORD } })
+    expect(login.statusCode).toBe(200)
+    await app.close()
+  })
+})
+
+describe('limites do plano', () => {
+  const put = (path: string, content: string) => ({ path, content, encoding: 'UTF-8', baseVersion: null, force: true })
+  const MB = 1024 * 1024
+
+  it('com a quantidade máxima de arquivos, recusa arquivo novo mas deixa atualizar os existentes', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    for (let i = 0; i < 100; i++) expect((await ctx.call('PUT', '/v1/files', { token, body: put(`a${i}.txt`, 'x') })).status).toBe(200)
+    const extra = await ctx.call('PUT', '/v1/files', { token, body: put('novo.txt', 'x') })
+    expect(extra.status).toBe(403)
+    expect(extra.body.error.code).toBe('plan_file_limit')
+    // Atualizar um arquivo que já existe não aumenta a quantidade.
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('a0.txt', 'y') })).status).toBe(200)
+    // Depois de excluir um, volta a ter vaga.
+    const files = (await ctx.call('GET', '/v1/files', { token })).body.files as { id: string }[]
+    await ctx.call('DELETE', `/v1/files/${files[0].id}`, { token })
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('novo.txt', 'x') })).status).toBe(200)
+  })
+
+  it('com o armazenamento cheio, recusa arquivo novo e crescimento, mas deixa diminuir', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    // Exatamente 5 MB: chega ao limite sem passar.
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('grande.txt', 'x'.repeat(5 * MB)) })).status).toBe(200)
+    const novo = await ctx.call('PUT', '/v1/files', { token, body: put('vazio.txt', '') })
+    expect(novo.status).toBe(403)
+    expect(novo.body.error.code).toBe('plan_storage_limit')
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('grande.txt', 'x'.repeat(5 * MB + 1)) })).body.error.code).toBe('plan_storage_limit')
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('grande.txt', 'x'.repeat(4 * MB)) })).status).toBe(200)
+    // Com espaço livre, um arquivo que passaria do limite também é recusado.
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('outro.txt', 'x'.repeat(MB + 1)) })).body.error.code).toBe('plan_storage_limit')
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('outro.txt', 'x'.repeat(MB)) })).status).toBe(200)
+  })
+
+  it('a área de trabalho não cresce além do limite', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    await ctx.call('PUT', '/v1/files', { token, body: put('grande.txt', 'x'.repeat(5 * MB - 10)) })
+    expect((await ctx.call('PUT', '/v1/workspace', { token, body: { data: '0123456789', baseVersion: 0 } })).status).toBe(200)
+    const cheio = await ctx.call('PUT', '/v1/workspace', { token, body: { data: '0123456789A', baseVersion: 1 } })
+    expect(cheio.status).toBe(403)
+    expect(cheio.body.error.code).toBe('plan_storage_limit')
+    expect((await ctx.call('PUT', '/v1/workspace', { token, body: { data: '012', baseVersion: 1 } })).status).toBe(200)
+  })
+})
+
+describe('proteções de segurança', () => {
+  const put = (path: string, content: string) => ({ path, content, encoding: 'UTF-8', baseVersion: null, force: true })
+
+  it('bloqueia tentativas contra o mesmo e-mail vindas de IPs diferentes', async () => {
+    const ctx = setup({ loginAttempts: 2, authRequestsPerWindow: 1000 })
+    await ctx.register()
+    for (let i = 0; i < 8; i++) {
+      const r = await ctx.app.inject({ method: 'POST', url: '/v1/auth/login', remoteAddress: `10.0.0.${i}`, payload: { email: 'ana@exemplo.com', password: 'errada-errada' } })
+      expect(r.statusCode).toBe(401)
+    }
+    const r = await ctx.app.inject({ method: 'POST', url: '/v1/auth/login', remoteAddress: '10.0.1.1', payload: { email: 'ana@exemplo.com', password: PASSWORD } })
+    expect(r.statusCode).toBe(429)
+  })
+
+  it('só o código de redefinição mais recente vale, e no máximo 3 e-mails por janela', async () => {
+    const ctx = setup()
+    await ctx.register()
+    for (let i = 0; i < 5; i++) expect((await ctx.call('POST', '/v1/auth/password-reset/request', { body: { email: 'ana@exemplo.com' } })).status).toBe(202)
+    expect(ctx.sent).toHaveLength(3)
+    const novo = 'senha-redefinida-789'
+    expect((await ctx.call('POST', '/v1/auth/password-reset/confirm', { body: { token: ctx.sent[0].token, newPassword: novo } })).status).toBe(400)
+    expect((await ctx.call('POST', '/v1/auth/password-reset/confirm', { body: { token: ctx.sent[2].token, newPassword: novo } })).status).toBe(204)
+  })
+
+  it('sem sessão, recusa antes de ler um corpo grande; rotas de conta aceitam só corpo pequeno', async () => {
+    const ctx = setup()
+    const big = 'x'.repeat(200 * 1024)
+    expect((await ctx.call('PUT', '/v1/files', { body: put('a.txt', big) })).status).toBe(401)
+    const r = await ctx.call('POST', '/v1/auth/login', { body: { email: 'ana@exemplo.com', password: big } })
+    expect(r.status).toBe(413)
+    const token = await ctx.register()
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('a.txt', big) })).status).toBe(200)
+  })
+
+  it('gravações em paralelo não passam do limite de arquivos do plano', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    for (let i = 0; i < 95; i++) await ctx.call('PUT', '/v1/files', { token, body: put(`a${i}.txt`, 'x') })
+    const results = await Promise.all(Array.from({ length: 20 }, (_, i) => ctx.call('PUT', '/v1/files', { token, body: put(`p${i}.txt`, 'x') })))
+    expect(results.filter((r) => r.status === 200)).toHaveLength(5)
+    expect((await ctx.call('GET', '/v1/files', { token })).body.files).toHaveLength(100)
+  })
+
+  it('recusa nomes com espaço nas pontas e pastas aninhadas demais', async () => {
+    const ctx = setup()
+    const token = await ctx.register()
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('docs /a.txt', 'x') })).status).toBe(400)
+    expect((await ctx.call('PUT', '/v1/files', { token, body: put('a.txt ', 'x') })).status).toBe(400)
+    const deep = Array.from({ length: 40 }, () => 'p').join('/')
+    expect((await ctx.call('POST', '/v1/folders', { token, body: { path: deep } })).status).toBe(400)
+  })
+
+  it('troca de senha: bloqueia depois de várias senhas atuais erradas', async () => {
+    const ctx = setup({ loginAttempts: 2 })
+    const token = await ctx.register()
+    const body = { currentPassword: 'errada-errada', newPassword: 'outra-senha-forte-1' }
+    expect((await ctx.call('POST', '/v1/me/password', { token, body })).status).toBe(403)
+    expect((await ctx.call('POST', '/v1/me/password', { token, body })).status).toBe(403)
+    expect((await ctx.call('POST', '/v1/me/password', { token, body: { ...body, currentPassword: PASSWORD } })).status).toBe(429)
   })
 })

@@ -1,5 +1,5 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { _electron as electron } from '@playwright/test'
@@ -27,15 +27,74 @@ test.describe('edição e arquivos', () => {
   })
 })
 
+test.describe('seleção por coluna e cores do editor', () => {
+  test('Shift+Ctrl+arrastar cria uma seleção por coluna (vários cursores)', async ({ app, page, workspace }) => {
+    await stubOpenDialog(app, [workspace.file('notas.txt')])
+    await page.keyboard.press('Control+O')
+    await expect(page.locator('.view-lines')).toContainText('primeira laranja')
+    const lines = page.locator('.view-line')
+    const a = (await lines.nth(0).boundingBox())!
+    const b = (await lines.nth(1).boundingBox())!
+    await page.keyboard.down('Control')
+    await page.keyboard.down('Shift')
+    await page.mouse.move(a.x + 40, a.y + a.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(a.x + 40, b.y + b.height / 2, { steps: 5 })
+    await page.mouse.up()
+    await page.keyboard.up('Shift')
+    await page.keyboard.up('Control')
+    await expect(page.locator('.cursors-layer .cursor')).toHaveCount(2) // um cursor por linha
+    await page.keyboard.type('#')
+    // O mesmo caractere entra na mesma coluna das duas linhas.
+    const texto = await page.locator('.view-lines').innerText()
+    const [l1, l2] = texto.replace(/ /g, ' ').split(String.fromCharCode(10))
+    expect(l1.indexOf('#')).toBeGreaterThanOrEqual(0)
+    expect(l2.indexOf('#')).toBe(l1.indexOf('#'))
+  })
+
+  test('a coluna dos números de linha tem fundo cinza claro, números em cinza escuro', async ({ app, page, workspace }) => {
+    await stubOpenDialog(app, [workspace.file('notas.txt')])
+    await page.keyboard.press('Control+O')
+    await expect(page.locator('.view-lines')).toContainText('primeira laranja')
+    const cor = (): Promise<string> => page.locator('.margin').first().evaluate((el) => getComputedStyle(el).backgroundColor)
+    await page.screenshot({ path: process.env.SHOT_DIR ? `${process.env.SHOT_DIR}/claro.png` : undefined })
+    expect(await cor()).toBe('rgb(241, 241, 244)')
+    // Números do mesmo tamanho do texto (14 px) e em cinza médio.
+    const numeros = await page.evaluate(() => {
+      const todos = document.querySelectorAll('.monaco-editor .line-numbers:not(.active-line-number)')
+      const num = todos[todos.length - 1] as HTMLElement
+      const texto = document.querySelector('.monaco-editor .view-line') as HTMLElement
+      return { num: parseFloat(getComputedStyle(num).fontSize), texto: parseFloat(getComputedStyle(texto).fontSize), cor: getComputedStyle(num).color }
+    })
+    expect(numeros.num).toBe(numeros.texto)
+    expect(numeros.cor).toBe('rgb(113, 113, 122)')
+    await page.getByRole('button', { name: 'Exibir' }).click()
+    await page.getByRole('menuitem', { name: 'Alterar entre o modo claro e escuro' }).click()
+    await expect.poll(cor).toBe('rgb(45, 45, 49)')
+    // No escuro, os números ficam em cinza claro.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const todos = document.querySelectorAll('.monaco-editor .line-numbers:not(.active-line-number)')
+          return getComputedStyle(todos[todos.length - 1] as HTMLElement).color
+        }),
+      )
+      .toBe('rgb(212, 212, 216)')
+    await page.screenshot({ path: process.env.SHOT_DIR ? `${process.env.SHOT_DIR}/escuro.png` : undefined })
+  })
+})
+
 test.describe('novo documento e barra lateral', () => {
   test('a seta ao lado de Novo cria documentos de cada tipo', async ({ page }) => {
-    for (const [opcao, nome] of [
-      ['.txt (texto)', 'Sem título 2.txt'],
-      ['.py (Python)', 'Sem título 3.py'],
-      ['.sql (SQL)', 'Sem título 4.sql'],
-      ['.md (Markdown)', 'Sem título 5.md']
+    // Os tipos sem seção ficam no próprio menu; os outros, no submenu da seção.
+    for (const [secao, opcao, nome] of <[string | null, string, string][]>[
+      [null, '.txt (texto)', 'Sem título 2.txt'],
+      ['Programação', '.py (Python)', 'Sem título 3.py'],
+      ['Dados e configuração', '.sql (SQL)', 'Sem título 4.sql'],
+      [null, '.md (Markdown)', 'Sem título 5.md']
     ]) {
       await page.getByRole('button', { name: 'Escolher o tipo do novo documento' }).click()
+      if (secao) await page.getByRole('menuitem', { name: secao }).hover()
       await page.getByRole('menuitem', { name: opcao }).click()
       await expect(page.getByRole('tab', { selected: true })).toContainText(nome)
     }
@@ -57,9 +116,9 @@ test.describe('menu Ajuda', () => {
     await expect(page.getByRole('button', { name: 'Plugins' })).toHaveCount(0)
     await page.getByRole('button', { name: 'Ajuda' }).click()
     const items = await page.getByRole('menuitem').allInnerTexts()
-    expect(items.map((t) => t.trim())).toEqual(['Manual do usuário', 'Atalhos de teclado', 'Sobre o Meu Editor de Arquivos', 'Suporte Técnico'])
+    expect(items.map((t) => t.trim())).toEqual(['Manual do usuário', 'Atalhos de teclado', 'Sobre o Meu Editor de Arquivos', 'Suporte Técnico', 'Verificar por atualizações'])
     await expect(page.getByRole('menuitem', { name: 'Manual do usuário' })).not.toHaveAttribute('data-disabled', '') // o manual já existe
-    await expect(page.getByRole('menuitem', { name: 'Suporte Técnico' })).toHaveAttribute('data-disabled', '')
+    await expect(page.getByRole('menuitem', { name: 'Suporte Técnico' })).not.toHaveAttribute('data-disabled', '') // abre a página de suporte do site
   })
 
   test('Sobre mostra ícone, nome, versão, desenvolvedor com link e botão Fechar', async ({ page }) => {
@@ -68,7 +127,7 @@ test.describe('menu Ajuda', () => {
     const dialog = page.getByRole('dialog')
     await expect(dialog.locator('img')).toBeVisible()
     await expect(dialog.getByRole('heading', { name: 'Meu Editor de Arquivos', exact: true })).toBeVisible()
-    await expect(dialog).toContainText('Versão 1.0.0')
+    await expect(dialog).toContainText('Versão 1.1.0')
     await expect(dialog).not.toContainText('Informações sobre o aplicativo')
     const link = dialog.getByRole('link', { name: 'Diego Mendes Rodrigues' })
     await expect(link).toHaveAttribute('href', 'https://www.linkedin.com/in/diegomendesrodrigues/')
@@ -339,10 +398,10 @@ test.describe('manual do usuário', () => {
 
       await expect(manual.locator('html')).toHaveAttribute('lang', locale)
       expect(await manual.title()).toContain(translate(locale, 'menu.help.manual').replace('...', ''))
-      await expect(manual.locator('main h2')).toHaveCount(15)
+      await expect(manual.locator('main h2')).toHaveCount(16)
       // todas as telas do manual carregam (e estão no idioma do manual: cada idioma tem a sua pasta de imagens)
       const images = await manual.evaluate(() => [...document.images].map((i) => ({ src: i.getAttribute('src'), ok: i.complete && i.naturalWidth > 0 })))
-      expect(images.length).toBe(21)
+      expect(images.length).toBe(26)
       expect(images.filter((i) => !i.ok), `imagens quebradas em ${locale}`).toEqual([])
       // os rótulos do aplicativo citados no texto são os desta tela
       await expect(manual.locator('.ui').first()).toHaveText(translate(locale, 'menu.file'))
@@ -403,5 +462,544 @@ test.describe('corretor ortográfico', () => {
     await expect(page.locator('.monaco-editor .squiggly-info')).toHaveCount(1, { timeout: 15000 })
     await page.keyboard.press('F7')
     await expect(page.locator('.monaco-editor .squiggly-info')).toHaveCount(0)
+  })
+})
+
+test.describe('terminal', () => {
+  test('Ferramentas → Abrir o terminal executa comandos abaixo do documento e fecha pela aba', async ({ page }) => {
+    await page.getByRole('button', { name: 'Ferramentas' }).click()
+    await page.getByRole('menuitem', { name: 'Abrir o terminal' }).click()
+    const panel = page.getByRole('region', { name: 'Terminais' })
+    await expect(panel.getByRole('tab', { name: /Terminal 1/ })).toBeVisible()
+    // O documento continua aberto acima do terminal.
+    await expect(page.locator('.monaco-editor')).toBeVisible()
+    await panel.locator('.xterm').click()
+    await page.keyboard.type('echo terminal-ok-$((6*7))')
+    await page.keyboard.press('Enter')
+    // bash calcula 42; o PowerShell repete o texto: nos dois casos a saída aparece no terminal.
+    await expect(panel.locator('.xterm-rows')).toContainText(/terminal-ok-(42|\$\(\(6\*7\)\))/, { timeout: 20000 })
+    await panel.getByRole('button', { name: 'Fechar Terminal 1' }).click()
+    await expect(panel).toHaveCount(0)
+  })
+})
+
+test.describe('menu Codificação', () => {
+  test('Auto formatação remove os espaços duplos e formata no padrão da linguagem', async ({ app, page, workspace }) => {
+    writeFileSync(workspace.file('soma.py'), 'def soma( a,b ):\n  return  a+b\n')
+    await stubOpenDialog(app, [workspace.file('soma.py')])
+    await page.keyboard.press('Control+O')
+    await expect(page.getByRole('tab', { selected: true })).toContainText('soma.py')
+    await page.getByRole('button', { name: 'Codificação' }).click()
+    await page.getByRole('menuitem', { name: 'Auto formatação' }).click()
+    await expect(page.getByRole('contentinfo')).toContainText('Documento formatado no padrão Python.')
+    await page.locator('.monaco-editor').click()
+    await page.keyboard.press('Control+S')
+    await expect(page.getByRole('tab', { selected: true })).not.toContainText('●')
+    expect(readFileSync(workspace.file('soma.py'), 'utf8')).toBe('def soma(a, b):\n    return a + b\n')
+  })
+
+  test('Auto formatação deduz a indentação que falta no Python', async ({ app, page, workspace }) => {
+    writeFileSync(workspace.file('exibir.py'), "def exibir(nome):\nif nome == 'ana':\nprint('Ops')\nprint(nome)\n\n    exibir('Diego')\n")
+    await stubOpenDialog(app, [workspace.file('exibir.py')])
+    await page.keyboard.press('Control+O')
+    await expect(page.getByRole('tab', { selected: true })).toContainText('exibir.py')
+    await page.getByRole('button', { name: 'Codificação' }).click()
+    await page.getByRole('menuitem', { name: 'Auto formatação' }).click()
+    await expect(page.getByRole('contentinfo')).toContainText('A indentação estava faltando e foi deduzida')
+    await page.locator('.monaco-editor').click()
+    await page.keyboard.press('Control+S')
+    await expect(page.getByRole('tab', { selected: true })).not.toContainText('●')
+    expect(readFileSync(workspace.file('exibir.py'), 'utf8')).toBe(
+      "def exibir(nome):\n    if nome == 'ana':\n        print('Ops')\n    print(nome)\n\n\nexibir('Diego')\n"
+    )
+  })
+
+  test('Auto formatação mostra a linha do erro de sintaxe numa janela', async ({ app, page, workspace }) => {
+    writeFileSync(workspace.file('erro.py'), 'x = 1\ny = (\n')
+    await stubOpenDialog(app, [workspace.file('erro.py')])
+    await page.keyboard.press('Control+O')
+    await expect(page.getByRole('tab', { selected: true })).toContainText('erro.py')
+    const dialog = page.waitForEvent('dialog')
+    await page.getByRole('button', { name: 'Codificação' }).click()
+    await page.getByRole('menuitem', { name: 'Auto formatação' }).click()
+    const shown = await dialog
+    expect(shown.message()).toContain('erro de sintaxe na linha 3')
+    await shown.dismiss()
+  })
+
+  test('Codificar/Decodificar URL alterna o texto selecionado', async ({ page }) => {
+    await page.locator('.monaco-editor').click()
+    await page.keyboard.type('a b&c=ç')
+    for (const [esperado, aviso] of [['a%20b%26c%3D%C3%A7', 'URL codificada.'], ['a b&c=ç', 'URL decodificada.']]) {
+      await page.keyboard.press('Control+A')
+      await page.getByRole('button', { name: 'Codificação' }).click()
+      await page.getByRole('menuitem', { name: 'Codificar/Decodificar URL' }).click()
+      await expect(page.getByRole('contentinfo')).toContainText(aviso)
+      await expect(page.locator('.view-lines')).toHaveText(esperado)
+    }
+  })
+})
+
+const pt = (key: Parameters<typeof translate>[1], params?: Parameters<typeof translate>[2]): string => translate('pt-BR', key, params)
+
+/** Sobe a API de teste em memória (a mesma do servidor do projeto) numa porta livre e cria uma conta nela. */
+async function signInToTestApi(
+  page: import('@playwright/test').Page,
+  /** Ajusta a conta no servidor antes de entrar (ex.: assinatura); com ele, a espera pelo fim do login fica com o teste. */
+  prepare?: (store: import('../server/src/db/store').Store, userId: string) => Promise<void>
+): Promise<{ close(): Promise<void>; store: import('../server/src/db/store').Store; userId: string }> {
+  const { buildApp } = await import('../server/src/app')
+  const { createMemoryStore } = await import('../server/src/db/memory')
+  const store = createMemoryStore()
+  const api = buildApp({ store, mailer: { async sendPasswordReset() {} } })
+  const address = await api.listen({ port: 0, host: '127.0.0.1' })
+  await page.getByRole('button', { name: pt('menu.account'), exact: true }).click()
+  await page.getByRole('menuitem', { name: pt('menu.account.signIn') }).click()
+  await page.getByLabel(pt('account.serverUrl'), { exact: true }).fill(address.replace('127.0.0.1', 'localhost'))
+  await page.getByRole('dialog').getByRole('button', { name: pt('account.submit.server') }).click()
+  // O aplicativo não cria contas (isso é feito no site): a conta de teste é criada direto na API.
+  const created = await fetch(`${address}/v1/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'ana@exemplo.com', name: 'Ana', password: 'uma-senha-forte-123' })
+  })
+  const userId = ((await created.json()) as { user: { id: string } }).user.id
+  if (prepare) await prepare(store, userId)
+  await page.getByLabel(pt('account.email'), { exact: true }).fill('ana@exemplo.com')
+  await page.getByLabel(pt('account.password'), { exact: true }).fill('uma-senha-forte-123')
+  await page.getByRole('dialog').getByRole('button', { name: pt('account.submit.login') }).click()
+  if (!prepare) await page.getByRole('dialog').waitFor({ state: 'hidden' })
+  return { close: () => api.close(), store, userId }
+}
+
+test.describe('aviso de plano perto de expirar', () => {
+  test('plano cancelado terminando em 3 dias: avisa ao entrar, com o link da assinatura, e só uma vez', async ({ page }) => {
+    const end = new Date(Date.now() + 2.5 * 24 * 3600 * 1000)
+    const api = await signInToTestApi(page, (store, userId) =>
+      store.updateSubscription(userId, { usersGroupsId: 3, active: true, status: 'canceled', nextPaymentAt: end })
+    )
+    try {
+      const notice = page.getByTestId('plan-expiry-notice')
+      await expect(notice).toBeVisible()
+      await expect(page.getByRole('dialog')).toContainText(pt('cloud.expiry.title'))
+      await expect(notice).toContainText(pt('cloud.expiry.message', { days: 3, plan: 'Criador', date: end.toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'short' }) }))
+      await expect(notice).toContainText('meueditordearquivos.aplicativoia.online/assinatura.php')
+      await notice.getByRole('button', { name: pt('cloud.expiry.later') }).click()
+      await expect(notice).toBeHidden()
+      // Confirmado no servidor: não volta para a mesma data de fim.
+      await expect.poll(() => api.store.getPlanExpiryNotice(api.userId, new Date(), 7 * 24 * 3600 * 1000)).toBeNull()
+    } finally {
+      await api.close()
+    }
+  })
+})
+
+test.describe('espaço usado na nuvem', () => {
+  test('aparece no rodapé, ao lado do ícone da nuvem, e acompanha as gravações', async ({ page }) => {
+    const api = await signInToTestApi(page)
+    try {
+      const used = page.getByTestId('cloud-storage')
+      const files = page.getByTestId('cloud-files')
+      await expect(used).toHaveText(pt('status.cloudStorage', { size: '0.00 MB' }))
+      await expect(files).toHaveText(pt('status.cloudFiles', { n: 0 }))
+      await expect(files).toHaveAttribute('data-level', 'ok')
+      // Separador vertical à esquerda do grupo.
+      await expect(page.getByTestId('cloud-usage')).toHaveClass(/border-l/)
+      await expect(used).toHaveAttribute('title', pt('storage.sizeLimit', { used: '0.00', max: 5, plan: 'Gratuito' }))
+      // Fica à esquerda do ícone da nuvem.
+      await expect(page.getByRole('contentinfo').locator('[data-testid=cloud-usage] + button[data-storage=cloud]')).toHaveCount(1)
+
+      // 1,25 MB salvos na nuvem: o rodapé muda sem precisar recarregar.
+      await page.evaluate(async () => {
+        const w = window as unknown as { api: { cloudSave(r: object): Promise<unknown> } }
+        await w.api.cloudSave({ path: 'grande.txt', content: 'x'.repeat(1310720), encoding: 'UTF-8', baseVersion: null, force: false })
+      })
+      await expect(used).toHaveText(pt('status.cloudStorage', { size: '1.25 MB' }))
+      await expect(files).toHaveText(pt('status.cloudFiles', { n: 1 }))
+
+      // Abrir o arquivo da nuvem não repete o texto na área de trabalho: o espaço continua o mesmo.
+      // A área de trabalho é enviada (só a referência ao arquivo), e o total é refeito no servidor.
+      await page.getByRole('button', { name: pt('menu.file'), exact: true }).click()
+      await page.getByRole('menuitem', { name: pt('menu.file.openCloud') }).click()
+      await page.getByRole('dialog').getByRole('button', { name: /grande\.txt/ }).dblclick()
+      await page.getByRole('dialog').waitFor({ state: 'hidden' })
+      await expect(page.getByRole('tab', { name: /grande\.txt/ })).toBeVisible()
+      const workspaceBytes = async (): Promise<number> =>
+        page.evaluate(async () => {
+          const w = window as unknown as { api: { workspaceGet(): Promise<{ data: string | null }> } }
+          return (await w.api.workspaceGet()).data?.length ?? 0
+        })
+      await expect.poll(workspaceBytes, { timeout: 10_000 }).toBeGreaterThan(0)
+      expect(await workspaceBytes()).toBeLessThan(1000)
+      await page.evaluate(async () => {
+        const w = window as unknown as { api: { cloudStorage(): Promise<unknown> } }
+        await w.api.cloudStorage()
+      })
+      await expect(used).toHaveText(pt('status.cloudStorage', { size: '1.25 MB' }))
+    } finally {
+      await api.close()
+    }
+  })
+})
+
+test.describe('janela Abrir da nuvem', () => {
+  test('mostra o resumo, as pastas com detalhes em cinza, o menu e abre com duplo clique', async ({ page }) => {
+    const api = await signInToTestApi(page)
+    try {
+      await page.evaluate(async () => {
+        const w = window as unknown as { api: { cloudSave(r: object): Promise<unknown> } }
+        await w.api.cloudSave({ path: 'docs/nota.md', content: '# nota', encoding: 'UTF-8', baseVersion: null, force: false })
+        await w.api.cloudSave({ path: 'raiz.txt', content: 'abc', encoding: 'UTF-8', baseVersion: null, force: false })
+      })
+      await page.getByRole('button', { name: pt('menu.file'), exact: true }).click()
+      await page.getByRole('menuitem', { name: pt('menu.file.openCloud') }).click()
+      const dialog = page.getByRole('dialog', { name: pt('cloud.open.title') })
+      await expect(dialog.getByText(/2 arquivos armazenados com o tamanho 0,00 MB/)).toBeVisible()
+      const tree = dialog.getByTestId('cloud-open-tree')
+      await expect(tree.getByRole('button', { name: 'docs', exact: true })).toBeVisible()
+      // Detalhes (versão, tamanho, data) ao lado do nome.
+      await expect(tree.getByRole('button', { name: /nota\.md.*versão 1/ })).toBeVisible()
+
+      // Botão direito: mesmo menu da barra lateral.
+      await tree.getByRole('button', { name: 'docs', exact: true }).click({ button: 'right' })
+      await expect(page.getByRole('menuitem', { name: pt('sidebar.rename') })).toBeVisible()
+      await page.keyboard.press('Escape')
+
+      await tree.getByRole('button', { name: /nota\.md/ }).dblclick()
+      await dialog.waitFor({ state: 'hidden' })
+      await expect(page.getByRole('tab', { name: /nota\.md/ })).toBeVisible()
+    } finally {
+      await api.close()
+    }
+  })
+})
+
+test.describe('janela Abrir da nuvem: organizar', () => {
+  test('arrasta arquivos e pastas, renomeia, muda a cor e exclui pelo botão direito', async ({ page }) => {
+    const api = await signInToTestApi(page)
+    try {
+      await page.evaluate(async () => {
+        const w = window as unknown as { api: { cloudSave(r: object): Promise<unknown> } }
+        await w.api.cloudSave({ path: 'docs/nota.md', content: '# nota', encoding: 'UTF-8', baseVersion: null, force: false })
+        await w.api.cloudSave({ path: 'outra/x.md', content: 'x', encoding: 'UTF-8', baseVersion: null, force: false })
+        await w.api.cloudSave({ path: 'raiz.txt', content: 'abc', encoding: 'UTF-8', baseVersion: null, force: false })
+      })
+      const cloudPaths = (): Promise<string[]> =>
+        page.evaluate(async () => {
+          const w = window as unknown as { api: { cloudList(): Promise<{ path: string }[]> } }
+          return (await w.api.cloudList()).map((f) => f.path).sort()
+        })
+      await page.getByRole('button', { name: pt('menu.file'), exact: true }).click()
+      await page.getByRole('menuitem', { name: pt('menu.file.openCloud') }).click()
+      const dialog = page.getByRole('dialog', { name: pt('cloud.open.title') })
+      const tree = dialog.getByTestId('cloud-open-tree')
+      const folder = (name: string) => tree.getByRole('button', { name, exact: true })
+      const file = (name: string) => tree.getByRole('button', { name: new RegExp(`^${name.replace('.', '\\.')}`) })
+      await expect(folder('docs')).toBeVisible()
+
+      // Arquivo para dentro de uma pasta.
+      await file('raiz.txt').dragTo(folder('docs'))
+      await expect.poll(cloudPaths).toEqual(['docs/nota.md', 'docs/raiz.txt', 'outra/x.md'])
+
+      // Pasta para dentro de outra e, depois, de volta para a raiz.
+      await folder('outra').dragTo(folder('docs'))
+      await expect.poll(cloudPaths).toEqual(['docs/nota.md', 'docs/outra/x.md', 'docs/raiz.txt'])
+      await folder('outra').dragTo(dialog.getByTestId('cloud-open-root').getByText(pt('cloud.root')))
+      await expect.poll(cloudPaths).toEqual(['docs/nota.md', 'docs/raiz.txt', 'outra/x.md'])
+
+      // Botão direito no arquivo: Renomear e Excluir.
+      await file('nota.md').click({ button: 'right' })
+      await page.getByRole('menuitem', { name: pt('sidebar.rename') }).click()
+      const rename = page.getByRole('dialog', { name: pt('rename.fileTitle') })
+      await rename.getByLabel(pt('rename.newName')).fill('ideias.md')
+      await rename.getByRole('button', { name: pt('rename.submit') }).click()
+      await expect(file('ideias.md')).toBeVisible()
+      await expect(dialog).toBeVisible()
+      page.once('dialog', (d) => void d.accept())
+      await file('raiz.txt').click({ button: 'right' })
+      await page.getByRole('menuitem', { name: pt('common.delete') }).click()
+      await expect.poll(cloudPaths).toEqual(['docs/ideias.md', 'outra/x.md'])
+
+      // Botão direito na pasta: Renomear, cor e Excluir (só vazia).
+      await folder('outra').click({ button: 'right' })
+      await expect(page.getByRole('menuitem', { name: pt('common.delete') })).toHaveAttribute('data-disabled', '')
+      await page.getByRole('menuitem', { name: pt('sidebar.rename') }).click()
+      const renameFolder = page.getByRole('dialog', { name: pt('rename.folderTitle') })
+      await renameFolder.getByLabel(pt('rename.newName')).fill('textos')
+      await renameFolder.getByRole('button', { name: pt('rename.submit') }).click()
+      await expect(folder('textos')).toBeVisible()
+      await folder('textos').click({ button: 'right' })
+      await page.getByRole('menuitem', { name: pt('sidebar.folderColor') }).click()
+      const colors = page.getByRole('dialog', { name: pt('folderColor.title') })
+      await colors.getByRole('radio', { name: pt('folderColor.blue'), exact: true }).click()
+      await colors.getByRole('button', { name: pt('folderColor.submit') }).click()
+      await expect(folder('textos').locator('svg[data-color]')).toHaveAttribute('data-color', 'blue')
+      await expect(dialog).toBeVisible()
+      expect(await cloudPaths()).toEqual(['docs/ideias.md', 'textos/x.md'])
+    } finally {
+      await api.close()
+    }
+  })
+})
+
+test.describe('limites do plano na nuvem', () => {
+  test('armazenamento cheio: salvar mostra o aviso e não grava; quantidade cheia recusa arquivo novo', async ({ page }) => {
+    const api = await signInToTestApi(page)
+    try {
+      type Save = { cloudSave(r: object): Promise<{ ok: boolean; limit?: string }> }
+      // 5 MB exatos: o plano Gratuito fica cheio (o rodapé fica vermelho).
+      await page.evaluate(async () => {
+        const w = window as unknown as { api: Save }
+        await w.api.cloudSave({ path: 'cheio.txt', content: 'x'.repeat(5 * 1024 * 1024), encoding: 'UTF-8', baseVersion: null, force: false })
+      })
+      await expect(page.getByTestId('cloud-storage')).toHaveAttribute('data-level', 'full')
+
+      await page.locator('.monaco-editor').click()
+      await page.keyboard.type('texto novo')
+      await page.keyboard.press('Control+S')
+      const save = page.getByRole('dialog', { name: pt('cloud.save.title') })
+      await save.getByLabel(pt('cloud.save.name'), { exact: true }).fill('novo.md')
+      await save.getByRole('button', { name: pt('cloud.save.title') }).click()
+      const alert = page.getByRole('dialog', { name: pt('cloud.limit.title') })
+      await expect(alert).toContainText(pt('cloud.limit.storage'))
+      await alert.getByRole('button', { name: pt('cloud.limit.ok') }).click()
+      await expect(alert).toHaveCount(0)
+      const paths = await page.evaluate(async () => {
+        const w = window as unknown as { api: { cloudList(): Promise<{ path: string }[]> } }
+        return (await w.api.cloudList()).map((f) => f.path)
+      })
+      expect(paths).toEqual(['cheio.txt'])
+
+      // Quantidade: com 100 arquivos, o 101º é recusado com o limite de arquivos.
+      const limit = await page.evaluate(async () => {
+        const w = window as unknown as { api: Save & { cloudDelete(id: string): Promise<void>; cloudList(): Promise<{ id: string }[]> } }
+        for (const f of await w.api.cloudList()) await w.api.cloudDelete(f.id)
+        for (let i = 0; i < 100; i++) await w.api.cloudSave({ path: `a${i}.txt`, content: 'x', encoding: 'UTF-8', baseVersion: null, force: false })
+        return (await w.api.cloudSave({ path: 'extra.txt', content: 'x', encoding: 'UTF-8', baseVersion: null, force: false })).limit
+      })
+      expect(limit).toBe('files')
+    } finally {
+      await api.close()
+    }
+  })
+})
+
+test.describe('barra lateral: botão direito e ícones', () => {
+  type Page = import('@playwright/test').Page
+  /** Abre a pasta de exemplo no explorador. */
+  async function openWorkspace(app: import('@playwright/test').ElectronApplication, page: Page, dir: string) {
+    await stubOpenDialog(app, [dir])
+    await page.getByRole('button', { name: pt('sidebar.openFolder') }).click()
+    await expect(page.getByRole('tree').getByRole('button', { name: 'notas.txt' })).toBeVisible()
+  }
+  const row = (page: Page, name: string) => page.getByRole('tree').getByRole('button', { name, exact: true })
+
+  test('renomeia um arquivo do disco e a aba aberta acompanha', async ({ app, page, workspace }) => {
+    await openWorkspace(app, page, workspace.dir)
+    await row(page, 'notas.txt').click()
+    await expect(page.getByRole('tab', { selected: true })).toContainText('notas.txt')
+
+    await row(page, 'notas.txt').click({ button: 'right' })
+    await page.getByRole('menuitem', { name: pt('sidebar.rename') }).click()
+    const dialog = page.getByRole('dialog', { name: pt('rename.fileTitle') })
+    const field = dialog.getByLabel(pt('rename.newName'))
+    await expect(field).toHaveValue('notas.txt')
+    await field.fill('  ')
+    await expect(dialog.getByRole('button', { name: pt('rename.submit') })).toBeDisabled()
+    await field.fill('a:b.txt')
+    await expect(dialog.getByRole('alert')).toHaveText(pt('rename.invalid'))
+    await field.fill('lista.txt')
+    await dialog.getByRole('button', { name: pt('rename.submit') }).click()
+    await expect(dialog).toBeHidden()
+
+    await expect(row(page, 'lista.txt')).toBeVisible()
+    await expect(row(page, 'notas.txt')).toHaveCount(0)
+    expect(readFileSync(workspace.file('lista.txt'), 'utf8')).toContain('primeira laranja')
+    await expect(page.getByRole('tab', { selected: true })).toContainText('lista.txt')
+  })
+
+  test('pasta: renomear, mudar a cor e excluir só quando vazia', async ({ app, page, workspace }) => {
+    const { mkdirSync, existsSync } = await import('node:fs')
+    mkdirSync(workspace.file('vazia'))
+    await openWorkspace(app, page, workspace.dir)
+
+    // Pasta com arquivo: "Excluir" desabilitado.
+    await row(page, 'src').click({ button: 'right' })
+    await expect(page.getByRole('menuitem', { name: pt('common.delete') })).toHaveAttribute('data-disabled', '')
+    await page.getByRole('menuitem', { name: pt('sidebar.rename') }).click()
+    const rename = page.getByRole('dialog', { name: pt('rename.folderTitle') })
+    await rename.getByLabel(pt('rename.newName')).fill('codigo')
+    await rename.getByRole('button', { name: pt('rename.submit') }).click()
+    await expect(row(page, 'codigo')).toBeVisible()
+    expect(existsSync(workspace.file('codigo/a.ts'))).toBe(true)
+
+    // Cor: doze opções, a atual marcada.
+    await row(page, 'codigo').click({ button: 'right' })
+    await page.getByRole('menuitem', { name: pt('sidebar.folderColor') }).click()
+    const colors = page.getByRole('dialog', { name: pt('folderColor.title') })
+    await expect(colors.getByRole('radio')).toHaveCount(12)
+    await expect(colors.getByRole('radio', { checked: true })).toHaveAccessibleName(pt('folderColor.amber'))
+    await colors.getByRole('radio', { name: pt('folderColor.blue'), exact: true }).click()
+    await colors.getByRole('button', { name: pt('folderColor.submit') }).click()
+    await expect(row(page, 'codigo').locator('svg[data-color]')).toHaveAttribute('data-color', 'blue')
+
+    // Pasta vazia: excluir (com confirmação).
+    page.once('dialog', (d) => void d.accept())
+    await row(page, 'vazia').click({ button: 'right' })
+    const del = page.getByRole('menuitem', { name: pt('common.delete') })
+    await expect(del).not.toHaveAttribute('data-disabled', '')
+    await del.click()
+    await expect(row(page, 'vazia')).toHaveCount(0)
+    expect(existsSync(workspace.file('vazia'))).toBe(false)
+
+    // A pasta aberta no explorador não é renomeada nem excluída.
+    await page.getByRole('tree').getByRole('treeitem').first().getByRole('button').first().click({ button: 'right' })
+    await expect(page.getByRole('menuitem', { name: pt('sidebar.rename') })).toHaveAttribute('data-disabled', '')
+    await page.keyboard.press('Escape')
+  })
+
+  test('ícones por tipo de arquivo', async ({ app, page, workspace }) => {
+    writeFileSync(workspace.file('build.sh'), 'echo oi\n')
+    writeFileSync(workspace.file('app.log'), 'ok\n')
+    writeFileSync(workspace.file('foto.png'), '')
+    writeFileSync(workspace.file('tabela.csv'), 'a,b\n')
+    await openWorkspace(app, page, workspace.dir)
+    await row(page, 'src').click()
+    const kind = (name: string) => row(page, name).locator('svg[data-kind]')
+    await expect(kind('leia-me.md')).toHaveAttribute('data-kind', 'document')
+    await expect(kind('app.log')).toHaveAttribute('data-kind', 'log')
+    await expect(kind('a.ts')).toHaveAttribute('data-kind', 'code')
+    await expect(kind('build.sh')).toHaveAttribute('data-kind', 'script')
+    await expect(kind('dados.json')).toHaveAttribute('data-kind', 'web')
+    await expect(kind('tabela.csv')).toHaveAttribute('data-kind', 'data')
+    await expect(kind('foto.png')).toHaveAttribute('data-kind', 'other')
+  })
+
+  test('nuvem: renomeia arquivo e pasta pelo botão direito', async ({ page }) => {
+    const api = await signInToTestApi(page)
+    try {
+      await page.evaluate(async () => {
+        const w = window as unknown as { api: { cloudSave(r: object): Promise<unknown> } }
+        await w.api.cloudSave({ path: 'docs/nota.md', content: '# nota', encoding: 'UTF-8', baseVersion: null, force: false })
+        await w.api.cloudSave({ path: 'docs/sub/b.md', content: 'b', encoding: 'UTF-8', baseVersion: null, force: false })
+      })
+      await page.getByRole('button', { name: pt('sidebar.refresh') }).click()
+      const tree = page.getByRole('tree', { name: pt('sidebar.cloud') })
+      const item = (name: string) => tree.getByRole('button', { name, exact: true })
+      await expect(item('nota.md')).toBeVisible()
+
+      // Arquivo
+      await item('nota.md').click({ button: 'right' })
+      await page.getByRole('menuitem', { name: pt('sidebar.rename') }).click()
+      let dialog = page.getByRole('dialog', { name: pt('rename.fileTitle') })
+      await dialog.getByLabel(pt('rename.newName')).fill('ideias.md')
+      await dialog.getByRole('button', { name: pt('rename.submit') }).click()
+      await expect(item('ideias.md')).toBeVisible()
+
+      // Pasta com arquivos e subpasta: "Excluir" desabilitado; renomear leva tudo.
+      await item('docs').click({ button: 'right' })
+      await expect(page.getByRole('menuitem', { name: pt('common.delete') })).toHaveAttribute('data-disabled', '')
+      await page.getByRole('menuitem', { name: pt('sidebar.rename') }).click()
+      dialog = page.getByRole('dialog', { name: pt('rename.folderTitle') })
+      await dialog.getByLabel(pt('rename.newName')).fill('textos')
+      await dialog.getByRole('button', { name: pt('rename.submit') }).click()
+      await expect(item('textos')).toBeVisible()
+      await expect(item('docs')).toHaveCount(0)
+      const paths = await page.evaluate(async () => {
+        const w = window as unknown as { api: { cloudList(): Promise<{ path: string }[]> } }
+        return (await w.api.cloudList()).map((f) => f.path).sort()
+      })
+      expect(paths).toEqual(['textos/ideias.md', 'textos/sub/b.md'])
+    } finally {
+      await api.close()
+    }
+  })
+})
+
+/** Aba do documento ativo (as subabas do construtor também são "tab"). */
+const docTab = (page: import('@playwright/test').Page) => page.locator('[role=tablist]').first().getByRole('tab', { selected: true })
+
+test.describe('Cliente de API (fase 0)', () => {
+  test('Ctrl+Shift+A abre o construtor; as edições viram o JSON do .apireq e são salvas', async ({ app, page, workspace }) => {
+    await page.keyboard.press('Control+Shift+A')
+    await expect(docTab(page)).toContainText('Sem título 2.apireq')
+    await expect(page.getByTestId('api-request')).toBeVisible()
+    await expect(page.getByRole('contentinfo')).toContainText('Requisição de API')
+    // Requisição nova não tem alterações pendentes.
+    await expect(docTab(page)).not.toContainText('●')
+
+    await page.getByLabel('Método').selectOption('POST')
+    await page.getByLabel('URL da requisição').fill('{{baseUrl}}/produtos')
+    await page.getByLabel('Chave 1').fill('pagina')
+    await page.getByLabel('Valor 1').fill('2')
+    await expect(page.getByRole('tab', { name: /Params/ })).toContainText('1')
+    await page.getByRole('tab', { name: 'Configurações' }).click()
+    await page.getByLabel('Verificar o certificado TLS').uncheck()
+    await expect(page.getByRole('alert').filter({ hasText: 'interceptada' })).toBeVisible()
+    await expect(docTab(page)).toContainText('●')
+
+    // "Editar texto" mostra o JSON; "Construtor" volta.
+    await page.getByRole('button', { name: 'Editar texto' }).click()
+    await expect(page.locator('.view-lines')).toContainText('"method": "POST"')
+    await page.getByRole('button', { name: 'Construtor' }).click()
+    await expect(page.getByLabel('URL da requisição')).toHaveValue('{{baseUrl}}/produtos?pagina=2')
+
+    await stubSaveDialog(app, workspace.file('Criar produto.apireq'))
+    await page.keyboard.press('Control+S')
+    await expect(docTab(page)).toContainText('Criar produto.apireq')
+    const saved = JSON.parse(readFileSync(workspace.file('Criar produto.apireq'), 'utf8'))
+    expect(saved).toMatchObject({
+      $schema: 'meu-editor/api-request@1',
+      method: 'POST',
+      url: '{{baseUrl}}/produtos?pagina=2',
+      params: [{ key: 'pagina', value: '2', enabled: true }],
+      settings: { verifyTls: false }
+    })
+  })
+
+  test('Ferramentas → Cliente de API e Arquivo → Novo criam requisições', async ({ page }) => {
+    await page.getByRole('button', { name: 'Ferramentas' }).click()
+    await page.getByRole('menuitem', { name: 'Testar requisições e APIs' }).click()
+    await page.getByRole('menuitem', { name: /Cliente de API/ }).click()
+    await expect(page.getByTestId('api-request')).toBeVisible()
+    await page.getByRole('button', { name: 'Arquivo' }).click()
+    await page.getByRole('menuitem', { name: 'Novo arquivo de requisição de API (.apireq)' }).click()
+    await expect(docTab(page)).toContainText('Sem título 3.apireq')
+  })
+
+  test('.apireq inválido mostra o problema e o botão para editar o texto', async ({ app, page, workspace }) => {
+    writeFileSync(workspace.file('ruim.apireq'), JSON.stringify({ $schema: 'meu-editor/api-request@1', id: 'x', settings: { timeoutMs: 5 } }))
+    await stubOpenDialog(app, [workspace.file('ruim.apireq')])
+    await page.keyboard.press('Control+O')
+    await expect(page.getByTestId('api-invalid')).toContainText('Campo inválido: settings.timeoutMs')
+    await page.getByTestId('api-invalid').getByRole('button', { name: 'Editar texto' }).click()
+    await expect(page.locator('.view-lines')).toContainText('timeoutMs')
+  })
+
+  test('Ctrl+Shift+A dentro do terminal vai para o shell', async ({ page }) => {
+    await page.getByRole('button', { name: 'Ferramentas' }).click()
+    await page.getByRole('menuitem', { name: 'Abrir o terminal' }).click()
+    await page.locator('[data-terminal] .xterm').first().click()
+    await page.keyboard.press('Control+Shift+A')
+    await expect(page.getByTestId('api-request')).toHaveCount(0)
+  })
+
+  test('o cofre guarda segredos cifrados e o Renderer não consegue lê-los', async ({ app, page }) => {
+    const result = await page.evaluate(async () => {
+      const api = (window as unknown as { api: Record<string, (...a: unknown[]) => Promise<unknown>> }).api
+      await api.apiSecretSet('hml', 'token', 'valor-super-secreto')
+      const bad = await api.apiSecretSet('../x', 'token', 'v').then(() => 'aceito', () => 'recusado')
+      return {
+        has: await api.apiSecretHas('hml', 'token'),
+        names: await api.apiSecretNames('hml'),
+        bad,
+        keys: Object.keys(api).filter((k) => k.startsWith('apiSecret'))
+      }
+    })
+    expect(result).toEqual({ has: true, names: ['token'], bad: 'recusado', keys: expect.arrayContaining(['apiSecretSet', 'apiSecretHas', 'apiSecretNames', 'apiSecretDelete']) })
+    expect(result.keys.some((k) => /get/i.test(k))).toBe(false)
+    const userData = await app.evaluate(({ app: a }) => a.getPath('userData'))
+    const persistent = await page.evaluate(() => (window as unknown as { api: { apiSecretsInfo(): Promise<{ persistent: boolean }> } }).api.apiSecretsInfo())
+    if (persistent.persistent) expect(readFileSync(join(userData, 'api-secrets.json'), 'utf8')).not.toContain('valor-super-secreto')
   })
 })

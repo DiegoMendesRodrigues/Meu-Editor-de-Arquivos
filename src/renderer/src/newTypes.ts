@@ -16,7 +16,11 @@ export const NEW_TYPES: NewType[] = [
   { ext: 'markdown', name: 'Markdown' },
   { ext: 'txt', name: 'text', nameKey: 'newType.txt', inMenu: true },
   { ext: 'log', name: 'log', nameKey: 'newType.log' },
-  { ext: 'tex', name: 'LaTeX' }
+  { ext: 'tex', name: 'LaTeX' },
+  { ext: 'apireq', name: 'API', nameKey: 'newType.apireq', inMenu: true },
+  { ext: 'apienv', name: 'API environment', nameKey: 'newType.apienv', inMenu: true },
+  { ext: 'apiws', name: 'WebSocket', nameKey: 'newType.apiws', inMenu: true },
+  { ext: 'apigrpc', name: 'gRPC', nameKey: 'newType.apigrpc', inMenu: true }
 ]
 
 export const NEW_TYPE_GROUPS: { titleKey: MessageKey; types: NewType[] }[] = [

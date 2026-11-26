@@ -60,7 +60,7 @@ export function MarkdownWysiwyg({ content, onChange }: { content: string; onChan
     editorProps: {
       attributes: {
         class:
-          'prose prose-zinc mx-auto max-w-4xl px-10 py-8 outline-none prose-headings:font-semibold prose-a:text-accent prose-code:before:content-none prose-code:after:content-none prose-pre:bg-zinc-100 prose-pre:text-zinc-800 prose-table:text-sm prose-th:border prose-th:border-zinc-300 prose-th:bg-zinc-50 prose-th:px-3 prose-th:py-1.5 prose-td:border prose-td:border-zinc-300 prose-td:px-3 prose-td:py-1.5',
+          'prose prose-zinc dark:prose-invert mx-auto max-w-4xl px-10 py-8 outline-none prose-headings:font-semibold prose-a:text-accent prose-code:before:content-none prose-code:after:content-none prose-pre:bg-zinc-100 prose-pre:text-zinc-800 prose-table:text-sm prose-th:border prose-th:border-zinc-300 prose-th:bg-zinc-50 prose-th:px-3 prose-th:py-1.5 prose-td:border prose-td:border-zinc-300 prose-td:px-3 prose-td:py-1.5',
         spellcheck: 'false'
       },
       // Ctrl+clique num link externo abre no navegador do sistema (o processo principal valida o endereço).
@@ -102,7 +102,7 @@ export function MarkdownWysiwyg({ content, onChange }: { content: string; onChan
   }, [editor, readOnly])
 
   return (
-    <div className="flex h-full flex-col bg-white">
+    <div className="flex h-full flex-col bg-surface">
       {readOnly && (
         <div role="note" className="shrink-0 border-b border-border bg-zinc-50 px-3 py-1.5 text-zinc-600">
           {t('md.htmlReadOnly', { label: t('toolbar.editText') })}

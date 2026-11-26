@@ -38,6 +38,9 @@ export function createSmtpMailer(cfg: SmtpConfig): Mailer {
           `Your password reset code: ${token}\n` +
           'It expires soon. If this was not you, ignore this message.\n'
       })
+    },
+    async sendPlanExpiring(to, mail) {
+      await transport.sendMail({ from: `Meu Editor de Arquivos <${cfg.from}>`, to, subject: mail.subject, text: mail.text })
     }
   }
 }

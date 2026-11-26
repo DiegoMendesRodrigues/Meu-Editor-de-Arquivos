@@ -5,6 +5,14 @@ import type { editor, IDisposable } from 'monaco-editor'
 import { monaco } from '@/editor/monacoSetup'
 import { consumeReveal, requestReveal, setActiveEditor } from '@/editor/editorRef'
 import { JsonViewer } from '@/json/JsonViewer'
+import { ApiRequestView } from '@/api/ApiRequestView'
+import { EnvironmentView } from '@/api/EnvironmentView'
+import { SavedResponseView } from '@/api/SavedResponseView'
+import { RunReportView } from '@/api/RunReportView'
+import { CollectionSettingsView } from '@/api/CollectionSettingsView'
+import { WebSocketView } from '@/api/WebSocketView'
+import { GrpcView } from '@/api/GrpcView'
+import { monacoLanguage } from '@/editor/languages'
 import { attachRecorder } from '@/editor/macros'
 import { registerMarkdownKeybindings } from '@/markdown/editorFormatting'
 import { MarkdownWysiwyg } from '@/markdown/MarkdownWysiwyg'
@@ -15,6 +23,7 @@ import { newFile, openFile } from '@/commands'
 import { useLocale, useT } from '@/i18n'
 import { monacoSpeaks } from '@/editor/monacoNls'
 import { attachSpellcheck, registerSpellcheck } from '@/spell/spellcheck'
+import { useTheme } from '@/theme'
 
 registerSpellcheck()
 
@@ -26,6 +35,7 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
     useShallow((s) => ({ fontSize: s.fontSize, wordWrap: s.wordWrap, showInvisibles: s.showInvisibles, tabSize: s.tabSize, insertSpaces: s.insertSpaces }))
   )
   const locale = useLocale((s) => s.locale)
+  const theme = useTheme()
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const spellRef = useRef<IDisposable | null>(null)
 
@@ -101,7 +111,7 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
     }
   }, [view.showInvisibles, doc.id])
 
-  // Aplica a quebra de linha do documento ao modelo do Monaco.
+  // Aplica a quebra de linha do documento ao modelo do Monaco (que não tem CR: documentos CR usam LF).
   useEffect(() => {
     const model = editorRef.current?.getModel()
     if (model) {
@@ -113,8 +123,8 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
     <Editor
       path={modelPath(doc)}
       defaultValue={doc.content}
-      language={doc.language}
-      theme="meu-claro"
+      language={monacoLanguage(doc.language)}
+      theme={theme === 'dark' ? 'meu-escuro' : 'meu-claro'}
       // Mantém o modelo (e o histórico de desfazer) ao alternar para a visualização.
       keepCurrentModel
       onMount={handleMount}
@@ -129,7 +139,7 @@ function CodeEditor({ doc }: { doc: EditorDocument }) {
         renderControlCharacters: view.showInvisibles,
         folding: true,
         showFoldingControls: 'always',
-        multiCursorModifier: 'alt',
+        multiCursorModifier: 'ctrlCmd',
         smoothScrolling: true,
         scrollBeyondLastLine: false,
         tabSize: view.tabSize,
@@ -162,7 +172,7 @@ export function EditorPane() {
 
   if (!doc) {
     return (
-      <div className="grid h-full place-items-center bg-white text-zinc-500">
+      <div className="grid h-full place-items-center bg-surface text-zinc-500">
         <div className="text-center">
           <p className="mb-3 text-base">{t('editor.noDocument')}</p>
           <div className="flex justify-center gap-2">
@@ -179,6 +189,14 @@ export function EditorPane() {
   }
 
   if (canPreview(doc) && doc.mode === 'preview') {
+    // key: cada requisição tem o seu construtor (aba e painel abertos).
+    if (doc.language === 'apireq') return <ApiRequestView key={doc.id} doc={doc} />
+    if (doc.language === 'apienv') return <EnvironmentView key={doc.id} doc={doc} />
+    if (doc.language === 'apiresp') return <SavedResponseView key={doc.id} doc={doc} />
+    if (doc.language === 'apirun') return <RunReportView key={doc.id} doc={doc} />
+    if (doc.language === 'apicol') return <CollectionSettingsView key={doc.id} doc={doc} />
+    if (doc.language === 'apiws') return <WebSocketView key={doc.id} doc={doc} />
+    if (doc.language === 'apigrpc') return <GrpcView key={doc.id} doc={doc} />
     if (doc.language === 'json') {
       const edit = (line?: number, column?: number) => {
         if (line !== undefined) requestReveal(line, column ?? 1)

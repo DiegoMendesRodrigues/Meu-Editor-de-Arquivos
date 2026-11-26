@@ -1,6 +1,6 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { contextBridge, ipcRenderer, webUtils, type IpcRendererEvent } from 'electron'
-import { IpcChannels, type EditorApi, type FileChange } from '@shared/ipc'
+import { IpcChannels, type CloudUsageChange, type EditorApi, type FileChange } from '@shared/ipc'
 
 /**
  * Única ponte entre o Renderer e o sistema operacional.
@@ -30,6 +30,8 @@ const api: EditorApi = {
 
   openFolder: () => ipcRenderer.invoke(IpcChannels.openFolder),
   listFolder: (path) => ipcRenderer.invoke(IpcChannels.listFolder, path),
+  renameEntry: (path, newName) => ipcRenderer.invoke(IpcChannels.renameEntry, path, newName),
+  deleteEmptyFolder: (path) => ipcRenderer.invoke(IpcChannels.deleteEmptyFolder, path),
   searchFolder: (req) => ipcRenderer.invoke(IpcChannels.searchFolder, req),
   replaceInFiles: (req) => ipcRenderer.invoke(IpcChannels.replaceInFiles, req),
 
@@ -48,8 +50,11 @@ const api: EditorApi = {
   saveMacros: (items) => ipcRenderer.invoke(IpcChannels.librarySave, 'macros', items),
 
   accountStatus: () => ipcRenderer.invoke(IpcChannels.accountStatus),
+  accountNotices: () => ipcRenderer.invoke(IpcChannels.accountNotices),
+  accountAckPurgeNotice: () => ipcRenderer.invoke(IpcChannels.accountAckPurgeNotice),
+  accountAckExpiryNotice: () => ipcRenderer.invoke(IpcChannels.accountAckExpiryNotice),
+  accountManageSubscription: () => ipcRenderer.invoke(IpcChannels.accountManageSubscription),
   accountSetServer: (url) => ipcRenderer.invoke(IpcChannels.accountSetServer, url),
-  accountRegister: (email, name, password) => ipcRenderer.invoke(IpcChannels.accountRegister, email, name, password),
   accountLogin: (email, password) => ipcRenderer.invoke(IpcChannels.accountLogin, email, password),
   accountLogout: () => ipcRenderer.invoke(IpcChannels.accountLogout),
   accountUpdateProfile: (name) => ipcRenderer.invoke(IpcChannels.accountUpdateProfile, name),
@@ -58,6 +63,7 @@ const api: EditorApi = {
   accountConfirmReset: (token, next) => ipcRenderer.invoke(IpcChannels.accountConfirmReset, token, next),
   cloudList: () => ipcRenderer.invoke(IpcChannels.cloudList),
   cloudRead: (id) => ipcRenderer.invoke(IpcChannels.cloudRead, id),
+  cloudReadIfExists: (id) => ipcRenderer.invoke(IpcChannels.cloudReadIfExists, id),
   cloudSave: (req) => ipcRenderer.invoke(IpcChannels.cloudSave, req),
   cloudDelete: (id) => ipcRenderer.invoke(IpcChannels.cloudDelete, id),
   cloudMove: (id, path) => ipcRenderer.invoke(IpcChannels.cloudMove, id, path),
@@ -66,12 +72,132 @@ const api: EditorApi = {
   cloudFolders: () => ipcRenderer.invoke(IpcChannels.cloudFolders),
   cloudCreateFolder: (path) => ipcRenderer.invoke(IpcChannels.cloudCreateFolder, path),
   cloudDeleteFolder: (path) => ipcRenderer.invoke(IpcChannels.cloudDeleteFolder, path),
+  cloudRenameFolder: (from, to) => ipcRenderer.invoke(IpcChannels.cloudRenameFolder, from, to),
+  cloudStorage: () => ipcRenderer.invoke(IpcChannels.cloudStorage),
+  onCloudStorageChanged: (listener) => {
+    const handler = (_e: unknown, usage: CloudUsageChange) => listener(usage)
+    ipcRenderer.on(IpcChannels.cloudStorageChanged, handler)
+    return () => void ipcRenderer.off(IpcChannels.cloudStorageChanged, handler)
+  },
 
   openManual: () => ipcRenderer.invoke(IpcChannels.openManual),
   openSupport: () => ipcRenderer.invoke(IpcChannels.openSupport),
+  openCloudPlans: () => ipcRenderer.invoke(IpcChannels.openCloudPlans),
   checkUpdate: () => ipcRenderer.invoke(IpcChannels.checkUpdate),
   setLocale: (locale) => ipcRenderer.invoke(IpcChannels.setLocale, locale),
   getAppInfo: () => ipcRenderer.invoke(IpcChannels.appInfo),
+  terminalCreate: (size) => ipcRenderer.invoke(IpcChannels.terminalCreate, size),
+  terminalWrite: (id, data) => ipcRenderer.invoke(IpcChannels.terminalWrite, id, data),
+  terminalResize: (id, size) => ipcRenderer.invoke(IpcChannels.terminalResize, id, size),
+  terminalKill: (id) => ipcRenderer.invoke(IpcChannels.terminalKill, id),
+  onTerminalData: (listener) => {
+    const handler = (_e: unknown, id: number, data: string) => listener(id, data)
+    ipcRenderer.on(IpcChannels.terminalData, handler)
+    return () => void ipcRenderer.off(IpcChannels.terminalData, handler)
+  },
+  onTerminalExit: (listener) => {
+    const handler = (_e: unknown, id: number, exitCode: number) => listener(id, exitCode)
+    ipcRenderer.on(IpcChannels.terminalExit, handler)
+    return () => void ipcRenderer.off(IpcChannels.terminalExit, handler)
+  },
+  setTheme: (theme) => ipcRenderer.invoke(IpcChannels.setTheme, theme),
+  setFullScreen: (on) => ipcRenderer.invoke(IpcChannels.setFullScreen, on),
+  onFullScreenChanged: (listener) => {
+    const handler = (_e: unknown, on: boolean) => listener(on)
+    ipcRenderer.on(IpcChannels.fullScreenChanged, handler)
+    return () => void ipcRenderer.off(IpcChannels.fullScreenChanged, handler)
+  },
+  hashText: (algorithm, text) => ipcRenderer.invoke(IpcChannels.hashText, algorithm, text),
+  formatCode: (language, extension, text) => ipcRenderer.invoke(IpcChannels.formatCode, language, extension, text),
+  copyText: (text) => ipcRenderer.invoke(IpcChannels.copyText, text),
+  apiSecretsInfo: () => ipcRenderer.invoke(IpcChannels.apiSecretsInfo),
+  apiSecretSet: (scope, name, value) => ipcRenderer.invoke(IpcChannels.apiSecretSet, scope, name, value),
+  apiSecretHas: (scope, name) => ipcRenderer.invoke(IpcChannels.apiSecretHas, scope, name),
+  apiSecretNames: (scope) => ipcRenderer.invoke(IpcChannels.apiSecretNames, scope),
+  apiSecretDelete: (scope, name) => ipcRenderer.invoke(IpcChannels.apiSecretDelete, scope, name),
+  apiSend: (input) => ipcRenderer.invoke(IpcChannels.apiSend, input),
+  apiCancel: (runId) => ipcRenderer.invoke(IpcChannels.apiCancel, runId),
+  apiHistoryList: () => ipcRenderer.invoke(IpcChannels.apiHistoryList),
+  apiHistoryClear: () => ipcRenderer.invoke(IpcChannels.apiHistoryClear),
+  apiCookiesList: (jar) => ipcRenderer.invoke(IpcChannels.apiCookiesList, jar),
+  apiCookiesClear: (jar, domain, name) => ipcRenderer.invoke(IpcChannels.apiCookiesClear, jar, domain, name),
+  apiPickFiles: (purpose, multiple) => ipcRenderer.invoke(IpcChannels.apiPickFiles, purpose, multiple),
+  apiImportParse: (input) => ipcRenderer.invoke(IpcChannels.apiImportParse, input),
+  apiWriteFiles: (input) => ipcRenderer.invoke(IpcChannels.apiWriteFiles, input),
+  apiRunStart: (input) => ipcRenderer.invoke(IpcChannels.apiRunStart, input),
+  apiRunCancel: (runId) => ipcRenderer.invoke(IpcChannels.apiRunCancel, runId),
+  onApiRunProgress: (listener) => {
+    const handler = (_e: IpcRendererEvent, progress: Parameters<typeof listener>[0]): void => listener(progress)
+    ipcRenderer.on(IpcChannels.apiRunProgress, handler)
+    return () => void ipcRenderer.off(IpcChannels.apiRunProgress, handler)
+  },
+  apiOAuthAuthorize: (input) => ipcRenderer.invoke(IpcChannels.apiOAuthAuthorize, input),
+  apiOAuthCancel: (runId) => ipcRenderer.invoke(IpcChannels.apiOAuthCancel, runId),
+  onApiOAuthProgress: (listener) => {
+    const handler = (_e: IpcRendererEvent, progress: Parameters<typeof listener>[0]): void => listener(progress)
+    ipcRenderer.on(IpcChannels.apiOAuthProgress, handler)
+    return () => void ipcRenderer.off(IpcChannels.apiOAuthProgress, handler)
+  },
+  apiOAuthTokenInfo: (scope, tokenVar) => ipcRenderer.invoke(IpcChannels.apiOAuthTokenInfo, scope, tokenVar),
+  apiOAuthClear: (scope, tokenVar) => ipcRenderer.invoke(IpcChannels.apiOAuthClear, scope, tokenVar),
+  apiWsConnect: (input) => ipcRenderer.invoke(IpcChannels.apiWsConnect, input),
+  apiWsSend: (connId, message) => ipcRenderer.invoke(IpcChannels.apiWsSend, connId, message),
+  apiWsClose: (connId, code) => ipcRenderer.invoke(IpcChannels.apiWsClose, connId, code),
+  onApiWsEvent: (listener) => {
+    const handler = (_e: IpcRendererEvent, event: Parameters<typeof listener>[0]): void => listener(event)
+    ipcRenderer.on(IpcChannels.apiWsEvent, handler)
+    return () => void ipcRenderer.off(IpcChannels.apiWsEvent, handler)
+  },
+  apiMockStart: (input) => ipcRenderer.invoke(IpcChannels.apiMockStart, input),
+  apiMockStop: (mockId) => ipcRenderer.invoke(IpcChannels.apiMockStop, mockId),
+  onApiMockLog: (listener) => {
+    const handler = (_e: IpcRendererEvent, entry: Parameters<typeof listener>[0]): void => listener(entry)
+    ipcRenderer.on(IpcChannels.apiMockLog, handler)
+    return () => void ipcRenderer.off(IpcChannels.apiMockLog, handler)
+  },
+  apiGrpcLoad: (input) => ipcRenderer.invoke(IpcChannels.apiGrpcLoad, input),
+  apiGrpcStart: (input) => ipcRenderer.invoke(IpcChannels.apiGrpcStart, input),
+  apiGrpcSend: (callId, message) => ipcRenderer.invoke(IpcChannels.apiGrpcSend, callId, message),
+  apiGrpcEnd: (callId) => ipcRenderer.invoke(IpcChannels.apiGrpcEnd, callId),
+  apiGrpcCancel: (callId) => ipcRenderer.invoke(IpcChannels.apiGrpcCancel, callId),
+  onApiGrpcEvent: (listener) => {
+    const handler = (_e: IpcRendererEvent, event: Parameters<typeof listener>[0]): void => listener(event)
+    ipcRenderer.on(IpcChannels.apiGrpcEvent, handler)
+    return () => void ipcRenderer.off(IpcChannels.apiGrpcEvent, handler)
+  },
+  apiMonitorList: () => ipcRenderer.invoke(IpcChannels.apiMonitorList),
+  apiMonitorSave: (input) => ipcRenderer.invoke(IpcChannels.apiMonitorSave, input),
+  apiMonitorDelete: (id) => ipcRenderer.invoke(IpcChannels.apiMonitorDelete, id),
+  apiMonitorRunNow: (id) => ipcRenderer.invoke(IpcChannels.apiMonitorRunNow, id),
+  onApiMonitorEvent: (listener) => {
+    const handler = (_e: IpcRendererEvent, event: Parameters<typeof listener>[0]): void => listener(event)
+    ipcRenderer.on(IpcChannels.apiMonitorEvent, handler)
+    return () => void ipcRenderer.off(IpcChannels.apiMonitorEvent, handler)
+  },
+  apiScriptTrust: (input) => ipcRenderer.invoke(IpcChannels.apiScriptTrust, input),
+  apiScriptIsTrusted: (input) => ipcRenderer.invoke(IpcChannels.apiScriptIsTrusted, input),
+  aiStatus: () => ipcRenderer.invoke(IpcChannels.aiStatus),
+  aiGetSettings: () => ipcRenderer.invoke(IpcChannels.aiGetSettings),
+  aiSetSettings: (settings) => ipcRenderer.invoke(IpcChannels.aiSetSettings, settings),
+  aiChat: (input) => ipcRenderer.invoke(IpcChannels.aiChat, input),
+  aiCancel: (id) => ipcRenderer.invoke(IpcChannels.aiCancel, id),
+  onAiChunk: (listener) => {
+    const handler = (_e: IpcRendererEvent, chunk: Parameters<typeof listener>[0]): void => listener(chunk)
+    ipcRenderer.on(IpcChannels.aiChunk, handler)
+    return () => void ipcRenderer.off(IpcChannels.aiChunk, handler)
+  },
+  aiInstallInfo: () => ipcRenderer.invoke(IpcChannels.aiInstallInfo),
+  aiInstallStart: () => ipcRenderer.invoke(IpcChannels.aiInstallStart),
+  aiInstallCancel: () => ipcRenderer.invoke(IpcChannels.aiInstallCancel),
+  aiStartServer: () => ipcRenderer.invoke(IpcChannels.aiStartServer),
+  aiPull: (model) => ipcRenderer.invoke(IpcChannels.aiPull, model),
+  aiPullCancel: () => ipcRenderer.invoke(IpcChannels.aiPullCancel),
+  aiDeleteModel: (model) => ipcRenderer.invoke(IpcChannels.aiDeleteModel, model),
+  onAiInstallProgress: (listener) => {
+    const handler = (_e: IpcRendererEvent, progress: Parameters<typeof listener>[0]): void => listener(progress)
+    ipcRenderer.on(IpcChannels.aiInstallProgress, handler)
+    return () => void ipcRenderer.off(IpcChannels.aiInstallProgress, handler)
+  },
   onBeforeClose: (listener) => {
     const handler = () => listener()
     ipcRenderer.on(IpcChannels.beforeClose, handler)

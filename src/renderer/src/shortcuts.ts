@@ -56,6 +56,7 @@ export function shortcutGroups(t: Translate): ShortcutGroup[] {
       items: [
         { keys: 'Ctrl+Shift+B', action: t('sc.sidebar') },
         { keys: 'Ctrl+Shift+E', action: t('sc.togglePreview') },
+        { keys: 'F11', action: t('sc.fullScreen') },
         { keys: 'Ctrl++', action: t('menu.view.fontIncrease') },
         { keys: 'Ctrl+-', action: t('menu.view.fontDecrease') },
         { keys: 'Ctrl+0', action: t('menu.view.fontReset') }
@@ -74,7 +75,16 @@ export function shortcutGroups(t: Translate): ShortcutGroup[] {
       title: t('sc.group.macros'),
       items: [
         { keys: 'Ctrl+Shift+R', action: t('sc.macroRecord') },
-        { keys: 'Ctrl+Shift+M', action: t('menu.tools.macroRunLast') }
+        { keys: 'Ctrl+Shift+M', action: t('menu.tools.macroRunLast') },
+        { keys: 'Ctrl+Shift+I', action: t('menu.tools.ai') }
+      ]
+    },
+    {
+      title: t('menu.tools.apiClient'),
+      items: [
+        { keys: 'Ctrl+Shift+A', action: t('sc.apiClient') },
+        { keys: 'Ctrl+Enter', action: t('sc.apiSend') },
+        { keys: 'Esc', action: t('sc.apiCancel') }
       ]
     }
   ]

@@ -6,10 +6,12 @@
  * A autorização dos caminhos é feita no processo principal, antes de chegar aqui.
  */
 import { parentPort } from 'node:worker_threads'
-import { open, readdir, readFile, stat, writeFile } from 'node:fs/promises'
-import { join, relative, resolve } from 'node:path'
+import { chmod, open, readdir, readFile, realpath, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { randomBytes } from 'node:crypto'
+import { basename, dirname, join, relative, resolve } from 'node:path'
 import type { SearchFileResult, SearchResponse } from '@shared/ipc'
 import { buildGlobFilter, buildRegex, replaceText, searchText } from '@shared/search'
+import { toStoredText } from '@shared/eol'
 import { decodeText, encodeText } from './textCodec'
 import { MAX_FILES_SCANNED, type ReplaceWorkResult, type WorkRequest } from './searchTypes'
 
@@ -97,6 +99,21 @@ async function searchFolder(root: string, options: Extract<WorkRequest, { kind: 
   return { files, totalMatches, filesScanned, filesSkipped, truncated }
 }
 
+/** Grava num arquivo temporário da mesma pasta e renomeia por cima (não deixa o original pela metade). */
+async function writeAtomic(path: string, data: Uint8Array): Promise<void> {
+  const alvo = await realpath(path) // se for link, troca o arquivo de destino e não o link
+  const info = await stat(alvo)
+  const tmp = join(dirname(alvo), `.${basename(alvo)}.${randomBytes(6).toString('hex')}.tmp`)
+  try {
+    await writeFile(tmp, data, { flag: 'wx' })
+    await chmod(tmp, info.mode & 0o7777).catch(() => undefined)
+    await rename(tmp, alvo)
+  } catch (err) {
+    await rm(tmp, { force: true }).catch(() => undefined)
+    throw err
+  }
+}
+
 async function replaceInFiles(req: Extract<WorkRequest, { kind: 'replace' }>): Promise<ReplaceWorkResult> {
   const re = buildRegex(req.options)
   const result: ReplaceWorkResult = { filesChanged: 0, replacements: 0, errors: [], changed: [] }
@@ -111,8 +128,8 @@ async function replaceInFiles(req: Extract<WorkRequest, { kind: 'replace' }>): P
       const decoded = decodeText(buf)
       const replaced = replaceText(decoded.content.replace(/\r\n/g, '\n'), re, req.replacement, req.options.regex)
       if (replaced.count === 0) continue
-      const out = decoded.eol === 'CRLF' ? replaced.text.replace(/\n/g, '\r\n') : replaced.text
-      await writeFile(path, encodeText(out, decoded.encoding))
+      const out = decoded.eol === 'CRLF' ? replaced.text.replace(/\n/g, '\r\n') : toStoredText(replaced.text, decoded.eol)
+      await writeAtomic(path, encodeText(out, decoded.encoding))
       result.filesChanged++
       result.replacements += replaced.count
       result.changed.push(`${path} (${replaced.count})`)

@@ -43,9 +43,27 @@ monaco.editor.defineTheme('meu-claro', {
   inherit: true,
   rules: [],
   colors: {
+    // Coluna dos números de linha (e da dobra): fundo cinza bem claro e números em cinza médio.
+    'editorGutter.background': '#f1f1f4',
+    'editorLineNumber.foreground': '#71717a',
+    'editorLineNumber.activeForeground': '#18181b',
     'editorWhitespace.foreground': '#7c8591',
     // Sublinhado do corretor ortográfico (marcadores "info"): vermelho, como nos processadores de texto.
     'editorInfo.foreground': '#d32f2f'
+  }
+})
+// Tema escuro do app: o "vs-dark" com os mesmos ajustes do claro.
+monaco.editor.defineTheme('meu-escuro', {
+  base: 'vs-dark',
+  inherit: true,
+  rules: [],
+  colors: {
+    // Coluna dos números de linha: fundo cinza um pouco mais claro que o texto e números em cinza claro (contraste alto).
+    'editorGutter.background': '#2d2d31',
+    'editorLineNumber.foreground': '#d4d4d8',
+    'editorLineNumber.activeForeground': '#ffffff',
+    'editorWhitespace.foreground': '#6b7280',
+    'editorInfo.foreground': '#f14c4c'
   }
 })
 loader.config({ monaco })

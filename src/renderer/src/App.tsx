@@ -1,5 +1,6 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { useEffect } from 'react'
+import { Minimize2 } from 'lucide-react'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { MenuBar } from '@/components/MenuBar'
 import { Toolbar } from '@/components/Toolbar'
@@ -18,18 +19,34 @@ import { startWorkspaceSync } from '@/workspaceSync'
 import * as cmd from '@/commands'
 import { AboutDialog, ShortcutsDialog, UpdateDialog } from '@/components/AboutDialogs'
 import { AccountDialog } from '@/components/AccountDialog'
-import { CloudOpenDialog, CloudSaveDialog } from '@/components/CloudDialogs'
+import { AccountNoticesDialog, CloudLimitAlert, CloudOpenDialog, CloudSaveDialog } from '@/components/CloudDialogs'
+import { SidebarDialogs } from '@/components/SidebarMenus'
 import { MacrosDialog } from '@/components/MacrosDialog'
 import { SnippetsDialog } from '@/components/SnippetsDialog'
+import { HashDialog } from '@/components/HashDialog'
 import { useDialogs } from '@/store/dialogs'
-import { applyLocale, useLocale } from '@/i18n'
+import { applyLocale, useLocale, useT } from '@/i18n'
 import { useAccount } from '@/store/account'
 import { useLibrary } from '@/store/library'
+import { useApplyTheme } from '@/theme'
+import { TerminalPanel } from '@/terminal/TerminalPanel'
+import { useTerminals } from '@/store/terminals'
+import { ApiDialogs } from '@/api/ApiDialogs'
+import { AssistantPanel } from '@/ai/AssistantPanel'
+import { startAiBridge, useAi } from '@/ai/store'
 
 /** Atalhos globais da aplicação (os de edição ficam com o próprio Monaco). */
 function useGlobalShortcuts(): void {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F11' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        e.preventDefault()
+        e.stopPropagation()
+        cmd.toggleFullScreen()
+        return
+      }
+      // No terminal, as teclas vão para o shell (Ctrl+W apaga palavra, Ctrl+R busca no histórico...).
+      if (e.target instanceof Element && e.target.closest('[data-terminal]')) return
       if (e.key === 'F7' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
         e.preventDefault()
         useSpelling.getState().toggle()
@@ -48,6 +65,8 @@ function useGlobalShortcuts(): void {
       else if (key === 'r' && e.shiftKey) run(cmd.toggleMacroRecording)
       else if (key === 'm' && e.shiftKey) run(cmd.playLastMacro)
       else if (key === 'k' && e.shiftKey) run(cmd.openFolder)
+      else if (key === 'a' && e.shiftKey) run(cmd.openApiClient)
+      else if (key === 'i' && e.shiftKey) run(cmd.toggleAssistant)
       else if (key === 'o' && !e.shiftKey) run(cmd.openFile)
       else if (key === 's' && e.shiftKey) run(cmd.saveAs)
       else if (key === 's') run(cmd.save)
@@ -65,10 +84,18 @@ function useGlobalShortcuts(): void {
 const separatorClass = 'bg-border transition-colors data-[separator]:hover:bg-accent'
 
 export function App() {
+  const t = useT()
   const sidebarVisible = useView((s) => s.sidebarVisible)
   const bottomPanelVisible = useView((s) => s.bottomPanelVisible)
+  const fullScreen = useView((s) => s.fullScreen)
+  const hasTerminals = useTerminals((s) => s.tabs.length > 0)
+  const assistantOpen = useAi((s) => s.open)
   const dialog = useDialogs((s) => s.open)
   useGlobalShortcuts()
+  useApplyTheme()
+
+  // A janela também pode sair da tela inteira por fora do app; o estado acompanha.
+  useEffect(() => window.api.onFullScreenChanged((on) => useView.getState().setFullScreen(on)), [])
 
   // Restaura a sessão anterior; sem nada para restaurar, começa com um documento em branco.
   useEffect(() => {
@@ -121,13 +148,36 @@ export function App() {
   useEffect(() => void useLibrary.getState().load(), [])
   useEffect(() => void useAccount.getState().load(), [])
   useEffect(() => window.api.onBeforeClose(() => void cmd.requestQuit()), [])
+  // Os pedaços das respostas do assistente de IA chegam mesmo com o painel fechado.
+  useEffect(() => startAiBridge(), [])
 
+  const dialogs = (
+    <>
+      {dialog === 'snippets' && <SnippetsDialog />}
+      {dialog === 'macros' && <MacrosDialog />}
+      {dialog === 'account' && <AccountDialog />}
+      {dialog === 'cloudOpen' && <CloudOpenDialog />}
+      {dialog === 'cloudSave' && <CloudSaveDialog />}
+      <CloudLimitAlert />
+      <AccountNoticesDialog />
+      {/* Renomear e cor da pasta: abertas pelo botão direito na barra lateral ou na janela "Abrir da nuvem". */}
+      <SidebarDialogs />
+      {dialog === 'shortcuts' && <ShortcutsDialog />}
+      {dialog === 'about' && <AboutDialog />}
+      {dialog === 'update' && <UpdateDialog />}
+      {dialog === 'hash' && <HashDialog />}
+      <ApiDialogs />
+    </>
+  )
+
+  // Tela inteira: só o documento atual, sem menus, barras, abas e painéis. A árvore é a mesma
+  // (os elementos só são omitidos) para o editor não ser recriado nem perder o desfazer.
   return (
-    <div className="flex h-full flex-col">
-      <MenuBar />
-      <Toolbar />
+    <div className="relative flex h-full flex-col" {...(fullScreen ? { 'data-fullscreen': '' } : {})}>
+      {!fullScreen && <MenuBar />}
+      {!fullScreen && <Toolbar />}
       <Group orientation="horizontal" className="min-h-0 flex-1">
-        {sidebarVisible && (
+        {sidebarVisible && !fullScreen && (
           <>
             <Panel id="sidebar" defaultSize={240} minSize={160} maxSize="50%">
               <Sidebar />
@@ -139,13 +189,22 @@ export function App() {
           <Group orientation="vertical" className="h-full">
             <Panel id="editor" minSize={120}>
               <div className="flex h-full flex-col">
-                <TabBar />
+                {!fullScreen && <TabBar />}
                 <div className="min-h-0 flex-1">
                   <EditorPane />
                 </div>
               </div>
             </Panel>
-            {bottomPanelVisible && (
+            {/* Terminais (Ferramentas → Abrir o terminal), logo abaixo do documento. */}
+            {hasTerminals && !fullScreen && (
+              <>
+                <Separator className={`h-px ${separatorClass}`} />
+                <Panel id="terminal" defaultSize={240} minSize={100}>
+                  <TerminalPanel />
+                </Panel>
+              </>
+            )}
+            {bottomPanelVisible && !fullScreen && (
               <>
                 <Separator className={`h-px ${separatorClass}`} />
                 <Panel id="bottom" defaultSize={180} minSize={80}>
@@ -155,16 +214,29 @@ export function App() {
             )}
           </Group>
         </Panel>
+        {/* Assistente de IA local (Ferramentas → Assistente de IA, Ctrl+Shift+I), à direita do documento. */}
+        {assistantOpen && !fullScreen && (
+          <>
+            <Separator className={`w-px ${separatorClass}`} />
+            <Panel id="assistant" defaultSize={360} minSize={260} maxSize="60%">
+              <AssistantPanel />
+            </Panel>
+          </>
+        )}
       </Group>
-      <StatusBar />
-      {dialog === 'snippets' && <SnippetsDialog />}
-      {dialog === 'macros' && <MacrosDialog />}
-      {dialog === 'account' && <AccountDialog />}
-      {dialog === 'cloudOpen' && <CloudOpenDialog />}
-      {dialog === 'cloudSave' && <CloudSaveDialog />}
-      {dialog === 'shortcuts' && <ShortcutsDialog />}
-      {dialog === 'about' && <AboutDialog />}
-      {dialog === 'update' && <UpdateDialog />}
+      {!fullScreen && <StatusBar />}
+      {fullScreen && (
+        <button
+          type="button"
+          onClick={cmd.toggleFullScreen}
+          title={t('fullScreen.exit')}
+          aria-label={t('fullScreen.exit')}
+          className="absolute right-5 top-2 z-40 rounded border border-border bg-surface/80 p-1 text-zinc-600 opacity-40 shadow-sm transition-opacity hover:opacity-100 focus-visible:opacity-100"
+        >
+          <Minimize2 size={16} />
+        </button>
+      )}
+      {dialogs}
     </div>
   )
 }

@@ -4,8 +4,8 @@
  * em uso: com a conta conectada, abrir e salvar usam a nuvem; o ícone do rodapé alterna para o disco.
  */
 import { create } from 'zustand'
-import type { CloudFileMeta } from '@shared/ipc'
-import { useAccount } from './account'
+import type { CloudFileMeta, CloudPlan, CloudPlanLimit } from '@shared/ipc'
+import { errorMessage, useAccount } from './account'
 
 export type StorageMode = 'local' | 'cloud'
 
@@ -17,6 +17,17 @@ interface CloudState {
   error: string | null
   /** Com a conta conectada, usar a nuvem (padrão) ou o disco do computador. */
   preferCloud: boolean
+  /** Espaço usado na nuvem, em bytes (arquivos + textos não salvos); null = desconhecido ou sem conta. */
+  storageBytes: number | null
+  /** Arquivos guardados na nuvem, como o servidor informa; null = desconhecido ou sem conta. */
+  storedFiles: number | null
+  /** Plano do usuário (nome e limites); null = desconhecido, sem conta ou servidor anterior. */
+  plan: CloudPlan | null
+  /** Aviso de limite do plano aberto (a gravação foi recusada); null = nenhum. */
+  limitAlert: CloudPlanLimit | null
+  showLimitAlert(limit: CloudPlanLimit | null): void
+  /** Busca no servidor o uso da nuvem (espaço, arquivos e plano). */
+  refreshStorage(): Promise<void>
   /** Pasta sugerida para salvar (a última selecionada na barra lateral). */
   targetFolder: string
   setTargetFolder(path: string): void
@@ -32,6 +43,20 @@ export const useCloud = create<CloudState>((set) => ({
   folders: [],
   loading: false,
   error: null,
+  storageBytes: null,
+  storedFiles: null,
+  plan: null,
+  limitAlert: null,
+  showLimitAlert: (limitAlert) => set({ limitAlert }),
+  refreshStorage: async () => {
+    if (!useAccount.getState().status.user) return set({ storageBytes: null, storedFiles: null, plan: null })
+    try {
+      const usage = await window.api.cloudStorage()
+      set({ storageBytes: usage.storageBytes, storedFiles: usage.storedFiles, plan: usage.plan })
+    } catch {
+      set({ storageBytes: null, storedFiles: null, plan: null }) // servidor fora do ar: o rodapé só mostra o ícone
+    }
+  },
   preferCloud: true,
   targetFolder: '',
   setTargetFolder: (targetFolder) => set({ targetFolder }),
@@ -41,16 +66,34 @@ export const useCloud = create<CloudState>((set) => ({
     try {
       const [files, folders] = await Promise.all([window.api.cloudList(), window.api.cloudFolders()])
       set({ files, folders, error: null, loading: false })
+      void useCloud.getState().refreshStorage()
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : String(err), loading: false })
+      set({ error: errorMessage(err), loading: false }) // sem o prefixo técnico do IPC
       void useAccount.getState().load() // a sessão pode ter expirado
     }
   },
   setPreferCloud: (preferCloud) => set({ preferCloud }),
   upsertFile: (file) =>
     set((s) => ({ files: [...s.files.filter((f) => f.id !== file.id), file].sort((a, b) => a.path.localeCompare(b.path)) })),
-  clear: () => set({ files: [], folders: [], error: null, targetFolder: '' })
+  clear: () => set({ files: [], folders: [], error: null, targetFolder: '', storageBytes: null, storedFiles: null, plan: null })
 }))
+
+// O servidor informa o novo uso a cada gravação, exclusão ou sincronização da área de trabalho.
+globalThis.window?.api?.onCloudStorageChanged?.((usage) => {
+  if (!useAccount.getState().status.user) return
+  useCloud.setState(usage.storedFiles === null ? { storageBytes: usage.storageBytes } : usage)
+})
+
+/** Nível de alerta de um uso em relação ao limite do plano: laranja a partir de 90%, vermelho a partir de 100%. */
+export type UsageLevel = 'ok' | 'warn' | 'full'
+export function usageLevel(used: number, limit: number | null | undefined): UsageLevel {
+  if (!limit || limit <= 0) return 'ok'
+  if (used >= limit) return 'full'
+  return used >= limit * 0.9 ? 'warn' : 'ok'
+}
+
+/** Espaço usado no formato do rodapé: megabytes (1 MB = 1024 × 1024 bytes) com duas casas decimais, como o tamanho do documento. */
+export const formatStorage = (bytes: number): string => `${(bytes / (1024 * 1024)).toFixed(2)} MB`
 
 /** Local de armazenamento em uso agora. */
 export const storageMode = (): StorageMode => (useAccount.getState().status.user && useCloud.getState().preferCloud ? 'cloud' : 'local')

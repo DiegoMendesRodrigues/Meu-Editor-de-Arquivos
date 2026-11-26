@@ -44,4 +44,4 @@ Cada `listing.md` traz os campos da página da loja: descrição, novidades, rec
 
 - A política de privacidade precisa estar no ar: `https://meueditordearquivos.aplicativoia.online/privacidade.php` (já existe no site, nos seis idiomas). Revise o texto com quem cuida da LGPD.
 - O pacote da loja não usa o instalador NSIS nem a versão portátil: esses continuam em `npm run dist:win` para quem baixa fora da loja.
-- A versão do pacote vem de `package.json` (`1.0.0` → `1.0.0.0`). Cada novo envio precisa de uma versão maior.
+- A versão do pacote vem de `package.json` (`1.1.0` → `1.1.0.0`). Cada novo envio precisa de uma versão maior.

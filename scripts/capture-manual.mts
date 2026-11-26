@@ -9,6 +9,7 @@
  */
 import { type ChildProcess, spawn } from 'node:child_process'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { createServer as createHttpServer } from 'node:http'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join, parse, resolve } from 'node:path'
@@ -144,6 +145,58 @@ const DEMOS: Record<Locale, Demo> = {
   }
 }
 
+/** Conversa de exemplo do Assistente de IA (respondida por um Ollama falso local) e arquivos extras na nuvem. */
+const EXTRAS: Record<Locale, { question: string; answer: string; cloud: { path: string; text: string }[] }> = {
+  'pt-BR': {
+    question: 'Resuma este documento em três tópicos.',
+    answer: 'Resumo do documento:\n\n1. **Boas-vindas** ao Meu Editor de Arquivos, com um exemplo em Markdown.\n2. **Lista de tarefas**: a pasta já foi aberta; faltam revisar a ata e enviar o relatório.\n3. **Dica**: o botão de edição troca para o texto Markdown.',
+    cloud: [{ path: 'trabalho/relatorio-mensal.md', text: '# Relatório mensal\n\nVendas: +12%.\n' }, { path: 'pessoal/lista-de-compras.txt', text: 'Café\nPão\nFrutas\n' }, { path: 'projetos/api/config.json', text: '{\n  "ambiente": "homologação"\n}\n' }]
+  },
+  'pt-PT': {
+    question: 'Resuma este documento em três tópicos.',
+    answer: 'Resumo do documento:\n\n1. **Boas-vindas** ao Meu Editor de Arquivos, com um exemplo em Markdown.\n2. **Lista de tarefas**: a pasta já foi aberta; falta rever a ata e enviar o relatório.\n3. **Dica**: o botão de edição muda para o texto Markdown.',
+    cloud: [{ path: 'trabalho/relatorio-mensal.md', text: '# Relatório mensal\n\nVendas: +12%.\n' }, { path: 'pessoal/lista-de-compras.txt', text: 'Café\nPão\nFruta\n' }, { path: 'projetos/api/config.json', text: '{\n  "ambiente": "testes"\n}\n' }]
+  },
+  en: {
+    question: 'Summarize this document in three points.',
+    answer: 'Document summary:\n\n1. **Welcome** to Meu Editor de Arquivos, with a Markdown sample.\n2. **Task list**: the folder is open; reviewing the minutes and sending the report are pending.\n3. **Tip**: the edit button switches to the Markdown text.',
+    cloud: [{ path: 'work/monthly-report.md', text: '# Monthly report\n\nSales: +12%.\n' }, { path: 'personal/shopping-list.txt', text: 'Coffee\nBread\nFruit\n' }, { path: 'projects/api/config.json', text: '{\n  "environment": "staging"\n}\n' }]
+  },
+  es: {
+    question: 'Resume este documento en tres puntos.',
+    answer: 'Resumen del documento:\n\n1. **Bienvenida** a Meu Editor de Arquivos, con un ejemplo en Markdown.\n2. **Lista de tareas**: la carpeta ya está abierta; faltan revisar el acta y enviar el informe.\n3. **Consejo**: el botón de edición cambia al texto Markdown.',
+    cloud: [{ path: 'trabajo/informe-mensual.md', text: '# Informe mensual\n\nVentas: +12%.\n' }, { path: 'personal/lista-de-compras.txt', text: 'Café\nPan\nFruta\n' }, { path: 'proyectos/api/config.json', text: '{\n  "entorno": "pruebas"\n}\n' }]
+  },
+  fr: {
+    question: 'Résume ce document en trois points.',
+    answer: 'Résumé du document :\n\n1. **Bienvenue** dans Meu Editor de Arquivos, avec un exemple en Markdown.\n2. **Liste de tâches** : le dossier est ouvert ; il reste à relire le compte rendu et à envoyer le rapport.\n3. **Astuce** : le bouton de modification passe au texte Markdown.',
+    cloud: [{ path: 'travail/rapport-mensuel.md', text: '# Rapport mensuel\n\nVentes : +12 %.\n' }, { path: 'personnel/liste-de-courses.txt', text: 'Café\nPain\nFruits\n' }, { path: 'projets/api/config.json', text: '{\n  "environnement": "recette"\n}\n' }]
+  },
+  de: {
+    question: 'Fasse dieses Dokument in drei Punkten zusammen.',
+    answer: 'Zusammenfassung:\n\n1. **Willkommen** bei Meu Editor de Arquivos, mit einem Markdown-Beispiel.\n2. **Aufgabenliste**: Der Ordner ist geöffnet; Protokoll prüfen und Bericht senden stehen noch aus.\n3. **Tipp**: Die Bearbeiten-Schaltfläche wechselt zum Markdown-Text.',
+    cloud: [{ path: 'arbeit/monatsbericht.md', text: '# Monatsbericht\n\nUmsatz: +12 %.\n' }, { path: 'privat/einkaufsliste.txt', text: 'Kaffee\nBrot\nObst\n' }, { path: 'projekte/api/config.json', text: '{\n  "umgebung": "test"\n}\n' }]
+  }
+}
+
+/** Ollama falso em 127.0.0.1: versão, um modelo e a resposta da conversa em streaming (NDJSON). */
+function startFakeOllama(answer: string): Promise<{ port: number; close(): void }> {
+  const server = createHttpServer((req, res) => {
+    res.setHeader('Content-Type', 'application/json')
+    if (req.url === '/api/version') return void res.end(JSON.stringify({ version: '0.9.0' }))
+    if (req.url === '/api/tags') return void res.end(JSON.stringify({ models: [{ name: 'llama3.2' }] }))
+    if (req.url === '/api/chat') {
+      req.resume()
+      res.setHeader('Content-Type', 'application/x-ndjson')
+      for (const piece of answer.match(/[\s\S]{1,24}/g) ?? []) res.write(JSON.stringify({ message: { role: 'assistant', content: piece }, done: false }) + '\n')
+      return void res.end(JSON.stringify({ message: { role: 'assistant', content: '' }, done: true }) + '\n')
+    }
+    res.statusCode = 404
+    res.end('{}')
+  })
+  return new Promise((done) => server.listen(0, '127.0.0.1', () => done({ port: (server.address() as { port: number }).port, close: () => server.close() })))
+}
+
 const OUT = resolve('docs/manual')
 let API_PORT = 0
 const MENU = { file: 0, edit: 1, search: 2, view: 3, encoding: 4, language: 5, tools: 6, account: 7, help: 8 }
@@ -165,7 +218,7 @@ async function startApi(): Promise<ChildProcess> {
   API_PORT = await freePort() // porta nova a cada execução: nunca reaproveita um servidor antigo
   const child = spawn('npx', ['tsx', 'src/index.ts'], {
     cwd: resolve('server'),
-    env: { ...process.env, PORT: String(API_PORT), DATABASE_URL: '' },
+    env: { ...process.env, PORT: String(API_PORT), DATABASE_URL: '', ALLOW_REGISTER: 'true' },
     shell: true,
     stdio: 'ignore'
   })
@@ -198,7 +251,7 @@ async function stubMessageBox(app: ElectronApplication): Promise<void> {
 }
 
 async function launch(locale: Locale, userData: string): Promise<{ app: ElectronApplication; page: Page }> {
-  const app = await electron.launch({ args: [resolve('out/main/index.js'), `--user-data-dir=${userData}`, `--lang=${DEMOS[locale].system}`] })
+  const app = await electron.launch({ args: [resolve('out/main/index.js'), `--user-data-dir=${userData}`, `--lang=${DEMOS[locale].system}`], colorScheme: 'light' }) // telas no tema claro, qualquer que seja o do sistema
   const page = await app.firstWindow()
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(1120, 720))
   await page.waitForSelector('[role=tab]')
@@ -254,10 +307,19 @@ async function captureLocale(locale: Locale): Promise<void> {
   writeFileSync(join(folder, demo.badJson.name), demo.badJson.text)
   writeFileSync(join(folder, demo.txt.name), demo.txt.text)
   const userData = join(work, 'dados')
+  const extras = EXTRAS[locale]
+  const ollama = await startFakeOllama(extras.answer)
+  mkdirSync(userData, { recursive: true })
+  writeFileSync(join(userData, 'ai-settings.json'), JSON.stringify({ host: `http://127.0.0.1:${ollama.port}`, model: 'llama3.2', temperature: 0.7, allowRemote: false }))
 
   console.log(`\n== ${locale} ==`)
   let { app, page } = await launch(locale, userData)
   const api = await startApi()
+  const sample = createHttpServer((_req, res) => {
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify({ id: 42, name: 'Ana Souza', city: 'Recife', active: true, orders: [{ id: 1, total: 120.5 }, { id: 2, total: 89.9 }] }))
+  })
+  await new Promise<void>((done) => sample.listen(0, '127.0.0.1', done))
   try {
     // --- Visão geral: pasta aberta e um documento Markdown formatado
     await stubOpen(app, [folder])
@@ -353,6 +415,38 @@ async function captureLocale(locale: Locale): Promise<void> {
     await page.getByRole('menuitem', { name: t('menu.tools.macros') }).click()
     await shotDialog(page, img('s13-macros'))
 
+    // --- Menu Editar com o submenu "Converter letras para" aberto
+    await openMenu(page, MENU.edit)
+    await page.getByRole('menuitem', { name: t('menu.edit.case') }).hover()
+    const caseMenu = page.getByRole('menu', { name: t('menu.edit.case') })
+    await caseMenu.waitFor()
+    await sleep(200)
+    const editBox = (await page.getByRole('menu', { name: t('menu.edit'), exact: true }).boundingBox())!
+    const caseBox = (await caseMenu.boundingBox())!
+    await shot(page, img('s20-menu-edit'), {
+      clip: { x: 0, y: 0, width: Math.min(caseBox.x + caseBox.width + 24, 1100), height: Math.min(Math.max(editBox.y + editBox.height, caseBox.y + caseBox.height) + 16, 700) }
+    })
+    await page.keyboard.press('Escape')
+    await page.keyboard.press('Escape')
+    await sleep(150)
+
+    // --- MD5 e SHA: janela "Gerar SHA-256" com um texto
+    await page.locator('nav button').nth(MENU.tools).click()
+    await page.getByRole('menuitem', { name: 'SHA-256' }).hover()
+    await page.getByRole('menuitem', { name: t('menu.tools.hashGenerate'), exact: true }).click()
+    await page.getByRole('dialog').locator('textarea').first().fill('Meu Editor de Arquivos')
+    await sleep(300)
+    await shotDialog(page, img('s21-hash'))
+
+    // --- Modo escuro: a janela inteira, e depois volta ao claro
+    await page.locator('nav button').nth(MENU.view).click()
+    await page.getByRole('menuitem', { name: t('menu.view.toggleTheme') }).click()
+    await sleep(500)
+    await shot(page, img('s22-dark-mode'))
+    await page.locator('nav button').nth(MENU.view).click()
+    await page.getByRole('menuitem', { name: t('menu.view.toggleTheme') }).click()
+    await sleep(300)
+
     // --- Atalhos e Sobre
     await page.locator('nav button').nth(MENU.help).click()
     await page.getByRole('menuitem', { name: t('menu.help.shortcuts') }).click()
@@ -361,21 +455,62 @@ async function captureLocale(locale: Locale): Promise<void> {
     await page.getByRole('menuitem', { name: t('menu.help.about') }).click()
     await shotDialog(page, img('s15-about'))
 
+    // --- Cliente de API: requisição enviada a um servidor HTTP local (respostas fixas, sem internet) e um ambiente
+    // O painel inferior (da captura da busca) cobriria a resposta.
+    const closePanel = page.getByRole('button', { name: t('bottom.close'), exact: true })
+    if (await closePanel.isVisible()) await closePanel.click()
+    await page.keyboard.press('Control+Shift+A')
+    const apiView = page.getByTestId('api-request')
+    await apiView.waitFor()
+    await apiView.getByLabel(t('apiClient.url'), { exact: true }).fill(`http://127.0.0.1:${(sample.address() as { port: number }).port}/customers/42`)
+    await page.getByTestId('api-send').click()
+    await page.getByTestId('api-status').filter({ hasText: '200' }).waitFor()
+    await page.getByTestId('api-response').getByRole('treeitem').first().waitFor()
+    await shot(page, img('s23-api-request'))
+    await page.locator('nav button').nth(MENU.tools).click()
+    await page.getByRole('menuitem', { name: t('menu.tools.apiSubmenu') }).click()
+    await page.getByRole('menuitem', { name: t('menu.tools.apiEnvironments') }).click()
+    await page.getByTestId('api-environment').waitFor()
+    await page.getByLabel(t('apiClient.env.name'), { exact: true }).fill(locale.startsWith('pt') ? 'Homologação' : 'Staging')
+    await page.getByRole('button', { name: t('apiClient.env.add') }).click()
+    await page.getByLabel(t('apiClient.env.keyN', { n: 1 })).fill('baseUrl')
+    await page.getByLabel(t('apiClient.env.valueN', { n: 1 })).fill('https://api.example.com')
+    await page.getByRole('button', { name: t('apiClient.env.add') }).click()
+    await page.getByLabel(t('apiClient.env.keyN', { n: 2 })).fill('token')
+    await page.getByLabel(t('apiClient.env.secretN', { n: 2 })).check()
+    await page.getByLabel(t('apiClient.env.valueN', { n: 2 })).fill('valor-de-exemplo')
+    await shot(page, img('s24-api-environment'))
+
+    // --- Assistente de IA (Ollama falso local): pergunta sobre o documento Markdown aberto
+    await page.getByRole('tab').filter({ hasText: demo.md.name }).first().click()
+    await page.keyboard.press('Control+Shift+I')
+    const aiPanel = page.getByTestId('ai-panel')
+    await aiPanel.getByTestId('ai-status').and(page.locator('[data-state=ok]')).waitFor()
+    await aiPanel.getByLabel(t('ai.input.label')).fill(extras.question)
+    await aiPanel.getByTestId('ai-send').click()
+    await aiPanel.getByTestId('ai-assistant-message').filter({ hasText: extras.answer.split('\n').pop()!.replace(/\*\*/g, '').slice(-20) }).waitFor()
+    await aiPanel.getByTestId('ai-send').waitFor()
+    await shot(page, img('s25-ai-assistant'))
+    await aiPanel.getByRole('button', { name: t('ai.close') }).first().click()
+
     // --- Conta e nuvem (API de teste em memória)
     // Primeiro acesso: o aplicativo pede o endereço do servidor; depois mostra a tela de entrada.
     await page.locator('nav button').nth(MENU.account).click()
     await page.getByRole('menuitem', { name: t('menu.account.signIn') }).click()
-    await page.getByLabel(t('account.serverUrl'), { exact: true }).fill(`http://localhost:${API_PORT}`)
+    await page.getByRole('dialog').getByLabel(t('account.serverUrl'), { exact: true }).fill(`http://localhost:${API_PORT}`)
     await shot(page, img('s16a-account-server'), page.getByRole('dialog'))
     await page.getByRole('dialog').getByRole('button', { name: t('account.submit.server') }).click()
     await page.getByRole('button', { name: t('account.link.register') }).waitFor()
     await shot(page, img('s16-account-login'), page.getByRole('dialog'))
-    await page.getByRole('button', { name: t('account.link.register') }).click()
-    await page.getByLabel(t('account.email'), { exact: true }).fill(demo.user.email)
-    await page.getByLabel(t('account.name'), { exact: true }).fill(demo.user.name)
-    await page.getByLabel(t('account.newPassword'), { exact: true }).fill(demo.user.password)
-    await page.getByLabel(t('account.repeat'), { exact: true }).fill(demo.user.password)
-    await page.getByRole('dialog').getByRole('button', { name: t('account.submit.register') }).click()
+    // A conta é criada no site (o aplicativo só entra): a conta de demonstração é criada direto na API de teste.
+    await fetch(`http://127.0.0.1:${API_PORT}/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: demo.user.email, name: demo.user.name, password: demo.user.password })
+    })
+    await page.getByRole('dialog').getByLabel(t('account.email'), { exact: true }).fill(demo.user.email)
+    await page.getByRole('dialog').getByLabel(t('account.password'), { exact: true }).fill(demo.user.password)
+    await page.getByRole('dialog').getByRole('button', { name: t('account.submit.login') }).click()
     await page.getByRole('dialog').waitFor({ state: 'hidden' })
     await page.evaluate(
       async ({ path, text }) => {
@@ -386,16 +521,56 @@ async function captureLocale(locale: Locale): Promise<void> {
     )
     await page.locator('nav button').nth(MENU.file).click()
     await page.getByRole('menuitem', { name: t('menu.file.openCloud') }).click()
-    await page.getByRole('list', { name: t('cloud.list') }).waitFor()
+    await page.getByRole('tree', { name: t('cloud.list') }).getByRole('treeitem').first().waitFor()
     await shotDialog(page, img('s17-cloud-open'))
     await page.locator('nav button').nth(MENU.account).click()
     await page.getByRole('menuitem', { name: new RegExp(demo.user.name) }).click()
     await shotDialog(page, img('s18-account-profile'))
 
+    // --- Arquivos na nuvem: pastas na barra lateral, documento da nuvem aberto e o espaço usado no rodapé
+    await page.evaluate(async (files) => {
+      const api = (window as unknown as { api: { cloudSave(r: object): Promise<unknown> } }).api
+      for (const f of files) await api.cloudSave({ path: f.path, content: f.text, encoding: 'UTF-8', baseVersion: null, force: false })
+    }, [
+      // O primeiro arquivo ganha volume (o espaço usado aparece em MB); um script Python e uma requisição de API
+      // completam a variedade de ícones.
+      { ...extras.cloud[0], text: extras.cloud[0].text + 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n'.repeat(6000) },
+      ...extras.cloud.slice(1),
+      { path: `${extras.cloud[2].path.split('/')[0]}/main.py`, text: 'print("Meu Editor de Arquivos")\n' },
+      { path: `${extras.cloud[2].path.split('/').slice(0, -1).join('/')}/clientes.apireq`, text: '{}\n' }
+    ])
+    await page.locator('nav button').nth(MENU.file).click()
+    await page.getByRole('menuitem', { name: t('menu.file.openCloud') }).click()
+    const cloudTree = page.getByRole('dialog').getByTestId('cloud-open-tree')
+    const cloudFile = cloudTree.getByRole('button', { name: new RegExp('^' + demo.cloudPath.split('/').pop()!.replace('.', '\\.')) })
+    // Janela "Abrir da nuvem" com o resumo, o plano e todas as pastas abertas (usada no site).
+    for (let i = 0; i < 10; i++) {
+      const closed = cloudTree.locator('[role=treeitem][aria-expanded="false"]')
+      if ((await closed.count()) === 0) break
+      await closed.first().locator('> div').first().click()
+    }
+    await cloudFile.waitFor()
+    await shot(page, img('s27-cloud-open-tree'), page.getByRole('dialog'))
+    await cloudFile.dblclick()
+    await page.getByRole('dialog').waitFor({ state: 'hidden' })
+    await page.getByTestId('cloud-usage').waitFor()
+    // Só a área da nuvem aberta na barra lateral, com as pastas expandidas.
+    const openHeads = page.locator('aside section[data-section]:not([data-section="cloud"]) > :first-child button[aria-expanded="true"]')
+    for (let i = 0; i < 10 && (await openHeads.count()) > 0; i++) await openHeads.first().click()
+    const cloudSection = page.locator('aside section[data-section="cloud"]')
+    for (const f of [...extras.cloud.map((c) => c.path), demo.cloudPath]) {
+      const name = f.split('/')[0]
+      const folderRow = cloudSection.getByRole('treeitem', { name, exact: true }).first()
+      if ((await folderRow.count()) > 0 && (await folderRow.getAttribute('aria-expanded')) === 'false') await cloudSection.getByRole('button', { name, exact: true }).first().click()
+    }
+    await shot(page, img('s26-cloud-files'))
+
   } finally {
     await stubMessageBox(app).catch(() => undefined)
     await app.close().catch(() => undefined)
     stopApi(api)
+    sample.close()
+    ollama.close()
     rmSync(work, { recursive: true, force: true })
   }
 }

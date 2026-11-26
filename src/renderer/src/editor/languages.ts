@@ -9,7 +9,8 @@ const BY_EXTENSION: Record<string, string> = {
   ts: 'typescript', tsx: 'typescript', php: 'php', go: 'go', rs: 'rust',
   ps1: 'powershell', psm1: 'powershell', sh: 'shell', bash: 'shell', bat: 'bat', cmd: 'bat', lua: 'lua',
   html: 'html', htm: 'html', css: 'css', scss: 'scss', less: 'less', xml: 'xml', json: 'json',
-  csv: 'plaintext', sql: 'sql', yaml: 'yaml', yml: 'yaml', toml: 'toml', ini: 'ini', conf: 'ini'
+  csv: 'plaintext', sql: 'sql', yaml: 'yaml', yml: 'yaml', toml: 'toml', ini: 'ini', conf: 'ini',
+  apireq: 'apireq', apienv: 'apienv', apiresp: 'apiresp', apirun: 'apirun', apicol: 'apicol', apiws: 'apiws', apigrpc: 'apigrpc'
 }
 
 export function languageFromName(name: string): string {
@@ -26,7 +27,29 @@ const LANGUAGE_NAMES: Record<string, string> = {
   yaml: 'YAML', ini: 'INI', toml: 'TOML'
 }
 
-export const languageLabel = (id: string): string => (id === 'plaintext' ? t('lang.plaintext') : (LANGUAGE_NAMES[id] ?? id))
+/** Arquivos do Cliente de API: JSON com construtor ou visualizador próprio (não entram no menu Linguagem). */
+export const API_LANGUAGES = ['apireq', 'apienv', 'apiresp', 'apirun', 'apicol', 'apiws', 'apigrpc'] as const
+export type ApiLanguage = (typeof API_LANGUAGES)[number]
+export const isApiLanguage = (id: string | undefined): id is ApiLanguage => (API_LANGUAGES as readonly string[]).includes(id ?? '')
+
+const API_LANGUAGE_KEY = {
+  apireq: 'apiClient.languageName',
+  apienv: 'apiClient.languageName.apienv',
+  apiresp: 'apiClient.languageName.apiresp',
+  apirun: 'apiClient.languageName.apirun',
+  apicol: 'apiClient.languageName.apicol',
+  apiws: 'apiClient.languageName.apiws',
+  apigrpc: 'apiClient.languageName.apigrpc'
+} as const
+
+export const languageLabel = (id: string): string =>
+  id === 'plaintext' ? t('lang.plaintext') : isApiLanguage(id) ? t(API_LANGUAGE_KEY[id]) : (LANGUAGE_NAMES[id] ?? id)
+
+/**
+ * Linguagem usada pelo Monaco para o documento. A requisição de API (.apireq) é um JSON: no modo texto,
+ * ganha o realce e a formatação do JSON. Ela não entra no menu Linguagem (o tipo vem da extensão).
+ */
+export const monacoLanguage = (id: string): string => (isApiLanguage(id) ? 'json' : id)
 
 /** Linguagens oferecidas no menu, em ordem alfabética pelo nome exibido. */
 export const languageMenu = (translate: typeof t = t): string[] => {

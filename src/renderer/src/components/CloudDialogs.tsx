@@ -1,13 +1,20 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
-import { useEffect, useState } from 'react'
-import type { CloudFileMeta } from '@shared/ipc'
+import { useEffect, useMemo, useState } from 'react'
 import { finishCloudSave, openFromCloud, pendingCloudSaveDoc, pushToCloud } from '@/cloud'
-import { allFolders, baseName, isValidCloudName, joinPath, parentOf, useCloud } from '@/store/cloud'
+import { allFolders, baseName, buildCloudTree, isValidCloudName, joinPath, parentOf, useCloud } from '@/store/cloud'
+import { formatTotalMb } from '@/cloudInfo'
 import { useLocale, useT } from '@/i18n'
-import { errorMessage, useAccount } from '@/store/account'
+import { useAccount } from '@/store/account'
 import { useDialogs } from '@/store/dialogs'
 import { useActiveDocument, useDocuments } from '@/store/documents'
+import { CloudRows, type CloudRowsMode } from './CloudTree'
 import { Modal, buttonClass, fieldClass, primaryButtonClass } from './Modal'
+import { manageSubscription } from '@/commands'
+import { SITE_URL } from '@shared/support'
+import type { AccountNotices } from '@shared/ipc'
+
+/** Página de gestão da assinatura mostrada no aviso (o link real, com token, é montado pelo Main ao clicar). */
+const MANAGE_PAGE_LABEL = `${new URL(SITE_URL).host}/assinatura.php`
 
 const formatSize = (b: number): string => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(1)} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`)
 
@@ -32,62 +39,140 @@ export function CloudOpenDialog() {
   const locale = useLocale((s) => s.locale)
   const close = useDialogs((s) => s.close)
   const user = useAccount((s) => s.status.user)
-  const [files, setFiles] = useState<CloudFileMeta[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const files = useCloud((s) => s.files)
+  const folders = useCloud((s) => s.folders)
+  const plan = useCloud((s) => s.plan)
+  const loading = useCloud((s) => s.loading)
+  const error = useCloud((s) => s.error)
+  const tree = useMemo(() => buildCloudTree(files, folders), [files, folders])
 
-  const refresh = async (): Promise<void> => {
-    try {
-      setFiles(await window.api.cloudList())
-      setError(null)
-    } catch (err) {
-      setError(errorMessage(err))
-      void useAccount.getState().load()
-    }
-  }
   useEffect(() => {
-    if (user) void refresh()
+    if (user) void useCloud.getState().load()
   }, [user])
 
-  const open = async (id: string): Promise<void> => {
-    if (await openFromCloud(id)) close()
-  }
-  const remove = async (f: CloudFileMeta): Promise<void> => {
-    if (!window.confirm(t('cloud.confirmDelete', { path: f.path }))) return
-    try {
-      await window.api.cloudDelete(f.id)
-      await refresh()
-    } catch (err) {
-      setError(errorMessage(err))
-    }
+  const description = user ? (
+    <>
+      <span className="block">{t('cloud.open.summary', { n: files.length, size: formatTotalMb(files, locale) })}</span>
+      {plan && <span className="block">{t('cloud.open.plan', { plan: plan.name, maxFiles: plan.maxFiles, maxSizeMb: plan.maxSizeMb })}</span>}
+    </>
+  ) : (
+    t('cloud.open.description')
+  )
+  const mode: CloudRowsMode = {
+    onOpen: (f) => void openFromCloud(f.id).then((ok) => ok && close()),
+    info: (f) => t('cloud.fileInfo', { version: f.version, size: formatSize(f.size), date: new Date(f.updatedAt).toLocaleString(locale) })
   }
 
   return (
-    <Modal title={t('cloud.open.title')} description={t('cloud.open.description')} onClose={close}>
+    <Modal title={t('cloud.open.title')} description={description} onClose={close}>
       {!user ? (
         <NeedLogin onClose={close} />
       ) : (
         <div className="text-sm">
           {error && <p role="alert" className="mb-2 text-xs text-red-700">{error}</p>}
-          {files === null && !error && <p className="text-zinc-400">{t('cloud.loading')}</p>}
-          {files?.length === 0 && <p className="text-zinc-400">{t('cloud.empty')}</p>}
-          <ul className="divide-y divide-border rounded border border-border" aria-label={t('cloud.list')}>
-            {files?.map((f) => (
-              <li key={f.id} className="flex items-center gap-2 px-2 py-1.5">
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{f.path}</div>
-                  <div className="text-xs text-zinc-500">
-                    {t('cloud.fileInfo', { version: f.version, size: formatSize(f.size), date: new Date(f.updatedAt).toLocaleString(locale) })}
-                  </div>
-                </div>
-                <button type="button" className={primaryButtonClass} onClick={() => void open(f.id)}>{t('common.open')}</button>
-                <button type="button" className={buttonClass} onClick={() => void remove(f)}>{t('common.delete')}</button>
-              </li>
-            ))}
-          </ul>
+          {loading && files.length === 0 && !error && <p className="text-zinc-400">{t('cloud.loading')}</p>}
+          {!loading && !error && files.length === 0 && <p className="text-zinc-400">{t('cloud.empty')}</p>}
+          <div role="tree" aria-label={t('cloud.list')} data-testid="cloud-open-tree" className="rounded border border-border bg-surface py-1">
+            <CloudRows node={tree} files={files} mode={mode} />
+          </div>
         </div>
       )}
     </Modal>
   )
+}
+
+/** Aviso de limite do plano: a nuvem recusou a gravação (quantidade de arquivos ou armazenamento). */
+export function CloudLimitAlert() {
+  const t = useT()
+  const limit = useCloud((s) => s.limitAlert)
+  if (!limit) return null
+  const close = (): void => useCloud.getState().showLimitAlert(null)
+  return (
+    <Modal title={t('cloud.limit.title')} size="sm" onClose={close}>
+      <div role="alert" className="flex flex-col gap-4 text-sm" data-testid="cloud-limit-alert" data-limit={limit}>
+        <p>{t(limit === 'files' ? 'cloud.limit.files' : 'cloud.limit.storage')}</p>
+        <div className="flex justify-end">
+          <button type="button" className={primaryButtonClass} onClick={close} autoFocus>
+            {t('cloud.limit.ok')}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+/**
+ * Avisos da conta ao entrar (uma vez por conta em cada abertura do app; o servidor guarda o que já foi mostrado):
+ * arquivos da nuvem apagados por inatividade e plano que não renova terminando em até 7 dias.
+ */
+const noticesCheckedFor = new Set<string>()
+export function AccountNoticesDialog() {
+  const t = useT()
+  const locale = useLocale((s) => s.locale)
+  const userId = useAccount((s) => s.status.user?.id)
+  const [notices, setNotices] = useState<AccountNotices>({ purge: null, expiry: null })
+
+  useEffect(() => {
+    if (userId === undefined || noticesCheckedFor.has(userId)) return
+    noticesCheckedFor.add(userId)
+    window.api
+      .accountNotices()
+      .then(setNotices)
+      .catch(() => undefined)
+  }, [userId])
+
+  if (notices.purge) {
+    const close = (): void => {
+      setNotices((n) => ({ ...n, purge: null }))
+      void window.api.accountAckPurgeNotice().catch(() => undefined)
+    }
+    return (
+      <Modal title={t('cloud.purge.title')} size="sm" onClose={close}>
+        <div role="alert" className="flex flex-col gap-4 text-sm" data-testid="cloud-purge-notice">
+          <p>{t('cloud.purge.message', { days: notices.purge.days })}</p>
+          <div className="flex justify-end">
+            <button type="button" className={primaryButtonClass} onClick={close} autoFocus>
+              {t('cloud.purge.ok')}
+            </button>
+          </div>
+        </div>
+      </Modal>
+    )
+  }
+
+  if (notices.expiry) {
+    const { days, at, plan } = notices.expiry
+    // Mostrado uma vez: qualquer saída confirma no servidor.
+    const close = (): void => {
+      setNotices((n) => ({ ...n, expiry: null }))
+      void window.api.accountAckExpiryNotice().catch(() => undefined)
+    }
+    const renew = (): void => {
+      manageSubscription()
+      close()
+    }
+    const date = new Date(at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' })
+    return (
+      <Modal title={t('cloud.expiry.title')} size="sm" onClose={close}>
+        <div role="alert" className="flex flex-col gap-3 text-sm" data-testid="plan-expiry-notice">
+          <p>{t('cloud.expiry.message', { days, plan, date })}</p>
+          <p>{t('cloud.expiry.recommend')}</p>
+          <button type="button" className="self-start break-all text-left text-accent underline hover:no-underline" onClick={renew}>
+            {MANAGE_PAGE_LABEL}
+          </button>
+          <div className="flex justify-end gap-2">
+            <button type="button" className={buttonClass} onClick={close}>
+              {t('cloud.expiry.later')}
+            </button>
+            <button type="button" className={primaryButtonClass} onClick={renew} autoFocus>
+              {t('cloud.expiry.renew')}
+            </button>
+          </div>
+        </div>
+      </Modal>
+    )
+  }
+  return null
 }
 
 export function CloudSaveDialog() {

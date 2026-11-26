@@ -85,3 +85,17 @@ export function stopWatching(path: string): void {
   if (entry.timer) clearTimeout(entry.timer)
   watched.delete(path)
 }
+
+/**
+ * Para de monitorar os arquivos em `path` (o próprio arquivo ou tudo dentro da pasta) e devolve
+ * os caminhos e datas que estavam sendo monitorados, para recomeçar no novo caminho depois de renomear.
+ */
+export function releaseInside(path: string, inside: (root: string, target: string) => boolean): { path: string; mtimeMs: number }[] {
+  const released: { path: string; mtimeMs: number }[] = []
+  for (const [p, entry] of watched) {
+    if (!inside(path, p)) continue
+    released.push({ path: p, mtimeMs: entry.mtimeMs })
+    stopWatching(p)
+  }
+  return released
+}

@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { app } from 'electron'
 import log from 'electron-log/main'
 import { z } from 'zod'
+import { FOLDER_COLOR_IDS, MAX_FOLDER_COLORS } from '@shared/folderColors'
 import { LOCALES, type Locale } from '@shared/i18n'
 import { IpcChannels, SESSION_MAX_UNSAVED_CHARS, type SessionData } from '@shared/ipc'
 import { authorizeFile, authorizeRoot, isAuthorized, isAuthorizedRoot } from './access'
@@ -25,7 +26,7 @@ export const sessionSchema = z.object({
         name: z.string().min(1).max(1024),
         mode: z.enum(['preview', 'edit']),
         encoding: z.enum(['UTF-8', 'UTF-8 BOM']),
-        eol: z.enum(['LF', 'CRLF']),
+        eol: z.enum(['LF', 'CRLF', 'CR']),
         language: z.string().max(40).optional(),
         cloud: z.object({ id: z.string().min(1).max(64), path: z.string().min(1).max(512), version: z.number().int().min(0) }).optional(),
         syncId: z.string().min(1).max(64).optional(),
@@ -41,7 +42,8 @@ export const sessionSchema = z.object({
     insertSpaces: z.boolean().optional(),
     fontSize: z.number().int().min(8).max(40).optional(),
     tabSize: z.number().int().min(1).max(16).optional(),
-    locale: z.enum(LOCALES.map((l) => l.code) as [Locale, ...Locale[]]).optional()
+    locale: z.enum(LOCALES.map((l) => l.code) as [Locale, ...Locale[]]).optional(),
+    theme: z.enum(['light', 'dark']).optional()
   }),
   spelling: z
     .object({
@@ -49,6 +51,10 @@ export const sessionSchema = z.object({
       locale: z.enum(LOCALES.map((l) => l.code) as [Locale, ...Locale[]]).optional(),
       words: z.array(z.string().min(1).max(100)).max(5000)
     })
+    .optional(),
+  folderColors: z
+    .record(z.string().min(1).max(4200), z.enum(FOLDER_COLOR_IDS))
+    .refine((colors) => Object.keys(colors).length <= MAX_FOLDER_COLORS)
     .optional()
 })
 

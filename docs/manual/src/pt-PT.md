@@ -41,6 +41,20 @@ Se outro programa alterar um ficheiro que tem aberto, a aplicação recarrega-o 
 
 ![Menu Ficheiro](img/s07-menu-file.png)
 
+### Organizar pela barra lateral
+
+Clique com o botão direito numa pasta ou ficheiro da barra lateral, do computador ou da nuvem:
+
+- **{{sidebar.rename}}** (pastas e ficheiros): abre a janela **{{rename.folderTitle}}** ou **{{rename.fileTitle}}** com o nome atual. Escreva o novo nome e clique em **{{rename.submit}}**. O nome não pode ficar vazio nem ter `\ / : * ? " < > |`. Os separadores abertos desse ficheiro, ou dos ficheiros dentro da pasta, passam a usar o novo nome.
+- **{{sidebar.folderColor}}** (pastas): abre a janela **{{folderColor.title}}** com doze cores, com a atual marcada. Escolha outra e clique em **{{folderColor.submit}}**. As cores ficam guardadas neste computador.
+- **{{common.delete}}** (pastas): só fica disponível quando a pasta está vazia.
+
+A pasta aberta no explorador não pode ser mudada de nome nem eliminada por aqui.
+
+Cada ficheiro tem um ícone conforme o tipo: documentos (.md, .txt, .tex), logs, programação, scripts, web, dados e configuração (as mesmas secções do botão **+**) e um ícone genérico para os restantes.
+
+As áreas da barra lateral ({{sidebar.openDocs}}, {{sidebar.recent}}, as do Cliente de API e as outras) têm um triângulo à esquerda do nome: clique nele, ou no nome, para abrir ou fechar a área. Para mudar a ordem, arraste o nome da área para cima ou para baixo (pelo teclado, Alt+↑ e Alt+↓ com o nome selecionado). A ordem e as áreas fechadas ficam guardadas neste computador. Para tirar uma área da barra lateral, clique no X à direita do nome dela, ou desmarque-a em **{{menu.view.sidebarAreas}}**, no menu **{{menu.view}}**; volte a marcá-la para ela regressar ao lugar de antes.
+
 ## 4. Guardar e documentos temporários
 
 - **{{menu.file.save}}** (**Ctrl+S**) grava o documento no ficheiro. Num documento novo, a aplicação pede o nome e a localização.
@@ -61,16 +75,48 @@ Os comandos de edição ficam em **{{menu.edit}}** e as opções de visualizaç�
 
 - **Anular e refazer:** Ctrl+Z e Ctrl+Y.
 - **Localizar e substituir** no documento: Ctrl+F e Ctrl+H. Para ir para uma linha, use Ctrl+G.
-- **Vários cursores:** mantenha Alt premido e clique onde quiser outro cursor, ou use Ctrl+D para selecionar a próxima ocorrência da palavra.
-- **{{menu.edit.columnSelection}}:** mantenha Shift+Alt premido e arraste o rato para editar várias linhas na mesma coluna.
+- **Vários cursores:** mantenha Ctrl premido e clique onde quiser outro cursor, ou use Ctrl+D para selecionar a próxima ocorrência da palavra.
+- **{{menu.edit.columnSelection}}:** mantenha Shift+Ctrl premido e arraste o rato para editar várias linhas na mesma coluna.
 - **Linhas:** Alt+↑ e Alt+↓ movem a linha; Shift+Alt+↑ e Shift+Alt+↓ duplicam-na; Ctrl+/ comenta ou descomenta.
 - **Arrumar:** {{menu.edit.sortAsc}}, {{menu.edit.sortDesc}}, {{menu.edit.removeDuplicates}} e {{menu.edit.trimWhitespace}}.
 - **{{menu.view.invisibles}}:** mostra os espaços (·), as tabulações (→) e o fim de cada linha (¶). É ótimo para encontrar espaços a mais.
 - **{{menu.view.wordWrap}}** e **{{menu.view.foldAll}} / {{menu.view.unfoldAll}}** ajudam a ler ficheiros compridos.
 - **Tamanho do tipo de letra:** Ctrl++ aumenta, Ctrl+- diminui e Ctrl+0 repõe o tamanho predefinido.
 - **Indentação:** em **{{menu.edit}}**, escolha entre espaços ou tabulação e o tamanho (2, 4 ou 8 colunas).
+- **{{menu.view.fullScreen}}** (F11, em **{{menu.view}}**): mostra só o documento, a ocupar o ecrã todo. Prima F11 outra vez, ou clique no botão do canto superior direito, para sair.
+- **{{menu.view.toggleTheme}}** (em **{{menu.view}}**): alterna entre o modo claro e o escuro. Enquanto não escolher, a aplicação segue o tema do sistema operativo; a escolha fica guardada para as próximas vezes.
 
 As suas preferências de visualização ficam guardadas para a próxima vez. Os textos internos do editor, como a caixa de pesquisa (Ctrl+F) e a paleta de comandos (F1), aparecem em inglês.
+
+![A aplicação no modo escuro](img/s22-dark-mode.png)
+
+### Letras, espaços e quebras de linha
+
+![Menu Editar com o submenu Converter letras para aberto](img/s20-menu-edit.png)
+
+No fim do menu **{{menu.edit}}** há três submenus:
+
+- **{{menu.edit.eol}}:** converte as quebras de linha do documento para o formato Windows (CRLF), Unix (LF) ou Mac (CR). A conversão marca o documento como alterado; basta guardar para ter efeito.
+- **{{menu.edit.case}}:** com um texto selecionado, escolha {{menu.edit.caseUpper}}, {{menu.edit.caseLower}} ou {{menu.edit.caseSentence}} (só a primeira letra de cada frase fica em maiúscula).
+- **{{menu.edit.spaces}}:** {{menu.edit.trimRight}}, {{menu.edit.trimLeft}} e {{menu.edit.trimBoth}} aplicam-se à linha do cursor (ou às linhas selecionadas). {{menu.edit.collapseSpaces}} troca dois ou mais espaços seguidos por um só no documento inteiro, sem mexer na indentação do início das linhas.
+
+### MD5, SHA-1, SHA-256 e SHA-512
+
+![Janela para gerar o SHA-256 de um texto](img/s21-hash.png)
+
+No fim do menu **{{menu.tools}}**, cada algoritmo tem duas opções:
+
+- **{{menu.tools.hashGenerate}}:** abre uma janela; escreva ou cole o texto e o resultado aparece de imediato, logo abaixo. **{{hash.copy}}** leva o resultado para a área de transferência.
+- **{{menu.tools.hashSelection}}:** calcula o resultado a partir do texto selecionado no documento e deixa-o na área de transferência, pronto a colar. Aparece um aviso na barra de estado.
+
+### Terminal
+
+Em **{{menu.tools}} → {{menu.tools.openTerminal}}**, abre-se um terminal logo abaixo do documento, na sua pasta pessoal: o PowerShell no Windows e o seu shell (normalmente o bash) no Linux. Escreva os comandos e veja os resultados aí mesmo; o documento continua aberto acima, e o divisor entre os dois pode ser arrastado.
+
+- Cada clique abre mais um terminal, num separador próprio (Terminal 1, Terminal 2…). O **×** do separador fecha o terminal; o comando `exit` também.
+- Com texto selecionado no terminal, Ctrl+C copia; sem seleção, Ctrl+C interrompe o comando em execução. Ctrl+V cola.
+- Enquanto o cursor está no terminal, as teclas vão para ele (Ctrl+W, Ctrl+R…), e não para os atalhos da aplicação.
+- Os terminais não regressam na abertura seguinte da aplicação.
 
 ### Corretor ortográfico
 
@@ -81,9 +127,18 @@ Em documentos Markdown, de texto (.txt) e LaTeX, as palavras que não estão no 
 - Coloque o cursor na palavra e prima **Ctrl+.** (ou clique com o botão direito e escolha **{{spell.suggestions}}**) para ver as sugestões. Escolha uma para trocar a palavra.
 - **{{spell.addToDictionary}}** faz com que a palavra passe a ser aceite, em qualquer idioma.
 - **{{menu.tools}} → {{menu.tools.spellCheck}}** (ou **F7**) liga e desliga a verificação.
-- O corretor usa o idioma da interface. Para verificar noutro idioma, escolha em **{{menu.tools}}** uma das opções **{{spell.source}}: Deutsch**, **{{spell.source}}: English**… — há dicionários de alemão, espanhol, francês, inglês, português do Brasil e português de Portugal (Acordo Ortográfico de 1990). **{{menu.tools.spellAuto}}** volta a seguir a interface.
+- O corretor usa o idioma da interface. Para verificar noutro idioma, escolha em **{{menu.tools}} → {{menu.tools.spellSubmenu}}** uma das opções **{{spell.source}}: Deutsch**, **{{spell.source}}: English**… — há dicionários de alemão, espanhol, francês, inglês, português do Brasil e português de Portugal (Acordo Ortográfico de 1990). **{{menu.tools.spellAuto}}** volta a seguir a interface.
 
 Os dicionários vêm com a aplicação: o corretor funciona sem internet.
+
+### Assistente de IA (Ollama)
+
+O **{{ai.title}}** usa um modelo de IA que corre no seu próprio computador, através do Ollama (ollama.com): nada sai para a internet. Abra o painel em **{{menu.tools}} → {{menu.tools.ai}}** ou com **Ctrl+Shift+I**. Se o Ollama ainda não estiver no computador, o próprio painel guia a instalação: no Windows, **{{ai.install.button}}** transfere o instalador oficial, verifica a assinatura digital e abre a janela dele para concluir; no Linux, **{{ai.install.openTerminal}}** escreve o comando oficial no terminal da aplicação para o rever e confirmar (precisa de sudo). Com o Ollama parado, use **{{ai.install.start}}**. Depois, escolha um modelo em **{{ai.install.pullTitle}}** e acompanhe a transferência; **{{ai.install.delete}}** liberta espaço.
+
+- Escolha o modelo, escreva a pergunta e acompanhe a resposta enquanto é gerada; **{{ai.stop}}** interrompe e **{{ai.newChat}}** começa do zero.
+- As **{{ai.quick.label}}** trabalham sobre a seleção (ou o documento inteiro): **{{ai.quick.explain}}**, **{{ai.quick.improve}}**, **{{ai.quick.fix}}**, **{{ai.quick.summarize}}**, **{{ai.quick.translate}}**, **{{ai.quick.document}}** e **{{ai.quick.tests}}**.
+- Nos blocos de código da resposta, use **{{ai.code.copy}}**, **{{ai.code.insert}}** ou **{{ai.code.replace}}**.
+- A conversa fica só na memória e desaparece ao fechar a aplicação. Por omissão, o assistente só comunica com um Ollama deste computador.
 
 ## 6. Markdown
 
@@ -107,7 +162,122 @@ Para editar, clique em **{{toolbar.editText}}**. No modo de edição, o botão *
 
 Se o ficheiro tiver um erro, a aplicação explica o problema e indica a linha e a coluna. O botão **{{json.editGoToError}}** abre o editor já no ponto do erro.
 
-## 8. Pesquisa em ficheiros
+## 8. Cliente de API
+
+![Cliente de API com um pedido enviado e a resposta em árvore](img/s23-api-request.png)
+
+O Cliente de API serve para testar serviços na internet (APIs): monta um pedido, envia-o e confere a resposta, sem sair do editor. Cada pedido é um ficheiro **.apireq**, que pode guardar, copiar e versionar como qualquer outro.
+
+### Abrir
+
+- Prima **Ctrl+Shift+A**, ou use **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiClient}}**.
+- Ou use **{{menu.file}} → Novo pedido de API (.apireq)**.
+
+O documento abre no **{{apiClient.builder}}**. Para ver e editar o ficheiro como texto (JSON), clique em **{{toolbar.editText}}**.
+
+### Montar o pedido
+
+Escolha o **{{apiClient.method}}** (GET, POST…) e escreva o endereço em **{{apiClient.url}}**. Os dados ficam em separadores:
+
+- **{{apiClient.tab.params}}**: os parâmetros da query. O que escreve na URL aparece aqui, e vice-versa.
+- **{{apiClient.tab.auth}}**: como se identificar no serviço (veja abaixo).
+- **{{apiClient.tab.headers}}**: os cabeçalhos do pedido.
+- **{{apiClient.tab.body}}**: o conteúdo enviado. Em **{{apiClient.body.type}}** escolhe entre JSON, XML, texto, HTML, formulário, formulário com ficheiros, ficheiro binário, GraphQL, SOAP ou nenhum corpo.
+- **{{apiClient.tab.settings}}**: tempo limite, redirecionamentos, proxy, certificados e **{{apiClient.settings.verifyTls}}**. Desligue a verificação apenas em ambientes de teste.
+
+Em qualquer campo, use <code>&#123;&#123;nome&#125;&#125;</code> para inserir uma variável do ambiente ativo.
+
+### Enviar e ver a resposta
+
+Clique em **{{apiClient.send}}** ou prima **Ctrl+Enter**. Enquanto o pedido está em curso, **Esc** cancela o envio. O botão de seta ao lado oferece **{{apiClient.sendDownload}}**, que grava o corpo diretamente num ficheiro (útil para respostas grandes ou binárias).
+
+A resposta mostra o estado, o tempo e o tamanho, e tem os separadores **{{apiClient.response.tab.body}}**, **{{apiClient.response.tab.headers}}**, **{{apiClient.response.tab.cookies}}**, **{{apiClient.response.tab.tests}}** e **{{apiClient.response.tab.timings}}**. O corpo pode ser visto como **{{apiClient.response.view.tree}}** (para abrir e fechar as partes do JSON), **{{apiClient.response.view.pretty}}** ou **{{apiClient.response.view.raw}}**. Use **{{apiClient.response.saveResponse}}** para guardar a resposta num ficheiro .apiresp, e **{{apiClient.response.openBody}}** para a editar como um documento comum.
+
+### Autorização
+
+No separador **{{apiClient.tab.auth}}**, escolha em **{{apiClient.auth.type}}**: API Key, Basic Auth, Bearer Token, OAuth 1.0 ou OAuth 2.0. No OAuth 2.0 existem os fluxos **{{apiClient.oauth.flow.authorizationCode}}**, **{{apiClient.oauth.flow.clientCredentials}}**, **{{apiClient.oauth.flow.deviceCode}}** e **{{apiClient.oauth.flow.password}}**; clique em **{{apiClient.oauth.getToken}}** e, se for preciso, o navegador do sistema abre para autorizar o acesso. Com **{{apiClient.auth.inherit}}**, o pedido usa a autorização definida na coleção.
+
+Para palavras-passe e tokens, use uma variável secreta (veja "Ambientes e segredos"): assim o valor nunca é gravado no ficheiro do pedido.
+
+### Testes e extrações
+
+No separador **{{apiClient.tab.tests}}**:
+
+- **{{apiClient.tests.assertions}}**: regras verificadas a cada envio, como "o estado é igual a 200", "o corpo contém um texto" ou "o JSONPath existe". O resultado aparece no separador **{{apiClient.response.tab.tests}}** da resposta.
+- **{{apiClient.tests.extractions}}**: guardam um valor da resposta (por exemplo, um token) numa variável do ambiente, para usar nos pedidos seguintes.
+
+### Ambientes e segredos
+
+![Ambiente de API com uma variável comum e uma secreta](img/s24-api-environment.png)
+
+Um ambiente reúne variáveis, como o endereço do servidor de testes e o de produção. Use **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiEnvironments}}** para criar um (ficheiro **.apienv**) e escolha o ativo no seletor **{{apiClient.env.select}}**.
+
+- Marque **{{apiClient.env.secret}}** nas variáveis sigilosas. O valor fica cifrado neste computador e **não vai para o ficheiro .apienv**.
+- Marque **{{apiClient.env.production}}** num ambiente de produção: a aplicação pede confirmação antes de enviar POST, PUT, PATCH e DELETE.
+- Os cookies recebidos ficam separados por ambiente; veja-os ou apague-os em **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiCookies}}**.
+
+### Coleções e histórico
+
+Uma coleção é uma pasta com os pedidos e o ficheiro **.apicol**, que guarda a autorização e as variáveis comuns. Na barra lateral, a secção **{{apiClient.col.section}}** mostra as coleções das pastas abertas; use o botão direito para criar pedidos e pastas, **{{apiClient.col.run}}**, **{{apiClient.col.export}}**, **{{apiClient.col.document}}** (gera a documentação da coleção) e **{{apiClient.col.settings}}**.
+
+O **{{apiClient.history.section}}** (também em **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiHistory}}**) lista os últimos pedidos enviados, e pode limpá-lo quando quiser.
+
+### Importar, exportar e gerar código
+
+- **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiImport}}** traz pedidos de curl, Postman, OpenAPI/Swagger, Insomnia, HAR e ficheiros .http. Clique em **{{apiClient.import.analyze}}** para ver o que será importado e escolha **{{apiClient.import.asCollection}}** ou **{{apiClient.import.openInTabs}}**. Colar um comando curl na URL também oferece a importação.
+- **{{apiClient.col.export}}** grava a coleção como Postman, OpenAPI, HAR, .http ou curl. Os valores de variáveis secretas nunca são exportados.
+- O botão **{{apiClient.code}}** abre **{{apiClient.codegen.title}}** e mostra o pedido em várias linguagens, pronto a copiar.
+
+### Executar uma coleção
+
+Em **{{apiClient.col.run}}**, escolha os pedidos, o ambiente, o número de iterações e o atraso entre eles. Um ficheiro de dados (CSV ou JSON) repete a execução com os valores de cada linha, e **{{apiClient.runner.stopOnFailure}}** interrompe no primeiro erro. Clique em **{{apiClient.runner.start}}**: o resultado abre como relatório (**.apirun**), com totais, tempos e os testes de cada pedido. Em **{{apiClient.report.export}}** o relatório sai em JUnit XML, HTML ou Markdown.
+
+### GraphQL
+
+Em **{{apiClient.body.type}}**, escolha GraphQL para escrever a **{{apiClient.graphql.query}}** e as **{{apiClient.graphql.variables}}**. Com **{{apiClient.graphql.loadSchema}}**, a aplicação lê o schema do servidor, mostra a documentação dos tipos e oferece o preenchimento automático.
+
+Quando a operação escolhida é uma **subscription**, aparece o botão **{{apiClient.graphql.subscribe}}**: a aplicação abre um WebSocket (protocolo graphql-transport-ws) no endereço do pedido e mostra os eventos recebidos logo abaixo do editor. Clique em **{{apiClient.mock.stop}}** para terminar.
+
+### SOAP e WSDL
+
+Em **{{apiClient.body.type}}**, escolha SOAP, a **{{apiClient.soap.version}}** (1.1 ou 1.2) e a SOAPAction; **{{apiClient.soap.template}}** preenche um envelope vazio. Para criar os pedidos a partir de um serviço, use **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiImport}}** com o ficheiro WSDL: cada operação dá origem a um pedido, já com o envelope de exemplo. Nos testes e extrações, o alvo XPath lê respostas XML (por exemplo, <code>//*[local-name()='Resultado']</code>).
+
+### WebSocket
+
+Use **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiWebSocket}}** para criar uma ligação (ficheiro **.apiws**). Escreva o **{{apiClient.ws.url}}** (ws:// ou wss://), os cabeçalhos e os subprotocolos e clique em **{{apiClient.ws.connect}}**. Escreva a mensagem (texto, JSON ou binário em base64) e envie com **Ctrl+Enter**. O **{{apiClient.ws.log}}** mostra as mensagens enviadas e recebidas, com hora e tamanho; é possível filtrar, pausar e limpar. Use **{{apiClient.ws.saveMessage}}** para guardar mensagens que envia com frequência.
+
+### Servidor mock
+
+Um servidor mock responde no lugar da API real, com respostas que já conhece. Na resposta de um pedido guardado, clique em **{{apiClient.response.saveExample}}**: a aplicação guarda o exemplo junto do pedido. Depois, no botão direito da coleção, escolha **{{apiClient.col.mock}}** (ou **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiMock}}**). As rotas vêm dos exemplos guardados ou de um ficheiro OpenAPI; ajuste o estado e o atraso de cada uma e clique em **{{apiClient.mock.start}}**. O servidor só atende neste computador, a menos que marque **{{apiClient.mock.lan}}**, e para sozinho ao fim de 8 horas sem chamadas.
+
+### gRPC
+
+Use **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiGrpc}}** para criar uma chamada (ficheiro **.apigrpc**). Indique o **{{apiClient.grpc.address}}**, marque **{{apiClient.grpc.tls}}** se o servidor o exigir e escolha a **{{apiClient.grpc.source}}**: **{{apiClient.grpc.source.reflection}}** ou **{{apiClient.grpc.source.proto}}**. Clique em **{{apiClient.grpc.load}}**, escolha o serviço e o método e use **{{apiClient.grpc.useTemplate}}** para começar a mensagem em JSON. Chamadas simples e com streaming do servidor usam **{{apiClient.grpc.invoke}}**; com streaming do cliente ou nos dois sentidos, use **{{apiClient.grpc.start}}**, **{{apiClient.grpc.send}}** e **{{apiClient.grpc.end}}**. As mensagens, os metadados e o estado aparecem na lista de eventos.
+
+### Monitores
+
+Um monitor repete a execução de uma coleção a cada tantos minutos e avisa por notificação do sistema quando algo falha (e de novo quando volta a passar). No botão direito da coleção, escolha **{{apiClient.col.monitor}}** (ou **{{menu.tools}} → {{menu.tools.apiSubmenu}} → {{menu.tools.apiMonitor}}**), defina o intervalo, o ambiente e os pedidos e guarde. O gráfico mostra o tempo de cada execução, com as falhas a vermelho; **{{apiClient.monitor.runNow}}** executa de imediato. Os monitores só funcionam com a aplicação aberta e retomam sozinhos quando a volta a abrir.
+
+### Scripts
+
+No separador **{{apiClient.tab.tests}}**, abaixo das asserções, há dois scripts opcionais em JavaScript: **{{apiClient.scripts.pre}}** (pode alterar o URL, os cabeçalhos e o corpo) e **{{apiClient.scripts.post}}** (pode verificar a resposta com <code>test</code> e <code>expect</code> e guardar valores com <code>env.set</code>). O alias <code>pm</code> aceita o básico dos scripts do Postman. Os scripts correm isolados, sem rede, ficheiros nem acesso ao computador, com limite de tempo e de memória; o que escrevem com <code>console.log</code> aparece no bloco **{{apiClient.scripts.console}}** da resposta.
+
+Scripts que não escreveu (importados ou recebidos de outra pessoa) não correm sozinhos: o pedido mostra um aviso com **{{apiClient.scripts.trustCollection}}**. A confiança vale só neste computador e cai se os scripts mudarem.
+
+### IA no Cliente de API
+
+No painel da resposta, **{{ai.api.explain}}** pede ao assistente uma explicação da resposta e **{{ai.api.suggestTests}}** sugere asserções para o separador **{{apiClient.tab.tests}}**. No botão direito da coleção, **{{ai.api.document}}** escreve a documentação. Os cabeçalhos de autenticação e os valores secretos não são enviados ao modelo.
+
+Nos scripts, <code>pm.sendRequest</code> faz pedidos auxiliares (por exemplo, para obter um token), com as mesmas regras de segredos dos pedidos comuns e no máximo 10 por script.
+
+### Segurança
+
+- Todos os pedidos saem do próprio computador, pela aplicação; nada passa por servidores nossos.
+- Palavras-passe, tokens e valores secretos ficam no cofre do sistema operativo (cifrados). Se o sistema não tiver cofre, ficam apenas na memória e perdem-se ao fechar a aplicação.
+- Estes valores **nunca** vão para os ficheiros (.apireq, .apienv, .apicol), nem para exportações, geração de código, registos ou para a nuvem. O histórico e os cookies também ficam apenas neste computador.
+- Apenas as respostas guardadas e os relatórios de uma coleção podem ser sincronizados com a nuvem, e só se ligar **{{apiClient.col.syncResponses}}**.
+
+## 9. Pesquisa em ficheiros
 
 ![Painel de pesquisa com os resultados agrupados por ficheiro](img/s06-search.png)
 
@@ -122,7 +292,7 @@ Para substituir o texto, escreva o novo no campo de substituição e clique em *
 
 A pesquisa não entra em pastas como `node_modules` e `.git`, nem em ficheiros binários ou com mais de 5 MB. Mostra, no máximo, 5.000 ocorrências de cada vez.
 
-## 9. Linguagem, codificação e fins de linha
+## 10. Linguagem, codificação e fins de linha
 
 ![Menu Codificação](img/s09-menu-encoding.png)
 
@@ -130,11 +300,14 @@ A pesquisa não entra em pastas como `node_modules` e `.git`, nem em ficheiros b
 
 ![Menu Linguagem](img/s10-menu-language.png)
 
-- **{{menu.encoding}}:** converta o documento para **UTF-8** ou **UTF-8 com BOM**, e escolha a quebra de linha do **Windows (CRLF)** ou do **Unix/Mac (LF)**. A conversão marca o documento como alterado; basta guardar para ter efeito.
+- **{{menu.encoding}}:** converta o documento para **UTF-8** ou **UTF-8 com BOM**, e escolha a quebra de linha do **Windows (CRLF)**, do **Unix (LF)** ou do **Mac (CR)**. A conversão marca o documento como alterado; basta guardar para ter efeito.
+  - **{{menu.encoding.autoFormat}}** remove os espaços duplos do documento (a indentação das linhas mantém-se) e formata-o no padrão da linguagem: Python como Python (PEP 8), C e C++ no estilo LLVM, Java no estilo Google, C# no estilo Microsoft, Go com o gofmt, e JavaScript, TypeScript, JSON, CSS, HTML, Markdown, YAML, PHP e XML com o Prettier; também Lua, Shell e SQL. Funciona sem internet. Nas linguagens sem formatador (Rust, PowerShell, Batch, LaTeX, INI, TOML e texto), só os espaços duplos são removidos, e a barra de estado avisa. Se o código tiver erro de sintaxe, uma janela indica a linha do erro.
+  - No Python, se a indentação estiver em falta, é deduzida: depois de uma linha terminada em `:` o bloco abre um nível; blocos de `if`, `for`, `while`, `try` e `with` ficam com a linha seguinte; o corpo de um `def` vai até uma linha em branco ou um `return`. Confirme o resultado, porque em Python a indentação muda o que o programa faz. As aspas ficam como as escreveu. Atenção: espaços duplos dentro de textos entre aspas também são removidos. Ctrl+Z anula tudo de uma vez.
+  - **{{menu.encoding.url}}** codifica o texto selecionado no formato de endereços web (`minha página` passa a `minha%20p%C3%A1gina`); se o texto já estiver codificado, descodifica. Num endereço completo (`https://…`), os separadores `: / ? & = #` são mantidos.
 
 A codificação e a quebra de linha atuais aparecem na barra de estado.
 
-## 10. Snippets e macros
+## 11. Snippets e macros
 
 ![Janela de snippets](img/s12-snippets.png)
 
@@ -144,14 +317,14 @@ Os **snippets** são excertos de texto já prontos. Abra **{{menu.tools}} → {{
 
 As **macros** repetem uma sequência que fez. Prima **Ctrl+Shift+R** para começar a gravar, escreva ou edite o que quiser e prima **Ctrl+Shift+R** de novo para parar. Depois, **Ctrl+Shift+M** executa a última gravação. Em **{{menu.tools.macros}}** escolhe quantas vezes repetir e pode guardar a macro com um nome. É gravado o texto escrito, o texto colado, as teclas de seta, Início, Fim, Retrocesso, Delete, Tab, Enter e os comandos dos menus. Os cliques do rato e o Ctrl+Z não são gravados.
 
-## 11. Conta e ficheiros na nuvem
+## 12. Conta e ficheiros na nuvem
 
 ![Primeiro acesso: endereço do servidor](img/s16a-account-server.png)
 
 Com uma conta, guarda ficheiros na nuvem e abre-os noutros computadores. Abra o menu **{{menu.account}}**.
 
 1. **Endereço do servidor:** na primeira vez, indique o endereço que a sua empresa ou o administrador lhe forneceu. Começa por `https://`.
-2. **Criar conta:** clique em **{{account.link.register}}** e preencha o e-mail, o nome e uma palavra-passe com pelo menos 10 caracteres.
+2. **Criar conta:** clique em **{{account.link.register}}**. A aplicação abre a página de planos da nuvem no site, no mesmo idioma; escolha o plano (Gratuito ou pago) e registe o e-mail, o nome e uma palavra-passe com pelo menos 10 caracteres. A conta não é criada dentro da aplicação.
 
 ![Ecrã de início de sessão](img/s16-account-login.png)
 
@@ -164,17 +337,21 @@ Com uma conta, guarda ficheiros na nuvem e abre-os noutros computadores. Abra o 
 ![Lista de ficheiros na nuvem](img/s17-cloud-open.png)
 
 5. **Guardar na nuvem:** **{{menu.file}} → {{menu.file.saveCloud}}**. Escolha o caminho, por exemplo `trabalho/ata.md`.
-6. **Abrir da nuvem:** **{{menu.file}} → {{menu.file.openCloud}}**. Na lista pode abrir ou eliminar ficheiros. Num documento aberto da nuvem, **Ctrl+S** volta a guardar na nuvem.
+6. **Abrir da nuvem:** **{{menu.file}} → {{menu.file.openCloud}}**. No topo aparecem quantos ficheiros guarda, o tamanho total e os limites do seu plano. Os ficheiros ficam organizados por pasta, como na barra lateral, com a versão, o tamanho e a data da última alteração a cinzento. Faça duplo clique num ficheiro para o abrir; arraste ficheiros e pastas para outra pasta (ou para **{{cloud.root}}**), como na barra lateral, e use o botão direito para **{{sidebar.rename}}**, **{{sidebar.folderColor}}** e **{{common.delete}}**. Num documento aberto da nuvem, **Ctrl+S** volta a guardar na nuvem.
 
 Se o ficheiro tiver mudado na nuvem desde a última vez, a aplicação avisa e pergunta se quer substituí-lo. Cada ficheiro pode ter até 10 MB. Se o seu sistema não tiver cofre de credenciais, a aplicação avisa que terá de iniciar sessão sempre que a abrir.
 
-## 12. Idiomas
+Com a conta ligada, o rodapé mostra, à esquerda do ícone da nuvem, quantos ficheiros guarda e quanto espaço usa na nuvem, em MB com duas casas decimais (por exemplo, `Ficheiros: 3   Armazenamento: 1.25 MB`). Cada valor fica laranja ao chegar a 90% do limite do seu plano e vermelho ao chegar a 100%. Ao chegar ao limite de ficheiros, a nuvem não aceita ficheiros novos; ao chegar ao limite de armazenamento, não aceita ficheiros novos nem alterações que aumentem o espaço usado. Nesses casos aparece o aviso **{{cloud.limit.title}}** e nada é guardado; atualizar um ficheiro sem aumentar o tamanho continua permitido, e eliminar ficheiros liberta o plano. A conta soma todos os seus ficheiros na nuvem e os textos dos documentos ainda não guardados, que ficam guardados para continuar noutro computador. O valor muda a cada gravação ou eliminação. Um ficheiro da nuvem aberto sem alterações não ocupa espaço a mais; só o texto ainda não guardado é guardado.
+
+Se o mesmo documento for alterado em dois computadores antes de sincronizar, cada computador fica com o seu texto, e a versão do outro abre num separador novo, com "(conflito – outro computador)" no nome, para nada se perder.
+
+## 13. Idiomas
 
 ![Bandeiras dos idiomas junto ao botão de pré-visualização](img/s08-flags.png)
 
 A aplicação está disponível em **alemão, espanhol, francês, inglês, português (Brasil) e português (Portugal)**. Abre no idioma do seu sistema; se não existir tradução, abre em inglês. Para mudar, clique na bandeira do idioma, à esquerda do botão de pré-visualização. A escolha tem efeito de imediato e fica guardada para a próxima vez. Este manual abre no idioma que estiver em uso.
 
-## 13. Atalhos de teclado
+## 14. Atalhos de teclado
 
 ![Janela de atalhos de teclado](img/s14-shortcuts.png)
 
@@ -182,7 +359,7 @@ Para ver a lista dentro da aplicação, abra **{{menu.help}} → {{menu.help.sho
 
 {{shortcuts}}
 
-## 14. Perguntas frequentes
+## 15. Perguntas frequentes
 
 **Fechei a aplicação sem guardar. Perdi o meu texto?**
 Não. O texto por guardar é conservado automaticamente e regressa quando abrir a aplicação de novo.
@@ -202,7 +379,7 @@ Verifique o endereço do servidor e a ligação à internet. Se a mensagem disse
 **Como vejo a versão da aplicação?**
 Em **{{menu.help}} → {{menu.help.about}}**.
 
-## 15. Sobre e suporte
+## 16. Sobre e suporte
 
 ![Janela Sobre](img/s15-about.png)
 

@@ -2,8 +2,11 @@
 import { create } from 'zustand'
 import type { CloudFileContent, Encoding, Eol, OpenedFile, SavedFile } from '@shared/ipc'
 import { untitledNumber } from '@shared/i18n'
-import { languageFromName } from '@/editor/languages'
+import { isApiLanguage, languageFromName } from '@/editor/languages'
 import { t } from '@/i18n'
+import { applyEol } from '@shared/eol'
+import { newApiGrpc, newApiRequest, newApiWebSocket, serializeApiRequest } from '@shared/api/schema'
+import { newCollection, newEnvironment, serializeCollection, serializeEnvironment } from '@/api/environment'
 
 export interface EditorDocument {
   id: string
@@ -17,6 +20,9 @@ export interface EditorDocument {
   encoding: Encoding
   /** Codificação da última gravação/leitura; se diferir de `encoding`, há conversão pendente. Ausente = igual. */
   savedEncoding?: Encoding
+  /** Quebra de linha guardada no disco (LF e CR têm o mesmo texto dentro do app). Ausente = igual a `eol`. */
+  savedEol?: Eol
+  /** Quebra de linha do arquivo. Documentos CR ficam com LF no app e são convertidos ao gravar. */
   eol: Eol
   /** Markdown abre formatado ('preview'); o usuário alterna para 'edit' para editar o texto. */
   mode: DocumentMode
@@ -50,6 +56,10 @@ interface DocumentsState {
 
   /** Cria um documento sem título; a extensão define a linguagem (padrão: Markdown). */
   newDocument(extension?: string): void
+  /** Abre um documento novo (sem caminho) com o nome e o conteúdo dados, como o relatório do executor; devolve o id. */
+  newDocumentWithContent(name: string, content: string): string
+  /** Abre um documento novo, sem caminho, com o texto pronto (ex.: resposta de API para salvar como .apiresp). */
+  newDocumentFrom(name: string, content: string): void
   addOpenedFiles(files: OpenedFile[]): void
   setActive(id: string): void
   updateContent(id: string, content: string): void
@@ -67,6 +77,8 @@ interface DocumentsState {
   markCloudSaved(id: string, cloud: CloudRef, content: string): void
   /** Atualiza as abas de um arquivo da nuvem que foi movido (novo caminho e versão). */
   updateCloudPath(cloudId: string, path: string, version: number): void
+  /** Arquivo ou pasta do disco renomeado: as abas desse arquivo (ou de dentro da pasta) seguem o novo caminho. */
+  renameLocalPath(oldPath: string, newPath: string): void
   setEncoding(id: string, encoding: Encoding): void
   /** Converte as quebras de linha do texto (e do documento) para o formato escolhido. */
   setEol(id: string, eol: Eol): void
@@ -80,19 +92,20 @@ interface DocumentsState {
 }
 
 const defaultEol: Eol = navigator.userAgent.includes('Windows') ? 'CRLF' : 'LF'
-const LF = String.fromCharCode(10)
-const CRLF = String.fromCharCode(13, 10)
-const EOL_PATTERN = new RegExp(`${CRLF}|${String.fromCharCode(13)}|${LF}`, 'g')
 let seq = 0
 const nextId = (): string => `doc-${++seq}`
 /** Identificador do documento entre computadores (área de trabalho sincronizada). */
 export const newSyncId = (): string => crypto.randomUUID()
 
 export const isDirty = (d: EditorDocument): boolean =>
-  d.content !== d.savedContent || d.encoding !== (d.savedEncoding ?? d.encoding)
+  d.content !== d.savedContent || d.encoding !== (d.savedEncoding ?? d.encoding) || d.eol !== (d.savedEol ?? d.eol)
 
 /** Identificador estável do modelo no Monaco (um modelo por documento). */
 export const modelPath = (d: EditorDocument): string => `inmemory://doc/${d.id}/${d.name}`
+
+/** O caminho é o próprio `root` ou fica dentro dele (separador "\" ou "/"). */
+export const isInsidePath = (root: string, path: string): boolean =>
+  path === root || path.startsWith(`${root}\\`) || path.startsWith(`${root}/`)
 
 export const useDocuments = create<DocumentsState>((set) => ({
   documents: [],
@@ -104,20 +117,75 @@ export const useDocuments = create<DocumentsState>((set) => ({
     set((s) => {
       const n = s.untitledCounter + 1
       const name = `${t('doc.untitled', { n })}.${extension}`
+      const language = languageFromName(name)
+      // Requisição, ambiente e coleção de API nascem prontos e abrem no construtor; os demais tipos, vazios e em texto.
+      const apiText =
+        language === 'apireq'
+          ? serializeApiRequest(newApiRequest())
+          : language === 'apienv'
+            ? serializeEnvironment(newEnvironment(t('apiClient.env.newName')))
+            : language === 'apiws'
+              ? JSON.stringify(newApiWebSocket(), null, 2) + '\n'
+              : language === 'apigrpc'
+              ? JSON.stringify(newApiGrpc(), null, 2) + '\n'
+              : language === 'apicol'
+              ? serializeCollection(newCollection(t('apiClient.col.newName')))
+              : null
+      const isApi = apiText !== null
+      const content = isApi ? applyEol(apiText, defaultEol) : ''
       const doc: EditorDocument = {
         id: nextId(),
         path: null,
         name,
-        content: '',
-        savedContent: '',
-        language: languageFromName(name),
+        content,
+        savedContent: content,
+        language,
         encoding: 'UTF-8',
         eol: defaultEol,
-        mode: 'edit',
+        mode: isApi ? 'preview' : 'edit',
         syncId: newSyncId()
       }
       return { documents: [...s.documents, doc], activeId: doc.id, untitledCounter: n }
     }),
+
+  newDocumentFrom: (name, content) =>
+    set((s) => {
+      const language = languageFromName(name)
+      const doc: EditorDocument = {
+        id: nextId(),
+        path: null,
+        name,
+        content,
+        savedContent: '',
+        language,
+        encoding: 'UTF-8',
+        eol: defaultEol,
+        mode: canPreviewLanguage(language) ? 'preview' : 'edit',
+        syncId: newSyncId()
+      }
+      return { documents: [...s.documents, doc], activeId: doc.id }
+    }),
+
+  newDocumentWithContent: (name, content) => {
+    const id = nextId()
+    set((s) => {
+      const language = languageFromName(name)
+      const doc: EditorDocument = {
+        id,
+        path: null,
+        name,
+        content,
+        savedContent: '',
+        language,
+        encoding: 'UTF-8',
+        eol: defaultEol,
+        mode: canPreviewLanguage(language) ? 'preview' : 'edit',
+        syncId: newSyncId()
+      }
+      return { documents: [...s.documents, doc], activeId: id }
+    })
+    return id
+  },
 
   addOpenedFiles: (files) =>
     set((s) => {
@@ -159,7 +227,7 @@ export const useDocuments = create<DocumentsState>((set) => ({
     set((s) => ({
       documents: s.documents.map((d) =>
         d.id === id
-          ? { ...d, path: saved.path, name: saved.name, savedContent: content, savedEncoding: d.encoding, language: languageFromName(saved.name), missingOnDisk: false }
+          ? { ...d, path: saved.path, name: saved.name, savedContent: content, savedEncoding: d.encoding, savedEol: undefined, language: languageFromName(saved.name), missingOnDisk: false }
           : d
       )
     })),
@@ -182,7 +250,7 @@ export const useDocuments = create<DocumentsState>((set) => ({
     set((s) => ({
       documents: s.documents.map((d) =>
         d.id === id
-          ? { ...d, content: file.content, savedContent: file.content, encoding: file.encoding, savedEncoding: file.encoding, eol: file.eol, missingOnDisk: false }
+          ? { ...d, content: file.content, savedContent: file.content, encoding: file.encoding, savedEncoding: file.encoding, eol: file.eol, savedEol: undefined, missingOnDisk: false }
           : d
       )
     })),
@@ -240,7 +308,7 @@ export const useDocuments = create<DocumentsState>((set) => ({
         if (d.id !== id) return d
         // O nome da aba passa a ser o do arquivo na nuvem (e a linguagem segue a extensão).
         const name = cloud.path.split('/').pop() ?? cloud.path
-        return { ...d, cloud, name, language: languageFromName(name), savedContent: content, savedEncoding: d.encoding }
+        return { ...d, cloud, name, language: languageFromName(name), savedContent: content, savedEncoding: d.encoding, savedEol: undefined }
       })
     })),
 
@@ -249,6 +317,19 @@ export const useDocuments = create<DocumentsState>((set) => ({
       documents: s.documents.map((d) =>
         d.cloud?.id === cloudId ? { ...d, name: path.split('/').pop() ?? path, cloud: { ...d.cloud, path, version } } : d
       )
+    })),
+
+  renameLocalPath: (oldPath, newPath) =>
+    set((s) => ({
+      documents: s.documents.map((d) => {
+        if (!d.path || !isInsidePath(oldPath, d.path)) return d
+        const path = newPath + d.path.slice(oldPath.length)
+        if (d.path !== oldPath) return { ...d, path } // dentro da pasta renomeada: o nome não muda
+        const name = path.split(/[\\/]/).pop() ?? path
+        // A linguagem segue a nova extensão, a menos que tenha sido escolhida manualmente.
+        const language = d.language === languageFromName(d.name) ? languageFromName(name) : d.language
+        return { ...d, path, name, language, mode: canPreviewLanguage(language) ? d.mode : 'edit' }
+      })
     })),
 
   setLanguage: (id, language) =>
@@ -264,13 +345,13 @@ export const useDocuments = create<DocumentsState>((set) => ({
   setEol: (id, eol) =>
     set((s) => ({
       documents: s.documents.map((d) =>
-        d.id === id ? { ...d, eol, content: d.content.replace(EOL_PATTERN, eol === 'CRLF' ? CRLF : LF) } : d
+        d.id === id ? { ...d, eol, savedEol: d.savedEol ?? d.eol, content: applyEol(d.content, eol) } : d
       )
     }))
 }))
 
-/** Linguagens com visualização própria: Markdown formatado e JSON em árvore. */
-export const canPreviewLanguage = (language: string): boolean => language === 'markdown' || language === 'json'
+/** Linguagens com visualização própria: Markdown formatado, JSON em árvore e o construtor de requisições de API. */
+export const canPreviewLanguage = (language: string): boolean => language === 'markdown' || language === 'json' || isApiLanguage(language)
 export const canPreview = (d: EditorDocument | undefined): boolean => !!d && canPreviewLanguage(d.language)
 
 export const useActiveDocument = (): EditorDocument | undefined =>

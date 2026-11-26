@@ -7,6 +7,85 @@ export interface User {
   name: string
   passwordHash: string
   createdAt: Date
+  /** Último acesso (cadastro, login ou qualquer requisição autenticada); ausente em bancos ainda não migrados. */
+  lastAccess?: Date
+}
+
+/** Período de cobrança da assinatura. */
+export type SubscriptionPeriod = 'mensal' | 'semestral' | 'anual'
+/**
+ * Estado da assinatura: pending (cadastrado, aguardando o pagamento), active (paga e renovando),
+ * canceled (cancelada, vale até nextPaymentAt), payment_failed (cobrança falhou, vale até nextPaymentAt),
+ * ended (encerrada: o usuário voltou ao plano Gratuito).
+ */
+export type SubscriptionStatus = 'pending' | 'active' | 'canceled' | 'payment_failed' | 'ended'
+
+/** Arquivos da nuvem apagados por inatividade: quando e depois de quantos dias sem acesso. */
+export interface CloudPurgeNotice {
+  at: Date
+  days: number
+}
+
+/** Idiomas do aplicativo (o mesmo código da interface), usados nos e-mails enviados pela API. */
+export const APP_LOCALES = ['pt-BR', 'pt-PT', 'en', 'es', 'fr', 'de'] as const
+export type AppLocale = (typeof APP_LOCALES)[number]
+
+/** Plano pago que não vai renovar (cancelado ou com cobrança recusada) e termina em breve. */
+export interface PlanExpiry {
+  /** Fim do período pago (next_payment_at). */
+  at: Date
+  planName: string
+}
+
+/** Dados para o e-mail de "plano perto de expirar". */
+export interface PlanExpiryEmail extends PlanExpiry {
+  userId: string
+  email: string
+  name: string
+  locale: AppLocale | null
+}
+
+/** Data marcada em last_access depois da limpeza (fica fora da próxima verificação). */
+export const PURGED_LAST_ACCESS = new Date('2000-01-01T01:01:01.000Z')
+/** Só contas com last_access depois desta data entram na verificação de inatividade. */
+export const PURGE_SINCE = new Date('2026-01-01T01:01:01.000Z')
+
+/** Plano e assinatura de um usuário. */
+export interface Subscription {
+  usersGroupsId: number
+  planName: string
+  period: SubscriptionPeriod | null
+  status: SubscriptionStatus | null
+  /** true enquanto o usuário está no período pago. */
+  active: boolean
+  lastPaymentAt: Date | null
+  nextPaymentAt: Date | null
+  stripeCustomerId: string | null
+  stripeSubscriptionId: string | null
+}
+
+/** Campos da assinatura que uma gravação pode mudar (os ausentes ficam como estão). */
+export interface SubscriptionUpdate {
+  usersGroupsId?: number
+  period?: SubscriptionPeriod | null
+  status?: SubscriptionStatus | null
+  active?: boolean
+  lastPaymentAt?: Date | null
+  /** Só avança: uma data anterior à gravada é ignorada (eventos da Stripe podem chegar fora de ordem). */
+  nextPaymentAt?: Date | null
+  stripeCustomerId?: string | null
+  stripeSubscriptionId?: string | null
+}
+
+/** Uso da nuvem de um usuário. */
+export interface Usage {
+  storageBytes: number
+  storedFiles: number
+}
+
+/** Uso da nuvem com os limites do plano (grupo) do usuário. */
+export interface UsageWithPlan extends Usage {
+  plan: { name: string; maxFiles: number; maxSizeMb: number }
 }
 
 export interface RemoteFile {
@@ -34,6 +113,7 @@ export interface UpsertFileInput {
 export type MoveResult = { ok: true; file: FileMeta } | { ok: false; reason: 'not_found' | 'exists' }
 
 export type DeleteFolderResult = 'ok' | 'not_found' | 'not_empty'
+export type RenameFolderResult = 'ok' | 'not_found' | 'exists' | 'too_long'
 
 /** Área de trabalho sincronizada (abas e textos não salvos), em JSON, com versão. */
 export interface Workspace {
@@ -52,6 +132,8 @@ export interface Store {
   findUserById(id: string): Promise<User | null>
   updateUserName(id: string, name: string): Promise<void>
   setPassword(id: string, passwordHash: string): Promise<void>
+  /** Grava o instante do último acesso do usuário. */
+  touchLastAccess(userId: string, at: Date): Promise<void>
 
   createSession(userId: string, tokenHash: string, expiresAt: Date): Promise<void>
   findSession(tokenHash: string): Promise<{ userId: string; expiresAt: Date } | null>
@@ -80,6 +162,76 @@ export interface Store {
   createFolder(userId: string, path: string): Promise<void>
   /** Remove a pasta, só se estiver vazia (sem arquivos nem subpastas). */
   deleteFolder(userId: string, path: string): Promise<DeleteFolderResult>
+  /**
+   * Renomeia (ou move) a pasta `from` para `to`, levando os arquivos e as subpastas.
+   * Falha se a pasta não existir, se já houver algo em `to` ou se algum caminho passar de 512 caracteres.
+   */
+  renameFolder(userId: string, from: string, to: string): Promise<RenameFolderResult>
+
+  /** Uso gravado para o usuário (bytes e número de arquivos) com os limites do plano dele. */
+  getUsage(userId: string): Promise<UsageWithPlan>
+  /**
+   * Recalcula e grava o uso: espaço (soma dos arquivos + área de trabalho, isto é, textos dos
+   * documentos não salvos) e número de arquivos. Recalculado, nunca somado aos poucos.
+   * Chamado depois de cada gravação ou exclusão; devolve os novos totais.
+   */
+  refreshUsage(userId: string): Promise<Usage>
+
+  /** Grupos (planos) que existem, por id. */
+  planExists(usersGroupsId: number): Promise<boolean>
+  getSubscription(userId: string): Promise<Subscription | null>
+  /**
+   * Grava os campos informados. nextPaymentAt só avança (eventos repetidos ou fora de ordem), a não ser com
+   * `exact` (troca de plano feita pelo site, que pode encurtar ou alongar o período).
+   */
+  updateSubscription(userId: string, update: SubscriptionUpdate, opts?: { exact?: boolean }): Promise<void>
+  findUserIdByStripeSubscription(stripeSubscriptionId: string): Promise<string | null>
+  /**
+   * Fim do período pago: volta ao grupo 1 (Gratuito) quem passou de nextPaymentAt sem renovar
+   * (cancelada ou com cobrança falha) ou ficou mais de `graceMs` sem a renovação chegar. Guarda o plano anterior
+   * (previous_users_groups_id) e marca last_access com o instante da mudança. Devolve quantos.
+   */
+  expireSubscriptions(now: Date, graceMs: number): Promise<number>
+  /**
+   * Encerra a assinatura de um usuário agora (webhook da Stripe com o período já vencido), do mesmo jeito que
+   * expireSubscriptions: guarda o plano anterior, volta ao Gratuito e marca last_access com o instante da mudança
+   * (o prazo da limpeza por inatividade começa aí, com o prazo do plano anterior).
+   */
+  endSubscription(userId: string, now: Date): Promise<void>
+  /**
+   * Contas sem plano pago (grupo 1, assinatura inativa) com last_access depois de 2026-01-01 01:01:01 e há mais
+   * dias sem acesso que o waiting_time_for_deletion do plano anterior (ou do Gratuito): apaga arquivos, pastas e
+   * área de trabalho, zera o uso, marca last_access = 2000-01-01 01:01:01 e deixa o aviso para o aplicativo.
+   * Devolve quantas contas foram limpas.
+   */
+  purgeInactiveUsers(now: Date): Promise<number>
+  /** Aviso pendente de arquivos apagados por inatividade (null se não houver). */
+  getCloudPurgeNotice(userId: string): Promise<CloudPurgeNotice | null>
+  clearCloudPurgeNotice(userId: string): Promise<void>
+  /** Token de uso único para o site abrir a página de gestão da assinatura (só o hash é gravado). */
+  createManageToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void>
+  /** Consome o token (uso único) e devolve o usuário; null se inválido, usado ou expirado. */
+  consumeManageToken(tokenHash: string): Promise<string | null>
+
+  /** Idioma do aplicativo do usuário (para os e-mails da API). */
+  setUserLocale(userId: string, locale: AppLocale): Promise<void>
+  /**
+   * Plano pago que não vai renovar (status canceled ou payment_failed, ainda no período pago) e termina em até
+   * `withinMs`, se o aviso do aplicativo ainda não foi confirmado para essa data de fim. null se não houver.
+   */
+  getPlanExpiryNotice(userId: string, now: Date, withinMs: number): Promise<PlanExpiry | null>
+  /** O aplicativo mostrou o aviso: não volta para a mesma data de fim (expiry_notice_for = next_payment_at). */
+  ackPlanExpiryNotice(userId: string): Promise<void>
+  /**
+   * Reserva os e-mails de "plano perto de expirar": planos que não vão renovar e terminam em até `withinMs`, sem
+   * e-mail para essa data de fim. Marca expiry_email_for = next_payment_at (um só e-mail por data) e devolve os dados.
+   */
+  claimPlanExpiryEmails(now: Date, withinMs: number): Promise<PlanExpiryEmail[]>
+  /** O envio falhou: libera a reserva para a próxima tentativa (de hora em hora). */
+  releasePlanExpiryEmail(userId: string): Promise<void>
+
+  /** Remove sessões e códigos de redefinição vencidos (ou já usados). */
+  purgeExpired(now: Date): Promise<void>
 
   close(): Promise<void>
 }

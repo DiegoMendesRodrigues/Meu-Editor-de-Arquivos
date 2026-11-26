@@ -55,7 +55,12 @@ export function openManual(): void {
   })
 
   const external = (url: string): void => {
-    if (/^https?:\/\//.test(url)) void shell.openExternal(url)
+    try {
+      const u = new URL(url)
+      if (u.protocol === 'http:' || u.protocol === 'https:') void shell.openExternal(u.href)
+    } catch {
+      /* endereço inválido: ignora */
+    }
   }
   win.webContents.setWindowOpenHandler(({ url }) => {
     external(url)
@@ -67,6 +72,11 @@ export function openManual(): void {
       event.preventDefault()
       external(url)
     }
+  })
+
+  // Subquadros (iframes) não navegam.
+  win.webContents.on('will-frame-navigate', (event) => {
+    if (!event.isMainFrame) event.preventDefault()
   })
 
   void win.loadFile(file)

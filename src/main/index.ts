@@ -4,7 +4,7 @@ import { app, BrowserWindow, Menu, session, shell } from 'electron'
 import log from 'electron-log/main'
 import { windowIcon } from './icon'
 import { registerFileHandlers } from './ipc/files'
-import { guardWindowClose, registerAppHandlers } from './ipc/app'
+import { guardWindowClose, registerAppHandlers, reportFullScreen, windowBackground } from './ipc/app'
 import { registerFolderHandlers } from './ipc/folders'
 import { registerSearchHandlers } from './ipc/search'
 import { loadRecent, registerRecentHandlers } from './ipc/recent'
@@ -12,11 +12,16 @@ import { setWatchTarget } from './watcher'
 import { loadAccount, registerAccountHandlers } from './ipc/account'
 import { registerLibraryHandlers } from './ipc/library'
 import { registerSessionHandlers } from './ipc/session'
+import { killAllTerminals, registerTerminalHandlers } from './ipc/terminal'
+import { registerFormatHandlers } from './ipc/format'
+import { registerApiHandlers } from './api/ipc'
+import { registerAiHandlers } from './ai/aiIpc'
 
 log.initialize()
 
 // Uma única instância: duas janelas gravariam a mesma sessão e os mesmos arquivos de dados.
-if (!app.requestSingleInstanceLock()) {
+const isPrimaryInstance = app.requestSingleInstanceLock()
+if (!isPrimaryInstance) {
   app.quit()
 } else {
   app.on('second-instance', () => {
@@ -44,7 +49,7 @@ function createWindow(): void {
     minHeight: 500,
     show: false,
     title: 'Meu Editor de Arquivos',
-    backgroundColor: '#ffffff',
+    backgroundColor: windowBackground(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -56,18 +61,26 @@ function createWindow(): void {
 
   win.once('ready-to-show', () => win.show())
   guardWindowClose(win)
+  reportFullScreen(win)
   setWatchTarget(win.webContents)
   win.on('closed', () => setWatchTarget(null))
 
   // Links externos abrem no navegador do sistema; nenhuma janela nova no app.
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:\/\//.test(url)) void shell.openExternal(url)
+    try {
+      const u = new URL(url)
+      if (u.protocol === 'http:' || u.protocol === 'https:') void shell.openExternal(u.href)
+    } catch {
+      /* endereço inválido: ignora */
+    }
     return { action: 'deny' }
   })
   // Impede que o conteúdo navegue a janela para outro endereço.
   win.webContents.on('will-navigate', (event, url) => {
     if (url !== win.webContents.getURL()) event.preventDefault()
   })
+  // Subquadros (iframes) também não navegam para fora.
+  win.webContents.on('will-frame-navigate', (event) => event.preventDefault())
 
   // F12 abre as ferramentas de desenvolvimento apenas fora do pacote final.
   if (!app.isPackaged) {
@@ -88,6 +101,8 @@ function createWindow(): void {
 Menu.setApplicationMenu(null)
 
 app.whenReady().then(async () => {
+  // Segunda instância: só avisa a primeira (second-instance) e sai, sem abrir janela nem tocar nos dados.
+  if (!isPrimaryInstance) return
   // Editor de texto: nenhuma permissão (câmera, microfone, notificações, localização...) é concedida.
   session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false))
   session.defaultSession.setPermissionCheckHandler(() => false)
@@ -101,12 +116,19 @@ app.whenReady().then(async () => {
   registerLibraryHandlers()
   registerAccountHandlers()
   registerAppHandlers()
+  registerTerminalHandlers()
+  registerFormatHandlers()
+  registerApiHandlers()
+  registerAiHandlers()
   createWindow()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+
+// Nenhum shell do terminal integrado fica rodando depois que o app fecha.
+app.on('will-quit', killAllTerminals)
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

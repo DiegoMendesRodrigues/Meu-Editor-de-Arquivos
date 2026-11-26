@@ -2,11 +2,62 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
+/* Modo escuro: classe "dark" no <html>, posta pelo app (src/renderer/src/theme.ts). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: 'Segoe UI', 'Ubuntu', 'Cantarell', system-ui, sans-serif;
+  /* Fundo das superfícies (painéis, menus, janelas). Use bg-surface, não bg-white: no escuro ele muda. */
+  --color-surface: #ffffff;
   --color-chrome: #f3f4f6;
   --color-border: #d4d4d8;
   --color-accent: #2563eb;
+}
+
+/*
+ * Modo escuro. Em vez de repetir "dark:" em cada componente, a paleta usada pela interface é
+ * redefinida aqui: a escala de cinza (zinc) se inverte e os tons claros de destaque viram tons
+ * escuros, e os tons escuros de texto viram claros. Uma cor nova usada na interface precisa entrar
+ * nesta lista para ficar legível no escuro.
+ */
+.dark {
+  color-scheme: dark;
+  --color-surface: #1e1e1e;
+  --color-chrome: #252526;
+  --color-border: #3c3c42;
+  --color-accent: #3b82f6;
+
+  --color-zinc-50: #252529;
+  --color-zinc-100: #2b2b30;
+  --color-zinc-200: #35353b;
+  --color-zinc-300: #46464d;
+  --color-zinc-400: #7a7a83;
+  --color-zinc-500: #a1a1aa;
+  --color-zinc-600: #b8b8c0;
+  --color-zinc-700: #d4d4d8;
+  --color-zinc-800: #e4e4e7;
+  --color-zinc-900: #f4f4f5;
+
+  --color-red-500: #f87171;
+  --color-red-600: #f87171;
+  --color-red-700: #fca5a5;
+  --color-orange-600: #fb923c;
+  --color-rose-800: #fda4af;
+  --color-emerald-700: #6ee7b7;
+  --color-emerald-800: #a7f3d0;
+  --color-amber-50: #33290f;
+  --color-amber-300: #8a6a1f;
+  --color-amber-600: #fbbf24;
+  --color-amber-700: #fcd34d;
+  --color-yellow-200: #6b5a12;
+  --color-sky-50: #13283a;
+  --color-sky-100: #183650;
+  --color-sky-600: #38bdf8;
+  --color-blue-50: #172338;
+  --color-blue-100: #1d3254;
+  --color-blue-700: #93c5fd;
+  /* Método PATCH no Cliente de API e valores null/booleanos no visualizador de JSON. */
+  --color-violet-600: #a78bfa;
 }
 
 html,
@@ -18,8 +69,8 @@ body,
 }
 
 body {
-  background: #ffffff;
-  color: #1f2937;
+  background: var(--color-surface);
+  color: var(--color-zinc-800);
   font-family: var(--font-sans);
   font-size: 13px;
   user-select: none;
@@ -44,11 +95,11 @@ body {
 /* Imagens na visualização editável do Markdown: etiqueta com o texto alternativo. */
 .ProseMirror .md-image {
   display: inline-block;
-  border: 1px solid #d4d4d8;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: #f4f4f5;
+  background: var(--color-zinc-100);
   padding: 0 6px;
-  color: #52525b;
+  color: var(--color-zinc-600);
   font-size: 0.875em;
 }
 

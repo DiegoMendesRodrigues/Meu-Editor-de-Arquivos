@@ -19,5 +19,12 @@ describe('textCodec', () => {
   it('identifica a quebra de linha predominante', () => {
     expect(detectEol('a\r\nb\r\nc\n')).toBe('CRLF')
     expect(detectEol('a\nb\nc\r\n')).toBe('LF')
+    expect(detectEol('a\rb\rc\n')).toBe('CR')
+  })
+
+  it('entrega arquivos no formato Mac (CR) com LF', () => {
+    const r = decodeText(Buffer.from('a\rb\rc', 'utf8'))
+    expect(r.eol).toBe('CR')
+    expect(r.content).toBe('a\nb\nc')
   })
 })

@@ -8,6 +8,7 @@ import type { MessageKey } from '@shared/i18n'
 import { t } from '@/i18n'
 import { useDocuments, isDirty, canPreview, type EditorDocument } from '@/store/documents'
 import { useWorkspace } from '@/store/workspace'
+import { useSidebarLayout } from '@/store/sidebarLayout'
 import { getActiveEditor, revealInDocument, runEditorAction } from '@/editor/editorRef'
 import { useSearch } from '@/store/search'
 import { useView } from '@/store/view'
@@ -18,6 +19,14 @@ import { useLibrary } from '@/store/library'
 import { playMacro, startRecording, stopRecording } from '@/editor/macros'
 import { flushWorkspace } from '@/workspaceSync'
 import { flushSession, hasUnsavedText, unsavedFitsInSession } from '@/session'
+import { toStoredText } from '@shared/eol'
+import type { Eol, HashAlgorithm } from '@shared/ipc'
+import { useNotice } from '@/store/notice'
+import { selectedText } from '@/textCommands'
+import { createTerminal } from '@/terminal/terminalBus'
+import { useApiStore } from '@/store/api'
+import { useAi } from '@/ai/store'
+export { autoFormat, collapseSpaces, convertCase, trimSpaces, urlEncodeDecode } from '@/textCommands'
 
 const docs = () => useDocuments.getState()
 const active = (): EditorDocument | undefined => {
@@ -34,6 +43,63 @@ const refreshRecent = (): void => void useWorkspace.getState().refreshRecent()
 
 export function newFile(extension?: string): void {
   docs().newDocument(extension)
+}
+
+/** Ferramentas → Cliente de API (Ctrl+Shift+A): uma nova requisição, aberta no construtor. */
+export function openApiClient(): void {
+  useApiStore.getState().setSidebarOn(true)
+  docs().newDocument('apireq')
+}
+
+/** Ferramentas → Assistente de IA (Ctrl+Shift+I): abre ou fecha o painel à direita. */
+export function toggleAssistant(): void {
+  useAi.getState().toggle()
+}
+
+/** Ferramentas → Ambientes: um ambiente novo, aberto no construtor. */
+export function newEnvironmentDocument(): void {
+  useApiStore.getState().setSidebarOn(true)
+  docs().newDocument('apienv')
+}
+
+/** Ferramentas → WebSocket: uma nova conexão, aberta no construtor. */
+export function newWebSocketDocument(): void {
+  useApiStore.getState().setSidebarOn(true)
+  docs().newDocument('apiws')
+}
+
+/** Ferramentas → gRPC: uma nova chamada, aberta no construtor. */
+export function newGrpcDocument(): void {
+  useApiStore.getState().setSidebarOn(true)
+  docs().newDocument('apigrpc')
+}
+
+/** Ferramentas → Importar…: curl, Postman, OpenAPI, Insomnia, HAR e .http. */
+export function openApiImport(): void {
+  useApiStore.getState().setSidebarOn(true)
+  useApiStore.getState().openDialog({ kind: 'import' })
+}
+
+/** Ferramentas → Servidor mock: sem coleção de origem (escolhe um arquivo OpenAPI). */
+export function openApiMock(): void {
+  useApiStore.getState().openDialog({ kind: 'mock' })
+}
+
+/** Ferramentas → Monitores de API: lista os monitores e cria novos (a pasta é escolhida no formulário). */
+export function openApiMonitor(): void {
+  useApiStore.getState().openDialog({ kind: 'monitor' })
+}
+
+/** Ferramentas → Cookies: os cookies guardados pelo Cliente de API. */
+export function openApiCookies(): void {
+  useApiStore.getState().openDialog({ kind: 'cookies' })
+}
+
+/** Ferramentas → Histórico: mostra as seções de API (com o histórico) na barra lateral. */
+export function showApiHistory(): void {
+  useApiStore.getState().setSidebarOn(true)
+  useSidebarLayout.getState().setHidden('apiHistory', false)
+  if (!useView.getState().sidebarVisible) useView.getState().toggle('sidebarVisible')
 }
 
 export async function openFile(): Promise<void> {
@@ -88,7 +154,7 @@ export async function saveAs(doc = active()): Promise<boolean> {
   if (storageMode() === 'cloud') return requestCloudSave(doc)
   try {
     const content = doc.content
-    const saved = await window.api.saveFileAs({ suggestedName: doc.path ?? doc.name, content, encoding: doc.encoding })
+    const saved = await window.api.saveFileAs({ suggestedName: doc.path ?? doc.name, content: toStoredText(content, doc.eol), encoding: doc.encoding })
     if (!saved) return false
     if (doc.path && doc.path !== saved.path) void window.api.unwatchFile(doc.path)
     docs().markSaved(doc.id, saved, content)
@@ -107,7 +173,7 @@ export async function save(doc = active()): Promise<boolean> {
   if (!doc.path) return saveAs(doc)
   try {
     const content = doc.content
-    const saved = await window.api.saveFile({ path: doc.path, content, encoding: doc.encoding })
+    const saved = await window.api.saveFile({ path: doc.path, content: toStoredText(content, doc.eol), encoding: doc.encoding })
     docs().markSaved(doc.id, saved, content)
     return true
   } catch (err) {
@@ -230,10 +296,37 @@ export function convertEncoding(encoding: 'UTF-8' | 'UTF-8 BOM'): void {
   if (doc) docs().setEncoding(doc.id, encoding)
 }
 
-export function convertEol(eol: 'LF' | 'CRLF'): void {
+/** Converte as quebras de linha do documento ativo: Windows (CRLF), Unix (LF) ou Mac (CR). */
+export function convertEol(eol: Eol): void {
   const doc = active()
   if (doc) docs().setEol(doc.id, eol)
 }
+
+/** Entra ou sai da tela inteira: a janela ocupa a tela e só o documento fica visível. */
+export function toggleFullScreen(): void {
+  const on = !useView.getState().fullScreen
+  useView.getState().setFullScreen(on)
+  void window.api.setFullScreen(on)
+}
+
+export const openHash = (algorithm: HashAlgorithm): void => useDialogs.getState().showHash(algorithm)
+
+/** Gera o hash do texto selecionado no documento e o deixa na área de transferência. */
+export async function hashSelection(algorithm: HashAlgorithm): Promise<void> {
+  const text = selectedText()
+  if (!text) return window.alert(t('hash.noSelection', { algorithm }))
+  try {
+    await window.api.copyText(await window.api.hashText(algorithm, text))
+    useNotice.getState().show(t('hash.copied', { algorithm }))
+  } catch (err) {
+    reportError('err.hash', err)
+  }
+}
+
+export { toggleTheme } from '@/theme'
+
+/** Abre um terminal novo (o shell do usuário, na pasta pessoal) no painel abaixo do documento. */
+export const openTerminal = (): void => void createTerminal().catch((err) => reportError('err.terminal', err))
 
 export const zoomIn = (): void => useView.getState().zoomFont(1)
 export const zoomOut = (): void => useView.getState().zoomFont(-1)
@@ -261,6 +354,7 @@ export const saveToCloudDialog = (): void => {
   if (doc) void requestCloudSave(doc)
 }
 
+export const manageSubscription = (): void => void window.api.accountManageSubscription().catch((err) => reportError('err.manageSubscription', err))
 export const openSupport = (): void => void window.api.openSupport().catch((err) => reportError('err.openSupport', err))
 export const openManual = (): void => void window.api.openManual().catch((err) => reportError('err.openManual', err))
 export const openShortcuts = (): void => useDialogs.getState().show('shortcuts')

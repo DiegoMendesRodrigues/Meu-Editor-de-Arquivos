@@ -158,7 +158,7 @@ export function JsonViewer({ content, onEdit }: { content: string; onEdit: (line
 
   if (!parsed.ok) {
     return (
-      <div className="grid h-full place-items-center bg-white p-6">
+      <div className="grid h-full place-items-center bg-surface p-6">
         <div className="max-w-lg rounded-md border border-amber-300 bg-amber-50 p-4 text-zinc-800">
           <p className="mb-1 flex items-center gap-2 font-semibold">
             <TriangleAlert size={16} className="text-amber-600" /> {t('json.invalid')}
@@ -170,7 +170,7 @@ export function JsonViewer({ content, onEdit }: { content: string; onEdit: (line
           <button
             type="button"
             onClick={() => onEdit(parsed.line, parsed.column)}
-            className="flex items-center gap-1.5 rounded border border-border bg-white px-3 py-1.5 hover:bg-zinc-100"
+            className="flex items-center gap-1.5 rounded border border-border bg-surface px-3 py-1.5 hover:bg-zinc-100"
           >
             <Pencil size={14} /> {parsed.line !== undefined ? t('json.editGoToError') : t('toolbar.editText')}
           </button>
@@ -182,7 +182,7 @@ export function JsonViewer({ content, onEdit }: { content: string; onEdit: (line
   const selectedValue = selected ? getAtPath(parsed.value, selected) : undefined
 
   return (
-    <div className="flex h-full flex-col bg-white">
+    <div className="flex h-full flex-col bg-surface">
       <div className="flex h-9 shrink-0 items-center gap-1 border-b border-border bg-chrome px-2 text-[13px]">
         <ToolButton icon={ChevronsUpDown} label={t('menu.view.unfoldAll')} onClick={() => expandAll('all')} />
         <ToolButton icon={ChevronsDownUp} label={t('menu.view.foldAll')} onClick={() => expandAll('none')} />

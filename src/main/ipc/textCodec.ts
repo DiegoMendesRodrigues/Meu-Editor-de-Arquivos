@@ -1,13 +1,18 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import type { Encoding, Eol } from '@shared/ipc'
+import { fromStoredText, predominantEol } from '@shared/eol'
 
 const UTF8_BOM = Buffer.from([0xef, 0xbb, 0xbf])
 
-/** Decodifica um arquivo de texto, detectando BOM UTF-8 e o tipo de quebra de linha. */
+/**
+ * Decodifica um arquivo de texto, detectando BOM UTF-8 e o tipo de quebra de linha.
+ * Arquivos no formato Mac (CR) chegam com LF; a conversão de volta é feita ao gravar.
+ */
 export function decodeText(buf: Buffer): { content: string; encoding: Encoding; eol: Eol } {
   const hasBom = buf.length >= 3 && buf.subarray(0, 3).equals(UTF8_BOM)
-  const content = (hasBom ? buf.subarray(3) : buf).toString('utf8')
-  return { content, encoding: hasBom ? 'UTF-8 BOM' : 'UTF-8', eol: detectEol(content) }
+  const raw = (hasBom ? buf.subarray(3) : buf).toString('utf8')
+  const eol = detectEol(raw)
+  return { content: fromStoredText(raw, eol), encoding: hasBom ? 'UTF-8 BOM' : 'UTF-8', eol }
 }
 
 export function encodeText(content: string, encoding: Encoding): Buffer {
@@ -17,8 +22,5 @@ export function encodeText(content: string, encoding: Encoding): Buffer {
 
 /** Usa a quebra de linha predominante; arquivos sem quebra seguem o padrão da plataforma. */
 export function detectEol(content: string): Eol {
-  const crlf = (content.match(/\r\n/g) ?? []).length
-  const lf = (content.match(/\n/g) ?? []).length - crlf
-  if (crlf === 0 && lf === 0) return process.platform === 'win32' ? 'CRLF' : 'LF'
-  return crlf > lf ? 'CRLF' : 'LF'
+  return predominantEol(content) ?? (process.platform === 'win32' ? 'CRLF' : 'LF')
 }

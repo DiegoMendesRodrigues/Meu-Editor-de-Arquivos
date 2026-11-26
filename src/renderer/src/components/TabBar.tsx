@@ -24,7 +24,7 @@ export function TabBar() {
             onClick={() => setActive(d.id)}
             onAuxClick={(e) => e.button === 1 && void closeFile(d.id)}
             className={`group flex min-w-0 max-w-56 cursor-default items-center gap-2 border-r border-border px-3 ${
-              active ? 'border-t-2 border-t-accent bg-white' : 'border-t-2 border-t-transparent hover:bg-zinc-200'
+              active ? 'border-t-2 border-t-accent bg-surface' : 'border-t-2 border-t-transparent hover:bg-zinc-200'
             }`}
           >
             <span className={`truncate ${d.missingOnDisk ? 'text-red-600 line-through' : ''}`}>{d.name}</span>

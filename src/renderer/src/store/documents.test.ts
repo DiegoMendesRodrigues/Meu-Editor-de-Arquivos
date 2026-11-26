@@ -38,6 +38,16 @@ describe('conversões do documento', () => {
     expect(isDirty(doc())).toBe(false)
   })
 
+  it('converter para Mac (CR) mantém LF no app e marca como alterado até salvar', () => {
+    useDocuments.getState().addOpenedFiles([file])
+    useDocuments.getState().setEol(doc().id, 'CR')
+    expect(doc().content).toBe('um\ndois\n')
+    expect(doc().eol).toBe('CR')
+    expect(isDirty(doc())).toBe(true)
+    useDocuments.getState().markSaved(doc().id, { path: '/p/a.md', name: 'a.md', size: 8 }, doc().content)
+    expect(isDirty(doc())).toBe(false)
+  })
+
   it('converter codificação marca como alterado até salvar', () => {
     useDocuments.getState().addOpenedFiles([file])
     useDocuments.getState().setEncoding(doc().id, 'UTF-8 BOM')
