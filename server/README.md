@@ -44,6 +44,9 @@ No app: menu **Conta → Entrar ou criar conta**, informe o endereço da API (`h
   o servidor não inicia sem SMTP e `DATABASE_URL`.
 - Trocar ou redefinir a senha encerra as outras sessões.
 - Arquivos isolados por usuário; sincronização com controle de versão (409 em conflito).
+- Cadastro pelo site (`POST /v1/site/signup`, `GET /v1/site/users/:id/subscription`): só com o cabeçalho `X-Site-Key` igual a `SITE_API_KEY` (mínimo de 32 caracteres; sem ele, as rotas respondem 503). O site informa o IP do visitante em `X-Client-IP`, e o limite de tentativas vale por visitante. E-mail que já tem conta só recebe o plano com a senha dessa conta (mesmos limites do login).
+- Webhook da Stripe (`POST /v1/billing/stripe-webhook`): só com `STRIPE_WEBHOOK_SECRET` (`whsec_...`); a assinatura `Stripe-Signature` é conferida no corpo cru (HMAC-SHA256, até 5 minutos de diferença). Eventos: `checkout.session.completed`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.updated` e `customer.subscription.deleted`. Repetir um evento não muda nada, e a data do próximo pagamento só avança.
+- Assinatura cancelada ou com cobrança recusada mantém o plano até o fim do período pago (`next_payment_at`) e só então volta ao Gratuito (tarefa de hora em hora; assinatura ativa sem renovação espera 2 dias de tolerância).
 - O limite de tentativas é em memória (uma instância). Com várias instâncias, mova-o para um armazenamento compartilhado.
 
 ## Testes
@@ -59,6 +62,10 @@ A camada MySQL (`src/db/mysql.ts`) ainda **não foi testada contra um servidor r
 
 `POST /v1/auth/register`, `/login`, `/logout`, `/password-reset/request`, `/password-reset/confirm`;
 `PATCH /v1/folders` (renomear pasta: `{from, to}`; leva arquivos e subpastas; 409 `folder_in_use` se o destino existe), `GET|PATCH /v1/me`, `POST /v1/me/password`, `GET /v1/me/storage` (`{ storageBytes, storedFiles, plan: { name, maxFiles, maxSizeMb } }`: espaço usado na nuvem em bytes (arquivos + textos não salvos), número de arquivos e plano; `storageBytes` e `storedFiles` também vêm nas respostas de `PUT /v1/files`, `DELETE /v1/files/:id` e `PUT /v1/workspace`); `GET /v1/files`, `GET /v1/files/:id`, `PUT /v1/files`, `DELETE /v1/files/:id`.
+
+Só para o site (`X-Site-Key`): `POST /v1/site/signup` (`{ email, name, password, plan, period? }`; plano pago exige `period` mensal, semestral ou anual e fica `pending` até o pagamento; 201 conta nova, 200 conta existente; erros `invalid_credentials`, `subscription_active`, `plan_not_found`, `too_many_attempts`) `GET /v1/site/users/:id/subscription` e `POST /v1/site/subscription/confirm` (o site repassa a assinatura de uma Checkout Session que ele conferiu na Stripe, com status `complete` e o `client_reference_id` do cadastro; libera o plano na hora, sem esperar o webhook). Stripe: `POST /v1/billing/stripe-webhook`.
+
+Colunas da assinatura em `users`: `subscription_period`, `subscription_status` (pending, active, canceled, payment_failed, ended), `subscription_active`, `last_payment_at`, `next_payment_at`, `stripe_customer_id` e `stripe_subscription_id` (script para o phpMyAdmin em `src/db/migrations/2026-11-assinaturas.sql`).
 
 ## Pacote de instalação
 

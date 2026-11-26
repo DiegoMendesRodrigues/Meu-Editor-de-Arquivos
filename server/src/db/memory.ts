@@ -1,8 +1,28 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { randomUUID } from 'node:crypto'
-import type { FileMeta, RemoteFile, Store, Usage, User, Workspace } from './store.js'
+import type { FileMeta, RemoteFile, Store, Subscription, Usage, User, Workspace } from './store.js'
 
 const meta = ({ content: _c, ...m }: RemoteFile): FileMeta => m
+
+/** Planos da memória, iguais aos do banco de produção (users_groups). */
+const PLANS = new Map<number, { name: string; maxFiles: number; maxSizeMb: number }>([
+  [1, { name: 'Gratuito', maxFiles: 100, maxSizeMb: 5 }],
+  [2, { name: 'Explorador', maxFiles: 500, maxSizeMb: 25 }],
+  [3, { name: 'Criador', maxFiles: 1000, maxSizeMb: 50 }],
+  [4, { name: 'Mestre', maxFiles: 2000, maxSizeMb: 100 }]
+])
+
+type SubscriptionRow = Omit<Subscription, 'planName'>
+const newSubscription = (): SubscriptionRow => ({
+  usersGroupsId: 1,
+  period: null,
+  status: null,
+  active: false,
+  lastPaymentAt: null,
+  nextPaymentAt: null,
+  stripeCustomerId: null,
+  stripeSubscriptionId: null
+})
 
 /** Implementação em memória: usada nos testes e para experimentar o app sem um servidor SQL. */
 export function createMemoryStore(): Store {
@@ -13,6 +33,12 @@ export function createMemoryStore(): Store {
   const folders = new Map<string, Set<string>>() // usuário -> pastas criadas
   const workspaces = new Map<string, Workspace>()
   const usage = new Map<string, Usage>() // usuário -> uso gravado (bytes e arquivos)
+  const subscriptions = new Map<string, SubscriptionRow>() // usuário -> plano e assinatura
+  const subscriptionOf = (userId: string): SubscriptionRow => {
+    let sub = subscriptions.get(userId)
+    if (!sub) subscriptions.set(userId, (sub = newSubscription()))
+    return sub
+  }
   const userFolders = (userId: string): Set<string> => {
     let set = folders.get(userId)
     if (!set) folders.set(userId, (set = new Set()))
@@ -166,9 +192,8 @@ export function createMemoryStore(): Store {
       return { ok: true, workspace: { ...w } }
     },
     async getUsage(userId) {
-      // Todo usuário da memória está no grupo 1 (Gratuito), como no banco.
       const u = usage.get(userId) ?? { storageBytes: 0, storedFiles: 0 }
-      return { ...u, plan: { name: 'Gratuito', maxFiles: 100, maxSizeMb: 5 } }
+      return { ...u, plan: { ...PLANS.get(subscriptionOf(userId).usersGroupsId)! } }
     },
     async refreshUsage(userId) {
       let storageBytes = Buffer.byteLength(workspaces.get(userId)?.data ?? '', 'utf8')
@@ -181,6 +206,38 @@ export function createMemoryStore(): Store {
       const total = { storageBytes, storedFiles }
       usage.set(userId, total)
       return { ...total }
+    },
+    async planExists(usersGroupsId) {
+      return PLANS.has(usersGroupsId)
+    },
+    async getSubscription(userId) {
+      if (!users.has(userId)) return null
+      const sub = subscriptionOf(userId)
+      return { ...sub, planName: PLANS.get(sub.usersGroupsId)!.name }
+    },
+    async updateSubscription(userId, update) {
+      if (!users.has(userId)) return
+      const sub = subscriptionOf(userId)
+      const { nextPaymentAt, ...rest } = update
+      for (const [k, v] of Object.entries(rest)) if (v !== undefined) (sub as unknown as Record<string, unknown>)[k] = v
+      if (nextPaymentAt !== undefined) {
+        sub.nextPaymentAt = nextPaymentAt && sub.nextPaymentAt && sub.nextPaymentAt > nextPaymentAt ? sub.nextPaymentAt : nextPaymentAt
+      }
+    },
+    async findUserIdByStripeSubscription(stripeSubscriptionId) {
+      for (const [id, sub] of subscriptions) if (sub.stripeSubscriptionId === stripeSubscriptionId) return id
+      return null
+    },
+    async expireSubscriptions(now, graceMs) {
+      let n = 0
+      for (const sub of subscriptions.values()) {
+        if (!sub.active || !sub.nextPaymentAt) continue
+        const lapsed = sub.status === 'active' ? sub.nextPaymentAt.getTime() + graceMs < now.getTime() : sub.nextPaymentAt <= now
+        if (!lapsed) continue
+        Object.assign(sub, { usersGroupsId: 1, active: false, status: 'ended' })
+        n++
+      }
+      return n
     },
     async purgeExpired(now) {
       for (const [h, s] of sessions) if (s.expiresAt < now) sessions.delete(h)

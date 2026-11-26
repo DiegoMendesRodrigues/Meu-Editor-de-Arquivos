@@ -2,7 +2,7 @@
 import { randomUUID } from 'node:crypto'
 import mysql, { type Pool, type PoolConnection, type ResultSetHeader, type RowDataPacket } from 'mysql2/promise'
 import { ADMIN_UPSERT_SQL, adminSeed } from './admin.js'
-import type { DeleteFolderResult, FileMeta, MoveResult, PutWorkspaceResult, RemoteFile, RenameFolderResult, Store, UpsertResult, User, Workspace } from './store.js'
+import type { DeleteFolderResult, FileMeta, MoveResult, PutWorkspaceResult, RemoteFile, RenameFolderResult, Store, Subscription, SubscriptionUpdate, UpsertResult, User, Workspace } from './store.js'
 
 /**
  * Espaço usado por um usuário: tamanho dos arquivos (bytes UTF-8, coluna size) + área de trabalho
@@ -260,6 +260,62 @@ export function createMysqlStore(uri: string): Store {
       const [rows] = await pool.execute<RowDataPacket[]>('SELECT storage_bytes, stored_files FROM users WHERE id = ?', [userId])
       return { storageBytes: Number(rows[0]?.storage_bytes ?? 0), storedFiles: Number(rows[0]?.stored_files ?? 0) }
     },
+    async planExists(usersGroupsId) {
+      const [rows] = await pool.execute<RowDataPacket[]>('SELECT 1 FROM users_groups WHERE id = ?', [usersGroupsId])
+      return rows.length > 0
+    },
+    async getSubscription(userId): Promise<Subscription | null> {
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `SELECT u.users_groups_id, g.name, u.subscription_period, u.subscription_status, u.subscription_active,
+                u.last_payment_at, u.next_payment_at, u.stripe_customer_id, u.stripe_subscription_id
+           FROM users u JOIN users_groups g ON g.id = u.users_groups_id WHERE u.id = ?`,
+        [userId]
+      )
+      const r = rows[0]
+      if (!r) return null
+      return {
+        usersGroupsId: Number(r.users_groups_id),
+        planName: String(r.name),
+        period: r.subscription_period ?? null,
+        status: r.subscription_status ?? null,
+        active: Number(r.subscription_active) === 1,
+        lastPaymentAt: r.last_payment_at ?? null,
+        nextPaymentAt: r.next_payment_at ?? null,
+        stripeCustomerId: r.stripe_customer_id ?? null,
+        stripeSubscriptionId: r.stripe_subscription_id ?? null
+      }
+    },
+    async updateSubscription(userId, update) {
+      // Só as colunas da lista fixa entram no SQL; os valores vão como parâmetros.
+      const sets: string[] = []
+      const values: unknown[] = []
+      for (const [key, column] of Object.entries(SUBSCRIPTION_COLUMNS) as [keyof SubscriptionUpdate, string][]) {
+        const value = update[key]
+        if (value === undefined) continue
+        if (key === 'nextPaymentAt' && value !== null) {
+          sets.push(`${column} = GREATEST(COALESCE(${column}, ?), ?)`)
+          values.push(value, value)
+        } else {
+          sets.push(`${column} = ?`)
+          values.push(key === 'active' ? (value ? 1 : 0) : value)
+        }
+      }
+      if (sets.length === 0) return
+      await pool.execute(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`, [...values, userId] as never[])
+    },
+    async findUserIdByStripeSubscription(stripeSubscriptionId) {
+      const [rows] = await pool.execute<RowDataPacket[]>('SELECT id FROM users WHERE stripe_subscription_id = ?', [stripeSubscriptionId])
+      return rows[0]?.id ?? null
+    },
+    async expireSubscriptions(now, graceMs) {
+      const [res] = await pool.execute<ResultSetHeader>(
+        `UPDATE users SET users_groups_id = 1, subscription_active = 0, subscription_status = 'ended'
+          WHERE subscription_active = 1 AND next_payment_at IS NOT NULL
+            AND ((subscription_status = 'active' AND next_payment_at < ?) OR (subscription_status <> 'active' AND next_payment_at <= ?))`,
+        [new Date(now.getTime() - graceMs), now]
+      )
+      return res.affectedRows
+    },
     async purgeExpired(now) {
       await pool.execute('DELETE FROM sessions WHERE expires_at < ?', [now])
       await pool.execute('DELETE FROM password_resets WHERE expires_at < ? OR used_at IS NOT NULL', [now])
@@ -272,6 +328,29 @@ export function createMysqlStore(uri: string): Store {
 
 const FILE_COUNT = '(SELECT COUNT(*) FROM files WHERE user_id = ?)'
 
+/** Colunas de assinatura em users (nome no código -> coluna). */
+const SUBSCRIPTION_COLUMNS: Record<keyof SubscriptionUpdate, string> = {
+  usersGroupsId: 'users_groups_id',
+  period: 'subscription_period',
+  status: 'subscription_status',
+  active: 'subscription_active',
+  lastPaymentAt: 'last_payment_at',
+  nextPaymentAt: 'next_payment_at',
+  stripeCustomerId: 'stripe_customer_id',
+  stripeSubscriptionId: 'stripe_subscription_id'
+}
+
+/** Colunas novas de users para as assinaturas (ALTER TABLE em bancos já existentes). */
+const SUBSCRIPTION_DDL: [string, string][] = [
+  ['subscription_period', "VARCHAR(10) NULL COMMENT 'mensal, semestral ou anual'"],
+  ['subscription_status', "VARCHAR(20) NULL COMMENT 'pending, active, canceled, payment_failed ou ended'"],
+  ['subscription_active', "TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'No período pago'"],
+  ['last_payment_at', "DATETIME(3) NULL COMMENT 'Data do último pagamento'"],
+  ['next_payment_at', "DATETIME(3) NULL COMMENT 'Data do próximo pagamento (fim do período pago)'"],
+  ['stripe_customer_id', 'VARCHAR(255) NULL'],
+  ['stripe_subscription_id', 'VARCHAR(255) NULL']
+]
+
 async function columnExists(conn: mysql.Connection, table: string, column: string): Promise<boolean> {
   const [rows] = await conn.query<RowDataPacket[]>(
     'SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?',
@@ -282,7 +361,8 @@ async function columnExists(conn: mysql.Connection, table: string, column: strin
 
 /**
  * Aplica o esquema (CREATE TABLE IF NOT EXISTS) e as colunas novas em bancos já existentes
- * (storage_bytes, da 1.1.0; last_access, users_groups_id e stored_files, dos planos), de forma idempotente,
+ * (storage_bytes, da 1.1.0; last_access, users_groups_id e stored_files, dos planos; semestral, valor semestral;
+ * colunas de assinatura da Stripe em users), de forma idempotente,
  * recalculando o uso de todos os usuários. Se ADMIN_NAME, ADMIN_EMAIL e ADMIN_PASSWORD estiverem
  * definidos, cadastra (ou atualiza) o administrador. Devolve se o administrador foi gravado.
  */
@@ -298,7 +378,17 @@ export async function migrate(uri: string, sql: string, env: Record<string, stri
     }
     // A coluna nova com DEFAULT 1 já preenche as linhas existentes com o grupo Gratuito.
     if (!(await columnExists(conn, 'users', 'users_groups_id'))) await conn.query('ALTER TABLE users ADD COLUMN users_groups_id INT UNSIGNED NOT NULL DEFAULT 1')
+    if (!(await columnExists(conn, 'users_groups', 'semestral'))) {
+      await conn.query("ALTER TABLE users_groups ADD COLUMN semestral DECIMAL(5,2) NOT NULL DEFAULT 0.00 COMMENT 'Valor semestral' AFTER monthly_amount")
+    }
     if (!(await columnExists(conn, 'users', 'stored_files'))) await conn.query('ALTER TABLE users ADD COLUMN stored_files INT UNSIGNED NOT NULL DEFAULT 0')
+    for (const [column, ddl] of SUBSCRIPTION_DDL) {
+      if (!(await columnExists(conn, 'users', column))) await conn.query(`ALTER TABLE users ADD COLUMN ${column} ${ddl}`)
+    }
+    const [ix] = await conn.query<RowDataPacket[]>(
+      "SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND INDEX_NAME = 'ix_users_stripe_subscription'"
+    )
+    if (ix.length === 0) await conn.query('ALTER TABLE users ADD KEY ix_users_stripe_subscription (stripe_subscription_id)')
     const [fks] = await conn.query<RowDataPacket[]>(
       "SELECT 1 FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND CONSTRAINT_NAME = 'fk_users_group' AND CONSTRAINT_TYPE = 'FOREIGN KEY'"
     )

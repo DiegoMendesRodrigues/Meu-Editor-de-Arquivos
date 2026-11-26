@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS users_groups (
   max_size_mb                MEDIUMINT UNSIGNED NOT NULL COMMENT 'Espaço máximo (MB)',
   waiting_time_for_deletion  SMALLINT UNSIGNED  NOT NULL DEFAULT 30 COMMENT 'Dias de espera para excluir',
   monthly_amount             DECIMAL(5,2)       NOT NULL DEFAULT 0.00 COMMENT 'Valor mensal',
+  semestral                  DECIMAL(5,2)       NOT NULL DEFAULT 0.00 COMMENT 'Valor semestral',
   annual_value               DECIMAL(5,2)       NOT NULL DEFAULT 0.00 COMMENT 'Valor anual',
   visible_to_the_user        TINYINT(1)         NOT NULL DEFAULT 1 COMMENT 'Visível ao usuário'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

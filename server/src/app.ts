@@ -1,7 +1,10 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest, type FastifyServerOptions } from 'fastify'
+import { isIP } from 'node:net'
+import { timingSafeEqual } from 'node:crypto'
 import { z } from 'zod'
-import type { Store, User } from './db/store.js'
+import { applyStripeEvent, verifyStripeSignature } from './billing.js'
+import type { Store, Subscription, User } from './db/store.js'
 import { hashPassword, hashToken, newToken, verifyPassword } from './security.js'
 
 export interface Mailer {
@@ -23,6 +26,12 @@ export interface AppOptions {
   /** true (confia em todos os proxies), número de saltos ou lista de IPs/CIDRs dos proxies de confiança. */
   trustProxy?: boolean | number | string[]
   logger?: boolean
+  /** Chave que o site envia (X-Site-Key) para cadastrar usuários e consultar assinaturas. Sem ela, essas rotas ficam desligadas. */
+  siteKey?: string
+  /** Segredo do endpoint de webhook da Stripe (whsec_...). Sem ele, o webhook fica desligado. */
+  stripeWebhookSecret?: string
+  /** Tolerância para a renovação chegar depois de nextPaymentAt antes de voltar ao Gratuito (padrão: 2 dias). */
+  subscriptionGraceMs?: number
 }
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024
@@ -58,6 +67,14 @@ const profileSchema = z.object({ name: nameSchema })
 const changePasswordSchema = z.object({ currentPassword: z.string().min(1).max(200), newPassword: passwordSchema })
 const resetRequestSchema = z.object({ email: emailSchema })
 const resetConfirmSchema = z.object({ token: z.string().min(10).max(200), newPassword: passwordSchema })
+/** Cadastro feito pelo site (página de planos): plano escolhido e, nos pagos, o período da assinatura. */
+const siteSignupSchema = z.object({
+  email: emailSchema,
+  name: nameSchema,
+  password: z.string().min(1).max(200),
+  plan: z.number().int().min(1).max(1000),
+  period: z.enum(['mensal', 'semestral', 'anual']).optional()
+})
 const putFileSchema = z.object({
   path: cloudPathSchema,
   content: z.string(),
@@ -77,6 +94,22 @@ class HttpError extends Error {
 }
 
 const publicUser = (u: User) => ({ id: u.id, email: u.email, name: u.name, createdAt: u.createdAt.toISOString() })
+
+const publicSubscription = (s: Subscription) => ({
+  plan: { id: s.usersGroupsId, name: s.planName },
+  period: s.period,
+  status: s.status,
+  active: s.active,
+  lastPaymentAt: s.lastPaymentAt?.toISOString() ?? null,
+  nextPaymentAt: s.nextPaymentAt?.toISOString() ?? null
+})
+
+/** Comparação de textos em tempo constante (chave do site). */
+const sameSecret = (a: string, b: string): boolean => {
+  const x = Buffer.from(a, 'utf8')
+  const y = Buffer.from(b, 'utf8')
+  return x.length === y.length && timingSafeEqual(x, y)
+}
 
 const fileMeta = (f: { id: string; path: string; encoding: string; version: number; size: number; updatedAt: Date }) => ({
   id: f.id,
@@ -160,6 +193,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   // Erros de login por e-mail, de qualquer IP: segura tentativas distribuídas (ou com IP forjado) contra uma conta.
   const emailFailures = new Map<string, { count: number; resetAt: number }>()
   const resetRequests = new Map<string, { count: number; resetAt: number }>()
+  const siteRequests = new Map<string, { count: number; resetAt: number }>()
   const blocked = (key: string, email: string): boolean => over(failures, key, maxAttempts) || over(emailFailures, email, maxAttempts * 4)
   const fail = (key: string, email: string): void => {
     count(failures, key)
@@ -177,15 +211,22 @@ export function buildApp(opts: AppOptions): FastifyInstance {
   // Limpa os contadores vencidos (sem isso, a memória cresceria com cada IP/e-mail novo).
   const prune = setInterval(() => {
     const now = Date.now()
-    for (const map of [failures, authRequests, emailFailures, resetRequests]) for (const [key, f] of map) if (f.resetAt < now) map.delete(key)
+    for (const map of [failures, authRequests, emailFailures, resetRequests, siteRequests]) for (const [key, f] of map) if (f.resetAt < now) map.delete(key)
     for (const [id, at] of lastTouch) if (now - at > 60_000) lastTouch.delete(id)
   }, 60_000)
   prune.unref()
   app.addHook('onClose', async () => clearInterval(prune))
 
-  // Sessões e códigos de redefinição vencidos saem do banco de hora em hora.
+  // Sessões e códigos de redefinição vencidos saem do banco de hora em hora; no mesmo passo, quem passou do
+  // fim do período pago sem renovar volta ao plano Gratuito.
+  const graceMs = opts.subscriptionGraceMs ?? 2 * 24 * 3600 * 1000
   const purge = setInterval(() => {
-    store.purgeExpired(new Date()).catch((err) => app.log.error({ err }, 'Falha ao remover sessões vencidas'))
+    const now = new Date()
+    store.purgeExpired(now).catch((err) => app.log.error({ err }, 'Falha ao remover sessões vencidas'))
+    store
+      .expireSubscriptions(now, graceMs)
+      .then((n) => n > 0 && app.log.info({ n }, 'Assinaturas encerradas: plano Gratuito'))
+      .catch((err) => app.log.error({ err }, 'Falha ao encerrar assinaturas vencidas'))
   }, 3600_000)
   purge.unref()
   app.addHook('onClose', async () => clearInterval(purge))
@@ -472,6 +513,128 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     const { id } = z.object({ id: z.string().min(1).max(64) }).parse(req.params)
     if (!(await store.deleteFile(req.user!.id, id))) throw new HttpError(404, 'not_found', 'Arquivo não encontrado.')
     return { ...(await refreshUsage(req.user!.id)) }
+  })
+
+  // ---- Site: cadastro pela página de planos e consulta da assinatura ----
+  // Só o servidor do site conhece a chave (X-Site-Key). Ele informa o IP do visitante em X-Client-IP, para o
+  // limite de tentativas valer por visitante (todas as chamadas saem do mesmo servidor).
+  const siteAuth = async (req: FastifyRequest): Promise<void> => {
+    if (!opts.siteKey) throw new HttpError(503, 'site_signup_disabled', 'Cadastro pelo site indisponível.')
+    const key = req.headers['x-site-key']
+    if (typeof key !== 'string' || !sameSecret(key, opts.siteKey)) throw new HttpError(401, 'unauthorized', 'Não autorizado.')
+  }
+  const visitorIp = (req: FastifyRequest): string => {
+    const ip = req.headers['x-client-ip']
+    return typeof ip === 'string' && isIP(ip) ? ip : req.ip
+  }
+  const siteLimited = async (req: FastifyRequest): Promise<void> => {
+    await siteAuth(req)
+    const ip = visitorIp(req)
+    if (over(siteRequests, ip, maxAuthRequests)) throw tooMany()
+    count(siteRequests, ip)
+  }
+
+  app.post('/v1/site/signup', { onRequest: siteLimited }, async (req, reply) => {
+    const body = siteSignupSchema.parse(req.body)
+    if (!(await store.planExists(body.plan))) throw new HttpError(404, 'plan_not_found', 'Plano não encontrado.')
+    const paid = body.plan !== 1
+    if (paid && !body.period) throw new HttpError(400, 'invalid_request', 'Informe o período da assinatura.')
+
+    let user = await store.findUserByEmail(body.email)
+    let created = false
+    if (user) {
+      // Conta existente: só com a senha dela (mesmos limites do login).
+      const key = `${visitorIp(req)}|${body.email}`
+      if (blocked(key, body.email)) throw tooMany()
+      if (!(await verifyPassword(body.password, user.passwordHash))) {
+        fail(key, body.email)
+        throw new HttpError(401, 'invalid_credentials', 'Este e-mail já tem uma conta e a senha não confere.')
+      }
+      failures.delete(key)
+    } else {
+      const password = passwordSchema.parse(body.password)
+      user = await store.createUser({ email: body.email, name: body.name, passwordHash: await hashPassword(password) })
+      if (!user) throw new HttpError(409, 'email_in_use', 'Já existe uma conta com este e-mail.')
+      created = true
+    }
+
+    if (paid) {
+      const sub = await store.getSubscription(user.id)
+      // Já está num período pago: não abre outra assinatura por cima.
+      if (sub?.active && sub.usersGroupsId !== 1) throw new HttpError(409, 'subscription_active', 'Esta conta já tem uma assinatura ativa.')
+      await store.updateSubscription(user.id, { status: 'pending', period: body.period })
+    }
+    const sub = await store.getSubscription(user.id)
+    return reply.status(created ? 201 : 200).send({ userId: user.id, created, subscription: sub ? publicSubscription(sub) : null })
+  })
+
+  app.get('/v1/site/users/:id/subscription', { onRequest: siteAuth }, async (req) => {
+    const { id } = z.object({ id: z.string().uuid() }).parse(req.params)
+    const sub = await store.getSubscription(id)
+    if (!sub) throw new HttpError(404, 'not_found', 'Usuário não encontrado.')
+    return { subscription: publicSubscription(sub) }
+  })
+
+  // Confirmação pelo site logo depois do pagamento: o site conferiu a Checkout Session na API da Stripe (status
+  // "complete" e client_reference_id do próprio cadastro) e repassa os dados da assinatura. Libera o plano na hora,
+  // sem esperar o webhook (que continua cuidando das renovações, falhas e cancelamentos).
+  const siteConfirmSchema = z.object({
+    userId: z.string().uuid(),
+    plan: z.number().int().min(2).max(1000),
+    period: z.enum(['mensal', 'semestral', 'anual']),
+    stripeCustomerId: z.string().regex(/^cus_[A-Za-z0-9]{1,250}$/).optional(),
+    stripeSubscriptionId: z.string().regex(/^sub_[A-Za-z0-9]{1,250}$/),
+    paidAt: z.number().int().positive().optional(),
+    periodEnd: z.number().int().positive()
+  })
+  app.post('/v1/site/subscription/confirm', { onRequest: siteAuth }, async (req) => {
+    const body = siteConfirmSchema.parse(req.body)
+    if (!(await store.planExists(body.plan))) throw new HttpError(404, 'plan_not_found', 'Plano não encontrado.')
+    const current = await store.getSubscription(body.userId)
+    if (!current) throw new HttpError(404, 'not_found', 'Usuário não encontrado.')
+    const owner = await store.findUserIdByStripeSubscription(body.stripeSubscriptionId)
+    if (owner && owner !== body.userId) throw new HttpError(409, 'subscription_in_use', 'Assinatura de outra conta.')
+    await store.updateSubscription(body.userId, {
+      usersGroupsId: body.plan,
+      period: body.period,
+      active: true,
+      status: 'active',
+      lastPaymentAt: new Date((body.paidAt ?? Math.floor(Date.now() / 1000)) * 1000),
+      nextPaymentAt: new Date(body.periodEnd * 1000),
+      stripeSubscriptionId: body.stripeSubscriptionId,
+      stripeCustomerId: body.stripeCustomerId
+    })
+    req.log.info(`Site: assinatura confirmada (plano ${body.plan}, ${body.period})`)
+    const sub = await store.getSubscription(body.userId)
+    return { subscription: sub ? publicSubscription(sub) : null }
+  })
+
+  // ---- Stripe: webhook das assinaturas (corpo cru, para conferir a assinatura) ----
+  app.register(async (stripe) => {
+    stripe.addContentTypeParser('application/json', { parseAs: 'string', bodyLimit: 512 * 1024 }, (_req, body, done) => done(null, body))
+    stripe.post('/v1/billing/stripe-webhook', async (req, reply) => {
+      if (!opts.stripeWebhookSecret) throw new HttpError(503, 'billing_disabled', 'Webhook indisponível.')
+      const raw = typeof req.body === 'string' ? req.body : ''
+      const signature = req.headers['stripe-signature']
+      if (!verifyStripeSignature(raw, typeof signature === 'string' ? signature : undefined, opts.stripeWebhookSecret)) {
+        // A hospedagem só guarda o texto da mensagem no log: o motivo vai no próprio texto (sem o segredo).
+        req.log.warn(
+          `Stripe webhook recusado: assinatura inválida (cabeçalho ${typeof signature === 'string' ? 'presente' : 'ausente'}, ` +
+            `corpo ${raw.length} caracteres, content-type ${String(req.headers['content-type'] ?? '')})`
+        )
+        throw new HttpError(400, 'invalid_signature', 'Assinatura inválida.')
+      }
+      let event: unknown
+      try {
+        event = JSON.parse(raw)
+      } catch {
+        throw new HttpError(400, 'invalid_request', 'JSON inválido.')
+      }
+      const e = event && typeof event === 'object' ? (event as Record<string, unknown>) : {}
+      req.log.info(`Stripe webhook recebido: ${String(e.type ?? '?')} (livemode ${String(e.livemode ?? '?')})`)
+      await applyStripeEvent(store, event, req.log)
+      return reply.status(200).send({ received: true })
+    })
   })
 
   return app

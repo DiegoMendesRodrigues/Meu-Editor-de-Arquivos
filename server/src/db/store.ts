@@ -11,6 +11,42 @@ export interface User {
   lastAccess?: Date
 }
 
+/** Período de cobrança da assinatura. */
+export type SubscriptionPeriod = 'mensal' | 'semestral' | 'anual'
+/**
+ * Estado da assinatura: pending (cadastrado, aguardando o pagamento), active (paga e renovando),
+ * canceled (cancelada, vale até nextPaymentAt), payment_failed (cobrança falhou, vale até nextPaymentAt),
+ * ended (encerrada: o usuário voltou ao plano Gratuito).
+ */
+export type SubscriptionStatus = 'pending' | 'active' | 'canceled' | 'payment_failed' | 'ended'
+
+/** Plano e assinatura de um usuário. */
+export interface Subscription {
+  usersGroupsId: number
+  planName: string
+  period: SubscriptionPeriod | null
+  status: SubscriptionStatus | null
+  /** true enquanto o usuário está no período pago. */
+  active: boolean
+  lastPaymentAt: Date | null
+  nextPaymentAt: Date | null
+  stripeCustomerId: string | null
+  stripeSubscriptionId: string | null
+}
+
+/** Campos da assinatura que uma gravação pode mudar (os ausentes ficam como estão). */
+export interface SubscriptionUpdate {
+  usersGroupsId?: number
+  period?: SubscriptionPeriod | null
+  status?: SubscriptionStatus | null
+  active?: boolean
+  lastPaymentAt?: Date | null
+  /** Só avança: uma data anterior à gravada é ignorada (eventos da Stripe podem chegar fora de ordem). */
+  nextPaymentAt?: Date | null
+  stripeCustomerId?: string | null
+  stripeSubscriptionId?: string | null
+}
+
 /** Uso da nuvem de um usuário. */
 export interface Usage {
   storageBytes: number
@@ -110,6 +146,17 @@ export interface Store {
    * Chamado depois de cada gravação ou exclusão; devolve os novos totais.
    */
   refreshUsage(userId: string): Promise<Usage>
+
+  /** Grupos (planos) que existem, por id. */
+  planExists(usersGroupsId: number): Promise<boolean>
+  getSubscription(userId: string): Promise<Subscription | null>
+  updateSubscription(userId: string, update: SubscriptionUpdate): Promise<void>
+  findUserIdByStripeSubscription(stripeSubscriptionId: string): Promise<string | null>
+  /**
+   * Fim do período pago: volta ao grupo 1 (Gratuito) quem passou de nextPaymentAt sem renovar
+   * (cancelada ou com cobrança falha) ou ficou mais de `graceMs` sem a renovação chegar. Devolve quantos.
+   */
+  expireSubscriptions(now: Date, graceMs: number): Promise<number>
 
   /** Remove sessões e códigos de redefinição vencidos (ou já usados). */
   purgeExpired(now: Date): Promise<void>

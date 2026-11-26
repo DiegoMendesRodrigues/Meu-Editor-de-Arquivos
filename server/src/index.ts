@@ -15,6 +15,8 @@ import { createSmtpMailer, smtpConfigFromEnv } from './mailer.js'
  *   SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS / SMTP_FROM   envio real de e-mail (porta padrão 465).
  *   AUTO_MIGRATE  "true" aplica o esquema (CREATE TABLE IF NOT EXISTS) ao iniciar; útil em hospedagem sem shell.
  *   NODE_ENV      "production" exige DATABASE_URL e SMTP configurado (não aceita o envio simulado).
+ *   SITE_API_KEY  chave secreta compartilhada com o site (cadastro pela página de planos); sem ela, a rota fica desligada.
+ *   STRIPE_WEBHOOK_SECRET  segredo do endpoint de webhook da Stripe (whsec_...); sem ele, o webhook fica desligado.
  */
 const databaseUrl = process.env.DATABASE_URL
 const host = process.env.HOST ?? '127.0.0.1'
@@ -43,6 +45,9 @@ function trustProxyFromEnv(value: string | undefined): boolean | number | string
 if (production && !databaseUrl) throw new Error('Em produção, defina DATABASE_URL.')
 const smtp = smtpConfigFromEnv(process.env)
 if (production && !smtp) throw new Error('Em produção, configure o SMTP (SMTP_HOST, SMTP_USER, SMTP_PASS).')
+// Chave curta demais seria fácil de adivinhar: a rota do site fica desligada.
+const siteKey = (process.env.SITE_API_KEY ?? '').length >= 32 ? process.env.SITE_API_KEY : undefined
+if (process.env.SITE_API_KEY && !siteKey) console.warn('SITE_API_KEY tem menos de 32 caracteres: o cadastro pelo site fica desligado.')
 if (!['127.0.0.1', 'localhost', '::1'].includes(host)) {
   console.warn(`Atenção: o servidor escuta em ${host} sem HTTPS. Use um proxy reverso com HTTPS na frente dele.`)
 }
@@ -54,7 +59,14 @@ if (databaseUrl && process.env.AUTO_MIGRATE === 'true') {
 const store = databaseUrl ? createMysqlStore(databaseUrl) : createMemoryStore()
 if (!databaseUrl) console.warn('DATABASE_URL não definida: usando armazenamento em MEMÓRIA (os dados somem ao parar o servidor).')
 
-const app = buildApp({ store, mailer: smtp ? createSmtpMailer(smtp) : consoleMailer, logger: true, trustProxy: trustProxyFromEnv(process.env.TRUST_PROXY) })
+const app = buildApp({
+  store,
+  mailer: smtp ? createSmtpMailer(smtp) : consoleMailer,
+  logger: true,
+  trustProxy: trustProxyFromEnv(process.env.TRUST_PROXY),
+  siteKey,
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || undefined
+})
 
 const shutdown = async (): Promise<void> => {
   await app.close()
