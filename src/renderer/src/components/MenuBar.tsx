@@ -285,7 +285,8 @@ export function MenuBar() {
       title: t('menu.account'),
       items: [
         account ? { label: t('menu.account.profile', { name: account.name }), action: cmd.openAccount } : { label: t('menu.account.signIn'), action: cmd.openAccount },
-        { label: t('menu.account.cloudFiles'), action: cmd.openCloudFiles }
+        { label: t('menu.account.cloudFiles'), action: cmd.openCloudFiles },
+        { label: t('menu.account.manage'), action: account ? cmd.manageSubscription : undefined }
       ]
     },
     {

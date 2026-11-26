@@ -50,6 +50,12 @@ CREATE TABLE IF NOT EXISTS users (
   next_payment_at        DATETIME(3)  NULL COMMENT 'Data do próximo pagamento (fim do período pago)',
   stripe_customer_id     VARCHAR(255) NULL,
   stripe_subscription_id VARCHAR(255) NULL,
+  previous_users_groups_id INT UNSIGNED NULL COMMENT 'Plano antes de voltar ao Gratuito (prazo da limpeza)',
+  cloud_purged_at        DATETIME(3)  NULL COMMENT 'Arquivos apagados por inatividade (aviso pendente no aplicativo)',
+  cloud_purge_days       SMALLINT UNSIGNED NULL COMMENT 'Dias sem acesso que levaram à limpeza',
+  locale                 VARCHAR(8)   NULL COMMENT 'Idioma do aplicativo (e-mails da API)',
+  expiry_notice_for      DATETIME(3)  NULL COMMENT 'Fim do período cujo aviso de vencimento o aplicativo já mostrou',
+  expiry_email_for       DATETIME(3)  NULL COMMENT 'Fim do período cujo e-mail de vencimento já foi enviado',
   UNIQUE KEY uq_users_email (email),
   KEY ix_users_stripe_subscription (stripe_subscription_id),
   CONSTRAINT fk_users_group FOREIGN KEY (users_groups_id) REFERENCES users_groups (id)
@@ -61,6 +67,15 @@ CREATE TABLE IF NOT EXISTS sessions (
   expires_at DATETIME(3) NOT NULL,
   KEY ix_sessions_user (user_id),
   CONSTRAINT fk_sessions_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS manage_tokens (
+  token_hash CHAR(64)    NOT NULL PRIMARY KEY COMMENT 'SHA-256 do token da página de gestão da assinatura',
+  user_id    CHAR(36)    NOT NULL,
+  expires_at DATETIME(3) NOT NULL,
+  used_at    DATETIME(3) NULL,
+  KEY ix_manage_tokens_user (user_id),
+  CONSTRAINT fk_manage_tokens_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS password_resets (

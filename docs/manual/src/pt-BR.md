@@ -324,7 +324,7 @@ A codificação e a quebra de linha atuais aparecem na barra de status.
 Com uma conta, você guarda arquivos na nuvem e os abre em outros computadores. Abra o menu **{{menu.account}}**.
 
 1. **Endereço do servidor:** na primeira vez, informe o endereço que sua empresa ou o administrador passou. Ele começa com `https://`.
-2. **Criar conta:** clique em **{{account.link.register}}** e preencha e-mail, nome e uma senha com pelo menos 10 caracteres.
+2. **Criar conta:** clique em **{{account.link.register}}**. O aplicativo abre a página de planos da nuvem no site, no mesmo idioma; escolha o plano (Gratuito ou pago) e cadastre e-mail, nome e uma senha com pelo menos 10 caracteres. A conta não é criada dentro do aplicativo.
 
 ![Tela de entrada](img/s16-account-login.png)
 

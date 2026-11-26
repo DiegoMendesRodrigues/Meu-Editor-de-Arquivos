@@ -1,11 +1,12 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { app, BrowserWindow, safeStorage } from 'electron'
+import { app, BrowserWindow, safeStorage, shell } from 'electron'
 import log from 'electron-log/main'
 import { z } from 'zod'
 import {
   IpcChannels,
+  type AccountNotices,
   type AccountStatus,
   type AccountUser,
   type CloudFileContent,
@@ -17,8 +18,9 @@ import {
 import { fromStoredText } from '@shared/eol'
 import { detectEol } from './textCodec'
 import type { MessageKey } from '@shared/i18n'
-import { tm } from '../i18n'
+import { currentLocale, tm } from '../i18n'
 import { handle } from './secure'
+import { manageSubscriptionUrl } from '@shared/support'
 
 /**
  * Conta de usuário e sincronização com a API intermediária.
@@ -146,6 +148,16 @@ const usageSchema = storageSchema.extend({
   plan: z.object({ name: z.string().max(20), maxFiles: count, maxSizeMb: count }).nullish()
 })
 
+const noticesSchema = z.object({
+  user: z.object({
+    cloudPurge: z.object({ at: z.string().max(40), days: z.number().int().min(1).max(36500) }).nullish(),
+    planExpiry: z
+      .object({ at: z.string().datetime({ offset: true }).max(40), days: z.number().int().min(1).max(366), plan: z.string().max(20) })
+      .nullish()
+  })
+})
+const manageLinkSchema = z.object({ token: z.string().min(1).max(500) })
+
 /** Respostas que trazem o uso da nuvem (salvar, excluir, sincronizar) atualizam o rodapé das janelas. */
 function reportStorage(json: unknown): void {
   const parsed = storageSchema.safeParse(json)
@@ -202,7 +214,17 @@ async function startSession(res: { token: string; user: AccountUser }): Promise<
   token = res.token
   user = { id: res.user.id, email: res.user.email, name: res.user.name }
   await persist()
+  reportAccountLocale()
   return status()
+}
+
+/**
+ * Informa ao servidor o idioma do aplicativo (os e-mails da API seguem esse idioma). Ao entrar, na abertura e a
+ * cada troca de idioma; sem esperar e sem erro na interface (servidores antigos não têm a rota).
+ */
+export function reportAccountLocale(): void {
+  if (!isCloudSignedIn()) return
+  void api('PUT', '/v1/me/locale', { auth: true, body: { locale: currentLocale() } }).catch(() => undefined)
 }
 
 const toMeta = (f: CloudFileMeta): CloudFileMeta => ({ id: f.id, path: f.path, version: f.version, size: f.size, updatedAt: f.updatedAt })
@@ -227,6 +249,29 @@ export async function cloudReadText(id: string): Promise<string> {
 export function registerAccountHandlers(): void {
   handle(IpcChannels.accountStatus, () => status())
 
+  handle(IpcChannels.accountNotices, async (): Promise<AccountNotices> => {
+    if (!isCloudSignedIn()) return { purge: null, expiry: null }
+    reportAccountLocale()
+    const parsed = noticesSchema.safeParse(await api<unknown>('GET', '/v1/me', { auth: true }))
+    if (!parsed.success) return { purge: null, expiry: null }
+    const { cloudPurge, planExpiry } = parsed.data.user
+    return { purge: cloudPurge ? { days: cloudPurge.days } : null, expiry: planExpiry ? { days: planExpiry.days, at: planExpiry.at, plan: planExpiry.plan } : null }
+  })
+
+  handle(IpcChannels.accountAckExpiryNotice, async () => {
+    await api('POST', '/v1/me/plan-expiry-notice', { auth: true, body: {} })
+  })
+
+  handle(IpcChannels.accountAckPurgeNotice, async () => {
+    await api('DELETE', '/v1/me/cloud-purge-notice', { auth: true })
+  })
+
+  // O endereço é montado aqui: o Renderer não escolhe a URL aberta no navegador.
+  handle(IpcChannels.accountManageSubscription, async () => {
+    const res = manageLinkSchema.parse(await api<unknown>('POST', '/v1/me/manage-link', { auth: true, body: {} }))
+    await shell.openExternal(manageSubscriptionUrl(currentLocale(), res.token))
+  })
+
   handle(IpcChannels.accountSetServer, async (_e, raw: unknown) => {
     const url = check(serverUrlSchema, raw)
     if (url !== serverUrl) {
@@ -236,11 +281,6 @@ export function registerAccountHandlers(): void {
       await persist()
     }
     return status()
-  })
-
-  handle(IpcChannels.accountRegister, async (_e, email: unknown, name: unknown, password: unknown) => {
-    const body = { email: emailSchema.parse(email), name: check(nameSchema, name), password: passwordSchema.parse(password) }
-    return startSession(await api('POST', '/v1/auth/register', { body }))
   })
 
   handle(IpcChannels.accountLogin, async (_e, email: unknown, password: unknown) => {

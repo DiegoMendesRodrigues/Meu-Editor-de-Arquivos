@@ -502,12 +502,15 @@ async function captureLocale(locale: Locale): Promise<void> {
     await page.getByRole('dialog').getByRole('button', { name: t('account.submit.server') }).click()
     await page.getByRole('button', { name: t('account.link.register') }).waitFor()
     await shot(page, img('s16-account-login'), page.getByRole('dialog'))
-    await page.getByRole('button', { name: t('account.link.register') }).click()
+    // A conta é criada no site (o aplicativo só entra): a conta de demonstração é criada direto na API de teste.
+    await fetch(`http://127.0.0.1:${API_PORT}/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: demo.user.email, name: demo.user.name, password: demo.user.password })
+    })
     await page.getByRole('dialog').getByLabel(t('account.email'), { exact: true }).fill(demo.user.email)
-    await page.getByRole('dialog').getByLabel(t('account.name'), { exact: true }).fill(demo.user.name)
-    await page.getByRole('dialog').getByLabel(t('account.newPassword'), { exact: true }).fill(demo.user.password)
-    await page.getByRole('dialog').getByLabel(t('account.repeat'), { exact: true }).fill(demo.user.password)
-    await page.getByRole('dialog').getByRole('button', { name: t('account.submit.register') }).click()
+    await page.getByRole('dialog').getByLabel(t('account.password'), { exact: true }).fill(demo.user.password)
+    await page.getByRole('dialog').getByRole('button', { name: t('account.submit.login') }).click()
     await page.getByRole('dialog').waitFor({ state: 'hidden' })
     await page.evaluate(
       async ({ path, text }) => {
@@ -528,12 +531,26 @@ async function captureLocale(locale: Locale): Promise<void> {
     await page.evaluate(async (files) => {
       const api = (window as unknown as { api: { cloudSave(r: object): Promise<unknown> } }).api
       for (const f of files) await api.cloudSave({ path: f.path, content: f.text, encoding: 'UTF-8', baseVersion: null, force: false })
-    }, extras.cloud)
+    }, [
+      // O primeiro arquivo ganha volume (o espaço usado aparece em MB); um script Python e uma requisição de API
+      // completam a variedade de ícones.
+      { ...extras.cloud[0], text: extras.cloud[0].text + 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n'.repeat(6000) },
+      ...extras.cloud.slice(1),
+      { path: `${extras.cloud[2].path.split('/')[0]}/main.py`, text: 'print("Meu Editor de Arquivos")\n' },
+      { path: `${extras.cloud[2].path.split('/').slice(0, -1).join('/')}/clientes.apireq`, text: '{}\n' }
+    ])
     await page.locator('nav button').nth(MENU.file).click()
     await page.getByRole('menuitem', { name: t('menu.file.openCloud') }).click()
     const cloudTree = page.getByRole('dialog').getByTestId('cloud-open-tree')
     const cloudFile = cloudTree.getByRole('button', { name: new RegExp('^' + demo.cloudPath.split('/').pop()!.replace('.', '\\.')) })
-    if (!(await cloudFile.isVisible())) await cloudTree.getByRole('button', { name: demo.cloudPath.split('/')[0], exact: true }).click()
+    // Janela "Abrir da nuvem" com o resumo, o plano e todas as pastas abertas (usada no site).
+    for (let i = 0; i < 10; i++) {
+      const closed = cloudTree.locator('[role=treeitem][aria-expanded="false"]')
+      if ((await closed.count()) === 0) break
+      await closed.first().locator('> div').first().click()
+    }
+    await cloudFile.waitFor()
+    await shot(page, img('s27-cloud-open-tree'), page.getByRole('dialog'))
     await cloudFile.dblclick()
     await page.getByRole('dialog').waitFor({ state: 'hidden' })
     await page.getByTestId('cloud-usage').waitFor()

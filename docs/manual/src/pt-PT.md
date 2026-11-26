@@ -324,7 +324,7 @@ As **macros** repetem uma sequência que fez. Prima **Ctrl+Shift+R** para começ
 Com uma conta, guarda ficheiros na nuvem e abre-os noutros computadores. Abra o menu **{{menu.account}}**.
 
 1. **Endereço do servidor:** na primeira vez, indique o endereço que a sua empresa ou o administrador lhe forneceu. Começa por `https://`.
-2. **Criar conta:** clique em **{{account.link.register}}** e preencha o e-mail, o nome e uma palavra-passe com pelo menos 10 caracteres.
+2. **Criar conta:** clique em **{{account.link.register}}**. A aplicação abre a página de planos da nuvem no site, no mesmo idioma; escolha o plano (Gratuito ou pago) e registe o e-mail, o nome e uma palavra-passe com pelo menos 10 caracteres. A conta não é criada dentro da aplicação.
 
 ![Ecrã de início de sessão](img/s16-account-login.png)
 

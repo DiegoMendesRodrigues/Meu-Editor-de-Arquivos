@@ -324,7 +324,7 @@ Kodierung und Zeilenenden werden in der Statusleiste angezeigt.
 Mit einem Konto speichern Sie Dateien in der Cloud und öffnen sie auf anderen Computern. Öffnen Sie das Menü **{{menu.account}}**.
 
 1. **Serveradresse:** Geben Sie beim ersten Mal die Adresse ein, die Ihnen Ihr Unternehmen oder Ihr Administrator mitgeteilt hat. Sie beginnt mit `https://`.
-2. **Konto erstellen:** Klicken Sie auf **{{account.link.register}}** und tragen Sie E-Mail-Adresse, Namen und ein Passwort mit mindestens 10 Zeichen ein.
+2. **Konto erstellen:** Klicken Sie auf **{{account.link.register}}**. Die App öffnet die Seite mit den Cloud-Tarifen auf der Website in derselben Sprache; wählen Sie einen Tarif (Gratuito oder kostenpflichtig) und tragen Sie E-Mail-Adresse, Namen und ein Passwort mit mindestens 10 Zeichen ein. Konten werden nicht in der App erstellt.
 
 ![Anmeldebildschirm](img/s16-account-login.png)
 

@@ -18,12 +18,15 @@ async function signInToTestApi(page: import('@playwright/test').Page): Promise<{
   await page.getByRole('menuitem', { name: pt('menu.account.signIn') }).click()
   await page.getByLabel(pt('account.serverUrl'), { exact: true }).fill(address.replace('127.0.0.1', 'localhost'))
   await page.getByRole('dialog').getByRole('button', { name: pt('account.submit.server') }).click()
-  await page.getByRole('button', { name: pt('account.link.register') }).click()
+  // O aplicativo não cria contas (isso é feito no site): a conta de teste é criada direto na API.
+  await fetch(`${address}/v1/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'ana@exemplo.com', name: 'Ana', password: 'uma-senha-forte-123' })
+  })
   await page.getByLabel(pt('account.email'), { exact: true }).fill('ana@exemplo.com')
-  await page.getByLabel(pt('account.name'), { exact: true }).fill('Ana')
-  await page.getByLabel(pt('account.newPassword'), { exact: true }).fill('uma-senha-forte-123')
-  await page.getByLabel(pt('account.repeat'), { exact: true }).fill('uma-senha-forte-123')
-  await page.getByRole('dialog').getByRole('button', { name: pt('account.submit.register') }).click()
+  await page.getByLabel(pt('account.password'), { exact: true }).fill('uma-senha-forte-123')
+  await page.getByRole('dialog').getByRole('button', { name: pt('account.submit.login') }).click()
   await page.getByRole('dialog').waitFor({ state: 'hidden' })
   return { close: () => api.close() }
 }

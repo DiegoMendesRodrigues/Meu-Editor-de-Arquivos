@@ -324,7 +324,7 @@ The current encoding and line ending appear in the status bar.
 With an account you can keep files in the cloud and open them on other computers. Open the **{{menu.account}}** menu.
 
 1. **Server address:** the first time, enter the address given to you by your company or administrator. It starts with `https://`.
-2. **Create an account:** click **{{account.link.register}}** and fill in your email, name and a password of at least 10 characters.
+2. **Create an account:** click **{{account.link.register}}**. The app opens the cloud plans page on the website, in the same language; choose a plan (Gratuito or paid) and enter your email, name and a password of at least 10 characters. Accounts are not created inside the app.
 
 ![Sign-in screen](img/s16-account-login.png)
 

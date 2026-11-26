@@ -1,16 +1,18 @@
 // Desenvolvido por Diego Mendes Rodrigues - https://www.linkedin.com/in/diegomendesrodrigues/
 import { randomUUID } from 'node:crypto'
-import type { FileMeta, RemoteFile, Store, Subscription, Usage, User, Workspace } from './store.js'
+import { PURGE_SINCE, PURGED_LAST_ACCESS } from './store.js'
+import type { AppLocale, CloudPurgeNotice, FileMeta, PlanExpiry, PlanExpiryEmail, RemoteFile, Store, Subscription, Usage, User, Workspace } from './store.js'
 
 const meta = ({ content: _c, ...m }: RemoteFile): FileMeta => m
 
 /** Planos da memória, iguais aos do banco de produção (users_groups). */
-const PLANS = new Map<number, { name: string; maxFiles: number; maxSizeMb: number }>([
-  [1, { name: 'Gratuito', maxFiles: 100, maxSizeMb: 5 }],
-  [2, { name: 'Explorador', maxFiles: 500, maxSizeMb: 25 }],
-  [3, { name: 'Criador', maxFiles: 1000, maxSizeMb: 50 }],
-  [4, { name: 'Mestre', maxFiles: 2000, maxSizeMb: 100 }]
+const PLANS = new Map<number, { name: string; maxFiles: number; maxSizeMb: number; waitingDays: number }>([
+  [1, { name: 'Gratuito', maxFiles: 100, maxSizeMb: 5, waitingDays: 30 }],
+  [2, { name: 'Explorador', maxFiles: 500, maxSizeMb: 25, waitingDays: 30 }],
+  [3, { name: 'Criador', maxFiles: 1000, maxSizeMb: 50, waitingDays: 30 }],
+  [4, { name: 'Mestre', maxFiles: 2000, maxSizeMb: 100, waitingDays: 30 }]
 ])
+const DAY_MS = 24 * 3600 * 1000
 
 type SubscriptionRow = Omit<Subscription, 'planName'>
 const newSubscription = (): SubscriptionRow => ({
@@ -34,6 +36,21 @@ export function createMemoryStore(): Store {
   const workspaces = new Map<string, Workspace>()
   const usage = new Map<string, Usage>() // usuário -> uso gravado (bytes e arquivos)
   const subscriptions = new Map<string, SubscriptionRow>() // usuário -> plano e assinatura
+  const previousGroup = new Map<string, number>() // usuário -> plano antes de voltar ao Gratuito
+  const purgeNotices = new Map<string, CloudPurgeNotice>()
+  const manageTokens = new Map<string, { userId: string; expiresAt: Date; used: boolean }>()
+  const locales = new Map<string, AppLocale>()
+  const expiryNoticeFor = new Map<string, number>() // usuário -> next_payment_at do aviso já mostrado
+  const expiryEmailFor = new Map<string, number>() // usuário -> next_payment_at do e-mail já enviado
+  /** Plano pago que não renova e termina em até withinMs. */
+  const expiringPlan = (userId: string, now: Date, withinMs: number): PlanExpiry | null => {
+    const sub = subscriptions.get(userId)
+    if (!sub || !sub.active || sub.usersGroupsId < 2 || !sub.nextPaymentAt) return null
+    if (sub.status !== 'canceled' && sub.status !== 'payment_failed') return null
+    const left = sub.nextPaymentAt.getTime() - now.getTime()
+    if (left <= 0 || left > withinMs) return null
+    return { at: new Date(sub.nextPaymentAt), planName: PLANS.get(sub.usersGroupsId)?.name ?? '' }
+  }
   const subscriptionOf = (userId: string): SubscriptionRow => {
     let sub = subscriptions.get(userId)
     if (!sub) subscriptions.set(userId, (sub = newSubscription()))
@@ -193,7 +210,8 @@ export function createMemoryStore(): Store {
     },
     async getUsage(userId) {
       const u = usage.get(userId) ?? { storageBytes: 0, storedFiles: 0 }
-      return { ...u, plan: { ...PLANS.get(subscriptionOf(userId).usersGroupsId)! } }
+      const { waitingDays: _w, ...plan } = PLANS.get(subscriptionOf(userId).usersGroupsId)!
+      return { ...u, plan }
     },
     async refreshUsage(userId) {
       let storageBytes = Buffer.byteLength(workspaces.get(userId)?.data ?? '', 'utf8')
@@ -215,13 +233,13 @@ export function createMemoryStore(): Store {
       const sub = subscriptionOf(userId)
       return { ...sub, planName: PLANS.get(sub.usersGroupsId)!.name }
     },
-    async updateSubscription(userId, update) {
+    async updateSubscription(userId, update, opts) {
       if (!users.has(userId)) return
       const sub = subscriptionOf(userId)
       const { nextPaymentAt, ...rest } = update
       for (const [k, v] of Object.entries(rest)) if (v !== undefined) (sub as unknown as Record<string, unknown>)[k] = v
       if (nextPaymentAt !== undefined) {
-        sub.nextPaymentAt = nextPaymentAt && sub.nextPaymentAt && sub.nextPaymentAt > nextPaymentAt ? sub.nextPaymentAt : nextPaymentAt
+        sub.nextPaymentAt = !opts?.exact && nextPaymentAt && sub.nextPaymentAt && sub.nextPaymentAt > nextPaymentAt ? sub.nextPaymentAt : nextPaymentAt
       }
     },
     async findUserIdByStripeSubscription(stripeSubscriptionId) {
@@ -230,18 +248,80 @@ export function createMemoryStore(): Store {
     },
     async expireSubscriptions(now, graceMs) {
       let n = 0
-      for (const sub of subscriptions.values()) {
+      for (const [userId, sub] of subscriptions) {
         if (!sub.active || !sub.nextPaymentAt) continue
         const lapsed = sub.status === 'active' ? sub.nextPaymentAt.getTime() + graceMs < now.getTime() : sub.nextPaymentAt <= now
         if (!lapsed) continue
+        previousGroup.set(userId, sub.usersGroupsId)
         Object.assign(sub, { usersGroupsId: 1, active: false, status: 'ended' })
+        const u = users.get(userId)
+        if (u) u.lastAccess = now
         n++
       }
       return n
     },
+    async purgeInactiveUsers(now) {
+      let n = 0
+      for (const u of users.values()) {
+        const sub = subscriptionOf(u.id)
+        if (sub.usersGroupsId !== 1 || sub.active || !u.lastAccess || u.lastAccess <= PURGE_SINCE) continue
+        const days = PLANS.get(previousGroup.get(u.id) ?? 1)!.waitingDays
+        if (now.getTime() - u.lastAccess.getTime() <= days * DAY_MS) continue
+        for (const [id, f] of files) if (f.userId === u.id) files.delete(id)
+        folders.delete(u.id)
+        workspaces.delete(u.id)
+        usage.set(u.id, { storageBytes: 0, storedFiles: 0 })
+        u.lastAccess = new Date(PURGED_LAST_ACCESS)
+        previousGroup.delete(u.id)
+        purgeNotices.set(u.id, { at: now, days })
+        n++
+      }
+      return n
+    },
+    async getCloudPurgeNotice(userId) {
+      const notice = purgeNotices.get(userId)
+      return notice ? { ...notice } : null
+    },
+    async clearCloudPurgeNotice(userId) {
+      purgeNotices.delete(userId)
+    },
+    async createManageToken(userId, tokenHash, expiresAt) {
+      manageTokens.set(tokenHash, { userId, expiresAt, used: false })
+    },
+    async consumeManageToken(tokenHash) {
+      const t = manageTokens.get(tokenHash)
+      if (!t || t.used || t.expiresAt.getTime() < Date.now()) return null
+      t.used = true
+      return t.userId
+    },
+    async setUserLocale(userId, locale) {
+      locales.set(userId, locale)
+    },
+    async getPlanExpiryNotice(userId, now, withinMs) {
+      const plan = expiringPlan(userId, now, withinMs)
+      return plan && expiryNoticeFor.get(userId) !== plan.at.getTime() ? plan : null
+    },
+    async ackPlanExpiryNotice(userId) {
+      const at = subscriptions.get(userId)?.nextPaymentAt
+      if (at) expiryNoticeFor.set(userId, at.getTime())
+    },
+    async claimPlanExpiryEmails(now, withinMs) {
+      const out: PlanExpiryEmail[] = []
+      for (const u of users.values()) {
+        const plan = expiringPlan(u.id, now, withinMs)
+        if (!plan || expiryEmailFor.get(u.id) === plan.at.getTime()) continue
+        expiryEmailFor.set(u.id, plan.at.getTime())
+        out.push({ ...plan, userId: u.id, email: u.email, name: u.name, locale: locales.get(u.id) ?? null })
+      }
+      return out
+    },
+    async releasePlanExpiryEmail(userId) {
+      expiryEmailFor.delete(userId)
+    },
     async purgeExpired(now) {
       for (const [h, s] of sessions) if (s.expiresAt < now) sessions.delete(h)
       for (const [h, r] of resets) if (r.expiresAt < now || r.used) resets.delete(h)
+      for (const [h, t] of manageTokens) if (t.expiresAt < now || t.used) manageTokens.delete(h)
     },
     async close() {}
   }

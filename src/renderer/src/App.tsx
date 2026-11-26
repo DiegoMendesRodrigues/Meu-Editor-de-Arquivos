@@ -19,7 +19,7 @@ import { startWorkspaceSync } from '@/workspaceSync'
 import * as cmd from '@/commands'
 import { AboutDialog, ShortcutsDialog, UpdateDialog } from '@/components/AboutDialogs'
 import { AccountDialog } from '@/components/AccountDialog'
-import { CloudLimitAlert, CloudOpenDialog, CloudSaveDialog } from '@/components/CloudDialogs'
+import { AccountNoticesDialog, CloudLimitAlert, CloudOpenDialog, CloudSaveDialog } from '@/components/CloudDialogs'
 import { SidebarDialogs } from '@/components/SidebarMenus'
 import { MacrosDialog } from '@/components/MacrosDialog'
 import { SnippetsDialog } from '@/components/SnippetsDialog'
@@ -159,6 +159,7 @@ export function App() {
       {dialog === 'cloudOpen' && <CloudOpenDialog />}
       {dialog === 'cloudSave' && <CloudSaveDialog />}
       <CloudLimitAlert />
+      <AccountNoticesDialog />
       {/* Renomear e cor da pasta: abertas pelo botão direito na barra lateral ou na janela "Abrir da nuvem". */}
       <SidebarDialogs />
       {dialog === 'shortcuts' && <ShortcutsDialog />}

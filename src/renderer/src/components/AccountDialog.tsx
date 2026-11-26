@@ -5,7 +5,7 @@ import { errorMessage, useAccount } from '@/store/account'
 import { useDialogs } from '@/store/dialogs'
 import { Modal, buttonClass, fieldClass, primaryButtonClass } from './Modal'
 
-type View = 'login' | 'register' | 'forgot' | 'reset' | 'profile' | 'password' | 'server'
+type View = 'login' | 'forgot' | 'reset' | 'profile' | 'password' | 'server'
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -78,12 +78,6 @@ export function AccountDialog() {
           setF({ ...f, password: '', name: s.user?.name ?? '' })
           close()
         })
-      case 'register':
-        if (!needMatch()) return
-        return void run(async () => {
-          setStatus(await window.api.accountRegister(f.email, f.name, f.password))
-          close()
-        })
       case 'forgot':
         return void run(async () => {
           await window.api.accountRequestReset(f.email)
@@ -123,7 +117,6 @@ export function AccountDialog() {
   const titles: Record<View, string> = {
     server: t('account.view.server'),
     login: t('account.view.login'),
-    register: t('account.view.register'),
     forgot: t('account.view.forgot'),
     reset: t('account.view.reset'),
     profile: t('account.view.profile'),
@@ -145,14 +138,9 @@ export function AccountDialog() {
           </>
         )}
 
-        {(view === 'login' || view === 'register' || view === 'forgot') && (
+        {(view === 'login' || view === 'forgot') && (
           <Field label={t('account.email')}>
             <input type="email" value={f.email} onChange={set('email')} aria-label={t('account.email')} className={fieldClass} autoFocus autoComplete="username" />
-          </Field>
-        )}
-        {view === 'register' && (
-          <Field label={t('account.name')}>
-            <input value={f.name} onChange={set('name')} aria-label={t('account.name')} className={fieldClass} />
           </Field>
         )}
         {view === 'profile' && status.user && (
@@ -175,12 +163,12 @@ export function AccountDialog() {
             <input type="password" value={f.current} onChange={set('current')} aria-label={t('account.currentPassword')} className={fieldClass} autoFocus autoComplete="current-password" />
           </Field>
         )}
-        {(view === 'login' || view === 'register' || view === 'reset' || view === 'password') && (
+        {(view === 'login' || view === 'reset' || view === 'password') && (
           <Field label={view === 'login' ? t('account.password') : t('account.newPasswordLabel')}>
             <input type="password" value={f.password} onChange={set('password')} aria-label={view === 'login' ? t('account.password') : t('account.newPassword')} className={fieldClass} autoComplete={view === 'login' ? 'current-password' : 'new-password'} />
           </Field>
         )}
-        {(view === 'register' || view === 'reset' || view === 'password') && (
+        {(view === 'reset' || view === 'password') && (
           <Field label={t('account.repeatLabel')}>
             <input type="password" value={f.password2} onChange={set('password2')} aria-label={t('account.repeat')} className={fieldClass} autoComplete="new-password" />
           </Field>
@@ -211,11 +199,11 @@ export function AccountDialog() {
         <div className="flex flex-col gap-1 text-xs text-zinc-600">
           {view === 'login' && (
             <>
-              <button type="button" className={`${link} self-start`} onClick={() => go('register')}>{t('account.link.register')}</button>
+              <button type="button" className={`${link} self-start`} onClick={() => void window.api.openCloudPlans().catch((err) => setError(errorMessage(err)))}>{t('account.link.register')}</button>
               <button type="button" className={`${link} self-start`} onClick={() => go('forgot')}>{t('account.link.forgot')}</button>
             </>
           )}
-          {(view === 'register' || view === 'forgot' || view === 'reset') && (
+          {(view === 'forgot' || view === 'reset') && (
             <button type="button" className={`${link} self-start`} onClick={() => go('login')}>{t('account.link.backToLogin')}</button>
           )}
           {view === 'profile' && (
@@ -230,7 +218,7 @@ export function AccountDialog() {
           {view === 'server' && status.serverUrl && (
             <button type="button" className={`${link} self-start`} onClick={() => go(status.user ? 'profile' : 'login')}>{t('common.cancel')}</button>
           )}
-          {!status.rememberSession && (view === 'login' || view === 'register') && (
+          {!status.rememberSession && view === 'login' && (
             <p className="text-amber-700">{t('account.noVault')}</p>
           )}
         </div>

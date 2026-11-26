@@ -64,8 +64,11 @@ export const IpcChannels = {
   sessionLoad: 'session:load',
   sessionSave: 'session:save',
   accountStatus: 'account:status',
+  accountNotices: 'account:notices',
+  accountAckPurgeNotice: 'account:ack-purge-notice',
+  accountAckExpiryNotice: 'account:ack-expiry-notice',
+  accountManageSubscription: 'account:manage-subscription',
   accountSetServer: 'account:set-server',
-  accountRegister: 'account:register',
   accountLogin: 'account:login',
   accountLogout: 'account:logout',
   accountUpdateProfile: 'account:update-profile',
@@ -94,6 +97,7 @@ export const IpcChannels = {
   setLocale: 'app:set-locale',
   openManual: 'app:open-manual',
   openSupport: 'app:open-support',
+  openCloudPlans: 'app:open-cloud-plans',
   checkUpdate: 'app:check-update',
   setFullScreen: 'app:set-full-screen',
   fullScreenChanged: 'app:full-screen-changed',
@@ -346,6 +350,13 @@ export interface AccountUser {
   name: string
 }
 
+/** Avisos da conta mostrados uma vez pelo aplicativo. */
+export interface AccountNotices {
+  purge: { days: number } | null
+  /** Plano pago que não vai renovar (cancelado ou cobrança recusada) e termina em até 7 dias. */
+  expiry: { days: number; at: string; plan: string } | null
+}
+
 export interface AccountStatus {
   /** Endereço da API configurado (null = ainda não configurado). */
   serverUrl: string | null
@@ -460,8 +471,15 @@ export interface EditorApi {
 
   /** Conta de usuário e sincronização (a sessão fica no Main; o Renderer nunca vê o token). */
   accountStatus(): Promise<AccountStatus>
+  /** Aviso de arquivos da nuvem apagados por inatividade (null = nada a avisar). */
+  /** Avisos da conta ao entrar: arquivos apagados por inatividade e plano que não renova terminando em até 7 dias. */
+  accountNotices(): Promise<AccountNotices>
+  accountAckPurgeNotice(): Promise<void>
+  /** O aviso de plano perto de expirar foi mostrado (não volta para a mesma data de fim). */
+  accountAckExpiryNotice(): Promise<void>
+  /** Pede o link de uso único à API e abre a página da assinatura no navegador do sistema. */
+  accountManageSubscription(): Promise<void>
   accountSetServer(url: string): Promise<AccountStatus>
-  accountRegister(email: string, name: string, password: string): Promise<AccountStatus>
   accountLogin(email: string, password: string): Promise<AccountStatus>
   accountLogout(): Promise<AccountStatus>
   accountUpdateProfile(name: string): Promise<AccountStatus>
@@ -498,6 +516,8 @@ export interface EditorApi {
   openManual(): Promise<void>
   /** Abre a página de suporte técnico do site no navegador, no idioma da interface. */
   openSupport(): Promise<void>
+  /** Abre os planos da nuvem no site (a conta é criada lá), no idioma do aplicativo. */
+  openCloudPlans(): Promise<void>
   /** Consulta no site a versão mais recente publicada. */
   checkUpdate(): Promise<UpdateInfo>
 

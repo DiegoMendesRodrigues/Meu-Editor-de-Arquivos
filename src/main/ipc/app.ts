@@ -5,7 +5,8 @@ import { HASH_ALGORITHMS, IpcChannels, type AppInfo, type UpdateInfo } from '@sh
 import { z } from 'zod'
 import { LOCALES, type Locale } from '@shared/i18n'
 import { currentLocale, setMainLocale } from '../i18n'
-import { SITE_URL, siteUrl, supportUrl, versionUrl } from '@shared/support'
+import { reportAccountLocale } from './account'
+import { SITE_URL, cloudPlansUrl, siteUrl, supportUrl, versionUrl } from '@shared/support'
 import { openManual, refreshManual } from '../manual'
 import { handle } from './secure'
 
@@ -72,9 +73,12 @@ export function registerAppHandlers(): void {
   handle(IpcChannels.openManual, () => openManual())
   // O endereço é montado aqui (o Renderer não escolhe a URL aberta no navegador).
   handle(IpcChannels.openSupport, () => shell.openExternal(supportUrl(currentLocale())))
+  // Contas são criadas só no site (planos da nuvem); o endereço é fixo, montado aqui.
+  handle(IpcChannels.openCloudPlans, () => shell.openExternal(cloudPlansUrl(currentLocale())))
   handle(IpcChannels.setLocale, (_e, raw: unknown) => {
     setMainLocale(localeSchema.parse(raw))
     refreshManual()
+    reportAccountLocale()
   })
 
   handle(IpcChannels.appInfo, (): AppInfo => ({

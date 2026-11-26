@@ -4,12 +4,15 @@ import { isIP } from 'node:net'
 import { timingSafeEqual } from 'node:crypto'
 import { z } from 'zod'
 import { applyStripeEvent, verifyStripeSignature } from './billing.js'
-import type { Store, Subscription, User } from './db/store.js'
+import { APP_LOCALES, type Store, type Subscription, type User } from './db/store.js'
+import { DEFAULT_SITE_URL, EXPIRY_NOTICE_MS, daysLeft, sendPlanExpiryEmails } from './expiry.js'
 import { hashPassword, hashToken, newToken, verifyPassword } from './security.js'
 
 export interface Mailer {
   /** Envia o e-mail de redefinição de senha. Em produção, ligue a um serviço de e-mail real. */
   sendPasswordReset(to: string, token: string): Promise<void>
+  /** E-mail de "plano perto de expirar" (texto já no idioma do usuário). Sem ele, o aviso por e-mail fica desligado. */
+  sendPlanExpiring?(to: string, mail: { subject: string; text: string }): Promise<void>
 }
 
 export interface AppOptions {
@@ -32,6 +35,8 @@ export interface AppOptions {
   stripeWebhookSecret?: string
   /** Tolerância para a renovação chegar depois de nextPaymentAt antes de voltar ao Gratuito (padrão: 2 dias). */
   subscriptionGraceMs?: number
+  /** Endereço do site (links dos e-mails para a página de gestão da assinatura). */
+  siteUrl?: string
 }
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024
@@ -94,6 +99,13 @@ class HttpError extends Error {
 }
 
 const publicUser = (u: User) => ({ id: u.id, email: u.email, name: u.name, createdAt: u.createdAt.toISOString() })
+
+/** Assinatura para o site (inclui os ids da Stripe; só nas rotas com X-Site-Key). */
+const siteSubscription = (s: Subscription) => ({
+  ...publicSubscription(s),
+  stripeCustomerId: s.stripeCustomerId,
+  stripeSubscriptionId: s.stripeSubscriptionId
+})
 
 const publicSubscription = (s: Subscription) => ({
   plan: { id: s.usersGroupsId, name: s.planName },
@@ -227,6 +239,14 @@ export function buildApp(opts: AppOptions): FastifyInstance {
       .expireSubscriptions(now, graceMs)
       .then((n) => n > 0 && app.log.info({ n }, 'Assinaturas encerradas: plano Gratuito'))
       .catch((err) => app.log.error({ err }, 'Falha ao encerrar assinaturas vencidas'))
+      // Depois do encerramento: contas sem plano pago e sem acesso além do prazo do plano anterior perdem os arquivos.
+      .then(() => store.purgeInactiveUsers(new Date()))
+      .then((n) => n > 0 && app.log.info(`Limpeza por inatividade: arquivos apagados de ${n} conta(s)`))
+      .catch((err) => app.log.error({ err }, 'Falha na limpeza por inatividade'))
+    // Planos que não renovam e terminam em até 2 dias: e-mail com o link da página de gestão da assinatura.
+    sendPlanExpiryEmails(store, opts.mailer, app.log, now, opts.siteUrl ?? DEFAULT_SITE_URL)
+      .then((n) => n > 0 && app.log.info(`Avisos de plano perto de expirar enviados por e-mail: ${n}`))
+      .catch((err) => app.log.error({ err }, 'Falha nos avisos de plano perto de expirar'))
   }, 3600_000)
   purge.unref()
   app.addHook('onClose', async () => clearInterval(purge))
@@ -343,7 +363,45 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return reply.status(204).send()
   })
 
-  app.get('/v1/me', auth, async (req) => ({ user: publicUser(req.user!) }))
+  app.get('/v1/me', auth, async (req) => {
+    // Aviso de arquivos apagados por inatividade (o aplicativo mostra uma vez e confirma com o DELETE abaixo).
+    const notice = await store.getCloudPurgeNotice(req.user!.id)
+    // Plano que não vai renovar e termina em até 7 dias (o aplicativo mostra uma vez e confirma com o POST abaixo).
+    const now = new Date()
+    const expiry = await store.getPlanExpiryNotice(req.user!.id, now, EXPIRY_NOTICE_MS)
+    return {
+      user: {
+        ...publicUser(req.user!),
+        cloudPurge: notice ? { at: notice.at.toISOString(), days: notice.days } : null,
+        planExpiry: expiry ? { at: expiry.at.toISOString(), days: daysLeft(expiry.at, now), plan: expiry.planName } : null
+      }
+    }
+  })
+
+  app.post('/v1/me/plan-expiry-notice', auth, async (req, reply) => {
+    await store.ackPlanExpiryNotice(req.user!.id)
+    return reply.status(204).send()
+  })
+
+  // Idioma do aplicativo: os e-mails da API (aviso de plano perto de expirar) seguem esse idioma.
+  const localeSchema = z.object({ locale: z.enum(APP_LOCALES) })
+  app.put('/v1/me/locale', auth, async (req, reply) => {
+    await store.setUserLocale(req.user!.id, localeSchema.parse(req.body).locale)
+    return reply.status(204).send()
+  })
+
+  app.delete('/v1/me/cloud-purge-notice', auth, async (req, reply) => {
+    await store.clearCloudPurgeNotice(req.user!.id)
+    return reply.status(204).send()
+  })
+
+  // Link de uso único (15 minutos) para a página de gestão da assinatura no site (assinatura.php?token=...).
+  app.post('/v1/me/manage-link', auth, async (req) => {
+    const token = newToken()
+    const expiresAt = new Date(Date.now() + 15 * 60_000)
+    await store.createManageToken(req.user!.id, hashToken(token), expiresAt)
+    return { token, expiresAt: expiresAt.toISOString() }
+  })
 
   /**
    * Recalcula o uso (espaço e número de arquivos) depois de uma gravação. Uma falha aqui (banco sem a coluna nova,
@@ -572,7 +630,52 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params)
     const sub = await store.getSubscription(id)
     if (!sub) throw new HttpError(404, 'not_found', 'Usuário não encontrado.')
-    return { subscription: publicSubscription(sub) }
+    return { subscription: siteSubscription(sub) }
+  })
+
+  // Página de gestão da assinatura: troca o token de uso único (gerado pelo aplicativo) pela conta.
+  app.post('/v1/site/manage-token', { onRequest: siteLimited }, async (req) => {
+    const { token } = z.object({ token: z.string().min(10).max(200) }).parse(req.body)
+    const userId = await store.consumeManageToken(hashToken(token))
+    const user = userId ? await store.findUserById(userId) : null
+    const sub = user ? await store.getSubscription(user.id) : null
+    if (!user || !sub) throw new HttpError(400, 'invalid_token', 'Link inválido ou expirado.')
+    return { user: { id: user.id, email: user.email, name: user.name }, subscription: siteSubscription(sub) }
+  })
+
+  // Troca de plano, de período, cancelamento ou reativação feitos pelo site na Stripe: grava o resultado exato
+  // (o fim do período pode encurtar ou alongar). O webhook continua cuidando das renovações.
+  const siteSyncSchema = z.object({
+    userId: z.string().uuid(),
+    plan: z.number().int().min(2).max(1000),
+    period: z.enum(['mensal', 'semestral', 'anual']),
+    status: z.enum(['active', 'canceled']),
+    stripeSubscriptionId: z.string().regex(/^sub_[A-Za-z0-9]{1,250}$/),
+    periodEnd: z.number().int().positive(),
+    paidAt: z.number().int().positive().optional()
+  })
+  app.post('/v1/site/subscription/sync', { onRequest: siteAuth }, async (req) => {
+    const body = siteSyncSchema.parse(req.body)
+    if (!(await store.planExists(body.plan))) throw new HttpError(404, 'plan_not_found', 'Plano não encontrado.')
+    const current = await store.getSubscription(body.userId)
+    if (!current) throw new HttpError(404, 'not_found', 'Usuário não encontrado.')
+    // Só a assinatura que já é desta conta.
+    if (current.stripeSubscriptionId !== body.stripeSubscriptionId) throw new HttpError(409, 'subscription_in_use', 'Assinatura de outra conta.')
+    await store.updateSubscription(
+      body.userId,
+      {
+        usersGroupsId: body.plan,
+        period: body.period,
+        status: body.status,
+        active: true,
+        nextPaymentAt: new Date(body.periodEnd * 1000),
+        ...(body.paidAt ? { lastPaymentAt: new Date(body.paidAt * 1000) } : {})
+      },
+      { exact: true }
+    )
+    req.log.info(`Site: assinatura alterada (plano ${body.plan}, ${body.period}, ${body.status})`)
+    const sub = await store.getSubscription(body.userId)
+    return { subscription: sub ? siteSubscription(sub) : null }
   })
 
   // Confirmação pelo site logo depois do pagamento: o site conferiu a Checkout Session na API da Stripe (status

@@ -9,6 +9,12 @@ import { useDialogs } from '@/store/dialogs'
 import { useActiveDocument, useDocuments } from '@/store/documents'
 import { CloudRows, type CloudRowsMode } from './CloudTree'
 import { Modal, buttonClass, fieldClass, primaryButtonClass } from './Modal'
+import { manageSubscription } from '@/commands'
+import { SITE_URL } from '@shared/support'
+import type { AccountNotices } from '@shared/ipc'
+
+/** Página de gestão da assinatura mostrada no aviso (o link real, com token, é montado pelo Main ao clicar). */
+const MANAGE_PAGE_LABEL = `${new URL(SITE_URL).host}/assinatura.php`
 
 const formatSize = (b: number): string => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(1)} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`)
 
@@ -93,6 +99,80 @@ export function CloudLimitAlert() {
       </div>
     </Modal>
   )
+}
+
+/**
+ * Avisos da conta ao entrar (uma vez por conta em cada abertura do app; o servidor guarda o que já foi mostrado):
+ * arquivos da nuvem apagados por inatividade e plano que não renova terminando em até 7 dias.
+ */
+const noticesCheckedFor = new Set<string>()
+export function AccountNoticesDialog() {
+  const t = useT()
+  const locale = useLocale((s) => s.locale)
+  const userId = useAccount((s) => s.status.user?.id)
+  const [notices, setNotices] = useState<AccountNotices>({ purge: null, expiry: null })
+
+  useEffect(() => {
+    if (userId === undefined || noticesCheckedFor.has(userId)) return
+    noticesCheckedFor.add(userId)
+    window.api
+      .accountNotices()
+      .then(setNotices)
+      .catch(() => undefined)
+  }, [userId])
+
+  if (notices.purge) {
+    const close = (): void => {
+      setNotices((n) => ({ ...n, purge: null }))
+      void window.api.accountAckPurgeNotice().catch(() => undefined)
+    }
+    return (
+      <Modal title={t('cloud.purge.title')} size="sm" onClose={close}>
+        <div role="alert" className="flex flex-col gap-4 text-sm" data-testid="cloud-purge-notice">
+          <p>{t('cloud.purge.message', { days: notices.purge.days })}</p>
+          <div className="flex justify-end">
+            <button type="button" className={primaryButtonClass} onClick={close} autoFocus>
+              {t('cloud.purge.ok')}
+            </button>
+          </div>
+        </div>
+      </Modal>
+    )
+  }
+
+  if (notices.expiry) {
+    const { days, at, plan } = notices.expiry
+    // Mostrado uma vez: qualquer saída confirma no servidor.
+    const close = (): void => {
+      setNotices((n) => ({ ...n, expiry: null }))
+      void window.api.accountAckExpiryNotice().catch(() => undefined)
+    }
+    const renew = (): void => {
+      manageSubscription()
+      close()
+    }
+    const date = new Date(at).toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' })
+    return (
+      <Modal title={t('cloud.expiry.title')} size="sm" onClose={close}>
+        <div role="alert" className="flex flex-col gap-3 text-sm" data-testid="plan-expiry-notice">
+          <p>{t('cloud.expiry.message', { days, plan, date })}</p>
+          <p>{t('cloud.expiry.recommend')}</p>
+          <button type="button" className="self-start break-all text-left text-accent underline hover:no-underline" onClick={renew}>
+            {MANAGE_PAGE_LABEL}
+          </button>
+          <div className="flex justify-end gap-2">
+            <button type="button" className={buttonClass} onClick={close}>
+              {t('cloud.expiry.later')}
+            </button>
+            <button type="button" className={primaryButtonClass} onClick={renew} autoFocus>
+              {t('cloud.expiry.renew')}
+            </button>
+          </div>
+        </div>
+      </Modal>
+    )
+  }
+  return null
 }
 
 export function CloudSaveDialog() {

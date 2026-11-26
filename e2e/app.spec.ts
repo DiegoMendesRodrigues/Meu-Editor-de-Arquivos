@@ -543,24 +543,56 @@ test.describe('menu Codificação', () => {
 const pt = (key: Parameters<typeof translate>[1], params?: Parameters<typeof translate>[2]): string => translate('pt-BR', key, params)
 
 /** Sobe a API de teste em memória (a mesma do servidor do projeto) numa porta livre e cria uma conta nela. */
-async function signInToTestApi(page: import('@playwright/test').Page): Promise<{ close(): Promise<void> }> {
+async function signInToTestApi(
+  page: import('@playwright/test').Page,
+  /** Ajusta a conta no servidor antes de entrar (ex.: assinatura); com ele, a espera pelo fim do login fica com o teste. */
+  prepare?: (store: import('../server/src/db/store').Store, userId: string) => Promise<void>
+): Promise<{ close(): Promise<void>; store: import('../server/src/db/store').Store; userId: string }> {
   const { buildApp } = await import('../server/src/app')
   const { createMemoryStore } = await import('../server/src/db/memory')
-  const api = buildApp({ store: createMemoryStore(), mailer: { async sendPasswordReset() {} } })
+  const store = createMemoryStore()
+  const api = buildApp({ store, mailer: { async sendPasswordReset() {} } })
   const address = await api.listen({ port: 0, host: '127.0.0.1' })
   await page.getByRole('button', { name: pt('menu.account'), exact: true }).click()
   await page.getByRole('menuitem', { name: pt('menu.account.signIn') }).click()
   await page.getByLabel(pt('account.serverUrl'), { exact: true }).fill(address.replace('127.0.0.1', 'localhost'))
   await page.getByRole('dialog').getByRole('button', { name: pt('account.submit.server') }).click()
-  await page.getByRole('button', { name: pt('account.link.register') }).click()
+  // O aplicativo não cria contas (isso é feito no site): a conta de teste é criada direto na API.
+  const created = await fetch(`${address}/v1/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'ana@exemplo.com', name: 'Ana', password: 'uma-senha-forte-123' })
+  })
+  const userId = ((await created.json()) as { user: { id: string } }).user.id
+  if (prepare) await prepare(store, userId)
   await page.getByLabel(pt('account.email'), { exact: true }).fill('ana@exemplo.com')
-  await page.getByLabel(pt('account.name'), { exact: true }).fill('Ana')
-  await page.getByLabel(pt('account.newPassword'), { exact: true }).fill('uma-senha-forte-123')
-  await page.getByLabel(pt('account.repeat'), { exact: true }).fill('uma-senha-forte-123')
-  await page.getByRole('dialog').getByRole('button', { name: pt('account.submit.register') }).click()
-  await page.getByRole('dialog').waitFor({ state: 'hidden' })
-  return { close: () => api.close() }
+  await page.getByLabel(pt('account.password'), { exact: true }).fill('uma-senha-forte-123')
+  await page.getByRole('dialog').getByRole('button', { name: pt('account.submit.login') }).click()
+  if (!prepare) await page.getByRole('dialog').waitFor({ state: 'hidden' })
+  return { close: () => api.close(), store, userId }
 }
+
+test.describe('aviso de plano perto de expirar', () => {
+  test('plano cancelado terminando em 3 dias: avisa ao entrar, com o link da assinatura, e só uma vez', async ({ page }) => {
+    const end = new Date(Date.now() + 2.5 * 24 * 3600 * 1000)
+    const api = await signInToTestApi(page, (store, userId) =>
+      store.updateSubscription(userId, { usersGroupsId: 3, active: true, status: 'canceled', nextPaymentAt: end })
+    )
+    try {
+      const notice = page.getByTestId('plan-expiry-notice')
+      await expect(notice).toBeVisible()
+      await expect(page.getByRole('dialog')).toContainText(pt('cloud.expiry.title'))
+      await expect(notice).toContainText(pt('cloud.expiry.message', { days: 3, plan: 'Criador', date: end.toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'short' }) }))
+      await expect(notice).toContainText('meueditordearquivos.aplicativoia.online/assinatura.php')
+      await notice.getByRole('button', { name: pt('cloud.expiry.later') }).click()
+      await expect(notice).toBeHidden()
+      // Confirmado no servidor: não volta para a mesma data de fim.
+      await expect.poll(() => api.store.getPlanExpiryNotice(api.userId, new Date(), 7 * 24 * 3600 * 1000)).toBeNull()
+    } finally {
+      await api.close()
+    }
+  })
+})
 
 test.describe('espaço usado na nuvem', () => {
   test('aparece no rodapé, ao lado do ícone da nuvem, e acompanha as gravações', async ({ page }) => {

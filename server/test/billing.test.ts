@@ -214,3 +214,76 @@ describe('confirmação do pagamento pelo site', () => {
     expect(await ctx.store.getSubscription(a)).toMatchObject({ usersGroupsId: 2, active: true, stripeSubscriptionId: 'sub_A1' })
   })
 })
+
+describe('limpeza por inatividade, aviso e página de gestão', () => {
+  const register = async (ctx: ReturnType<typeof setup>, email: string) => {
+    const r = await ctx.app.inject({ method: 'POST', url: '/v1/auth/register', payload: { email, name: 'X', password: PASSWORD } })
+    return r.json() as { token: string; user: { id: string } }
+  }
+  const bearer = (token: string) => ({ authorization: `Bearer ${token}` })
+  const putFile = (ctx: ReturnType<typeof setup>, token: string) =>
+    ctx.app.inject({ method: 'PUT', url: '/v1/files', headers: bearer(token), payload: { path: 'a.md', content: 'olá', encoding: 'UTF-8', baseVersion: null } })
+  const later = (days: number) => new Date(Date.now() + days * DAY * 1000)
+
+  it('apaga os arquivos de conta sem plano pago além do prazo, avisa uma vez e não mexe em assinatura ativa', async () => {
+    const ctx = setup()
+    const free = await register(ctx, 'livre@exemplo.com')
+    expect((await putFile(ctx, free.token)).statusCode).toBe(200)
+    const paid = await register(ctx, 'paga@exemplo.com')
+    await putFile(ctx, paid.token)
+    await ctx.store.updateSubscription(paid.user.id, { usersGroupsId: 3, active: true, status: 'active', nextPaymentAt: later(400) })
+
+    expect(await ctx.store.purgeInactiveUsers(later(29))).toBe(0)
+    expect(await ctx.store.purgeInactiveUsers(later(31))).toBe(1)
+    expect(await ctx.store.listFiles(free.user.id)).toHaveLength(0)
+    expect(await ctx.store.getUsage(free.user.id)).toMatchObject({ storageBytes: 0, storedFiles: 0, plan: { name: 'Gratuito' } })
+    expect((await ctx.store.findUserById(free.user.id))?.lastAccess?.toISOString()).toBe('2000-01-01T01:01:01.000Z')
+    expect(await ctx.store.listFiles(paid.user.id)).toHaveLength(1)
+    // Já limpa (last_access de 2000) e a assinatura ativa: ninguém entra de novo.
+    expect(await ctx.store.purgeInactiveUsers(later(90))).toBe(0)
+
+    // O aplicativo recebe o aviso em /v1/me até confirmar.
+    const me = await ctx.app.inject({ method: 'GET', url: '/v1/me', headers: bearer(free.token) })
+    expect(me.json().user.cloudPurge).toMatchObject({ days: 30 })
+    expect((await ctx.app.inject({ method: 'DELETE', url: '/v1/me/cloud-purge-notice', headers: bearer(free.token) })).statusCode).toBe(204)
+    expect((await ctx.app.inject({ method: 'GET', url: '/v1/me', headers: bearer(free.token) })).json().user.cloudPurge).toBeNull()
+  })
+
+  it('assinatura encerrada: guarda o plano anterior, marca last_access e conta o prazo a partir daí', async () => {
+    const ctx = setup()
+    const u = await register(ctx, 'ex@exemplo.com')
+    await putFile(ctx, u.token)
+    const end = later(10)
+    await ctx.store.updateSubscription(u.user.id, { usersGroupsId: 4, active: true, status: 'canceled', nextPaymentAt: end })
+    const expiredAt = new Date(end.getTime() + 60_000)
+    expect(await ctx.store.expireSubscriptions(expiredAt, 2 * DAY * 1000)).toBe(1)
+    expect((await ctx.store.findUserById(u.user.id))?.lastAccess?.getTime()).toBe(expiredAt.getTime())
+    expect(await ctx.store.purgeInactiveUsers(new Date(expiredAt.getTime() + 29 * DAY * 1000))).toBe(0)
+    expect(await ctx.store.purgeInactiveUsers(new Date(expiredAt.getTime() + 31 * DAY * 1000))).toBe(1)
+    expect(await ctx.store.getCloudPurgeNotice(u.user.id)).toMatchObject({ days: 30 })
+  })
+
+  it('link da página de gestão: uso único, e a sincronização grava o fim exato do período', async () => {
+    const ctx = setup()
+    const u = await register(ctx, 'gestao@exemplo.com')
+    const link = (await ctx.app.inject({ method: 'POST', url: '/v1/me/manage-link', headers: bearer(u.token), payload: {} })).json()
+    expect(link.token).toBeTruthy()
+    const consume = () =>
+      ctx.app.inject({ method: 'POST', url: '/v1/site/manage-token', headers: { 'x-site-key': SITE_KEY, 'x-client-ip': '203.0.113.9' }, payload: { token: link.token } })
+    const first = await consume()
+    expect(first.statusCode).toBe(200)
+    expect(first.json()).toMatchObject({ user: { id: u.user.id, email: 'gestao@exemplo.com' }, subscription: { plan: { id: 1 } } })
+    expect((await consume()).statusCode).toBe(400)
+
+    const end = now() + 365 * DAY
+    await ctx.store.updateSubscription(u.user.id, { usersGroupsId: 4, active: true, status: 'active', nextPaymentAt: new Date(end * 1000), stripeSubscriptionId: 'sub_G1' })
+    const sync = (body: object) => ctx.app.inject({ method: 'POST', url: '/v1/site/subscription/sync', headers: { 'x-site-key': SITE_KEY }, payload: body })
+    // Downgrade que encurta o período (o webhook só deixaria avançar).
+    const shorter = now() + 60 * DAY
+    const ok = await sync({ userId: u.user.id, plan: 2, period: 'mensal', status: 'active', stripeSubscriptionId: 'sub_G1', periodEnd: shorter })
+    expect(ok.statusCode).toBe(200)
+    expect(ok.json().subscription).toMatchObject({ plan: { id: 2 }, period: 'mensal', status: 'active', stripeSubscriptionId: 'sub_G1' })
+    expect(new Date(ok.json().subscription.nextPaymentAt).getTime()).toBe(shorter * 1000)
+    expect((await sync({ userId: u.user.id, plan: 2, period: 'mensal', status: 'canceled', stripeSubscriptionId: 'sub_OUTRA', periodEnd: shorter })).statusCode).toBe(409)
+  })
+})

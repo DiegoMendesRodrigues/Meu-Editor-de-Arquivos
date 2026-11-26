@@ -50,8 +50,11 @@ const api: EditorApi = {
   saveMacros: (items) => ipcRenderer.invoke(IpcChannels.librarySave, 'macros', items),
 
   accountStatus: () => ipcRenderer.invoke(IpcChannels.accountStatus),
+  accountNotices: () => ipcRenderer.invoke(IpcChannels.accountNotices),
+  accountAckPurgeNotice: () => ipcRenderer.invoke(IpcChannels.accountAckPurgeNotice),
+  accountAckExpiryNotice: () => ipcRenderer.invoke(IpcChannels.accountAckExpiryNotice),
+  accountManageSubscription: () => ipcRenderer.invoke(IpcChannels.accountManageSubscription),
   accountSetServer: (url) => ipcRenderer.invoke(IpcChannels.accountSetServer, url),
-  accountRegister: (email, name, password) => ipcRenderer.invoke(IpcChannels.accountRegister, email, name, password),
   accountLogin: (email, password) => ipcRenderer.invoke(IpcChannels.accountLogin, email, password),
   accountLogout: () => ipcRenderer.invoke(IpcChannels.accountLogout),
   accountUpdateProfile: (name) => ipcRenderer.invoke(IpcChannels.accountUpdateProfile, name),
@@ -79,6 +82,7 @@ const api: EditorApi = {
 
   openManual: () => ipcRenderer.invoke(IpcChannels.openManual),
   openSupport: () => ipcRenderer.invoke(IpcChannels.openSupport),
+  openCloudPlans: () => ipcRenderer.invoke(IpcChannels.openCloudPlans),
   checkUpdate: () => ipcRenderer.invoke(IpcChannels.checkUpdate),
   setLocale: (locale) => ipcRenderer.invoke(IpcChannels.setLocale, locale),
   getAppInfo: () => ipcRenderer.invoke(IpcChannels.appInfo),

@@ -2,12 +2,17 @@
 import { randomUUID } from 'node:crypto'
 import mysql, { type Pool, type PoolConnection, type ResultSetHeader, type RowDataPacket } from 'mysql2/promise'
 import { ADMIN_UPSERT_SQL, adminSeed } from './admin.js'
-import type { DeleteFolderResult, FileMeta, MoveResult, PutWorkspaceResult, RemoteFile, RenameFolderResult, Store, Subscription, SubscriptionUpdate, UpsertResult, User, Workspace } from './store.js'
+import { APP_LOCALES, PURGE_SINCE, PURGED_LAST_ACCESS } from './store.js'
+import type { AppLocale, DeleteFolderResult, FileMeta, PlanExpiryEmail, MoveResult, PutWorkspaceResult, RemoteFile, RenameFolderResult, Store, Subscription, SubscriptionUpdate, UpsertResult, User, Workspace } from './store.js'
 
 /**
  * Espaço usado por um usuário: tamanho dos arquivos (bytes UTF-8, coluna size) + área de trabalho
  * (LENGTH conta bytes). Os "?" são o id do usuário (duas vezes).
  */
+/** Plano pago que não vai renovar (cancelado ou cobrança recusada), ainda no período pago e terminando até o 2º parâmetro. */
+const EXPIRING_SQL = `u.users_groups_id > 1 AND u.subscription_active = 1 AND u.subscription_status IN ('canceled', 'payment_failed')
+            AND u.next_payment_at > ? AND u.next_payment_at <= ?`
+
 const STORAGE_SUM =
   '(SELECT COALESCE(SUM(size), 0) FROM files WHERE user_id = ?) + COALESCE((SELECT LENGTH(data) FROM workspaces WHERE user_id = ?), 0)'
 
@@ -285,14 +290,14 @@ export function createMysqlStore(uri: string): Store {
         stripeSubscriptionId: r.stripe_subscription_id ?? null
       }
     },
-    async updateSubscription(userId, update) {
+    async updateSubscription(userId, update, opts) {
       // Só as colunas da lista fixa entram no SQL; os valores vão como parâmetros.
       const sets: string[] = []
       const values: unknown[] = []
       for (const [key, column] of Object.entries(SUBSCRIPTION_COLUMNS) as [keyof SubscriptionUpdate, string][]) {
         const value = update[key]
         if (value === undefined) continue
-        if (key === 'nextPaymentAt' && value !== null) {
+        if (key === 'nextPaymentAt' && value !== null && !opts?.exact) {
           sets.push(`${column} = GREATEST(COALESCE(${column}, ?), ?)`)
           values.push(value, value)
         } else {
@@ -309,16 +314,121 @@ export function createMysqlStore(uri: string): Store {
     },
     async expireSubscriptions(now, graceMs) {
       const [res] = await pool.execute<ResultSetHeader>(
-        `UPDATE users SET users_groups_id = 1, subscription_active = 0, subscription_status = 'ended'
+        // previous_users_groups_id vem antes de users_groups_id: o MySQL aplica o SET da esquerda para a direita.
+        `UPDATE users SET previous_users_groups_id = users_groups_id, users_groups_id = 1, subscription_active = 0,
+                subscription_status = 'ended', last_access = ?
           WHERE subscription_active = 1 AND next_payment_at IS NOT NULL
             AND ((subscription_status = 'active' AND next_payment_at < ?) OR (subscription_status <> 'active' AND next_payment_at <= ?))`,
-        [new Date(now.getTime() - graceMs), now]
+        [now, new Date(now.getTime() - graceMs), now]
       )
       return res.affectedRows
+    },
+    async purgeInactiveUsers(now) {
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `SELECT u.id, g.waiting_time_for_deletion AS days
+           FROM users u JOIN users_groups g ON g.id = COALESCE(u.previous_users_groups_id, 1)
+          WHERE u.users_groups_id = 1 AND u.subscription_active = 0
+            AND u.last_access > ? AND u.last_access < (? - INTERVAL g.waiting_time_for_deletion DAY)`,
+        [PURGE_SINCE, now]
+      )
+      let n = 0
+      for (const r of rows) {
+        const conn = await pool.getConnection()
+        try {
+          await conn.beginTransaction()
+          // Confere de novo dentro da transação: o usuário pode ter voltado (ou assinado) desde a consulta.
+          const [still] = await conn.execute<RowDataPacket[]>(
+            'SELECT 1 FROM users WHERE id = ? AND users_groups_id = 1 AND subscription_active = 0 AND last_access > ? AND last_access < (? - INTERVAL ? DAY) FOR UPDATE',
+            [r.id, PURGE_SINCE, now, r.days]
+          )
+          if (still.length === 0) {
+            await conn.rollback()
+            continue
+          }
+          await conn.execute('DELETE FROM files WHERE user_id = ?', [r.id])
+          await conn.execute('DELETE FROM folders WHERE user_id = ?', [r.id])
+          await conn.execute('DELETE FROM workspaces WHERE user_id = ?', [r.id])
+          await conn.execute(
+            `UPDATE users SET storage_bytes = 0, stored_files = 0, users_groups_id = 1, last_access = ?,
+                    previous_users_groups_id = NULL, cloud_purged_at = ?, cloud_purge_days = ? WHERE id = ?`,
+            [PURGED_LAST_ACCESS, now, r.days, r.id]
+          )
+          await conn.commit()
+          n++
+        } catch (err) {
+          await conn.rollback()
+          throw err
+        } finally {
+          conn.release()
+        }
+      }
+      return n
+    },
+    async getCloudPurgeNotice(userId) {
+      const [rows] = await pool.execute<RowDataPacket[]>('SELECT cloud_purged_at, cloud_purge_days FROM users WHERE id = ?', [userId])
+      const r = rows[0]
+      return r?.cloud_purged_at ? { at: r.cloud_purged_at, days: Number(r.cloud_purge_days ?? 0) } : null
+    },
+    async clearCloudPurgeNotice(userId) {
+      await pool.execute('UPDATE users SET cloud_purged_at = NULL, cloud_purge_days = NULL WHERE id = ?', [userId])
+    },
+    async createManageToken(userId, tokenHash, expiresAt) {
+      await pool.execute('INSERT INTO manage_tokens (token_hash, user_id, expires_at) VALUES (?, ?, ?)', [tokenHash, userId, expiresAt])
+    },
+    async setUserLocale(userId, locale) {
+      await pool.execute('UPDATE users SET locale = ? WHERE id = ?', [locale, userId])
+    },
+    async getPlanExpiryNotice(userId, now, withinMs) {
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `SELECT u.next_payment_at, g.name AS group_name FROM users u JOIN users_groups g ON g.id = u.users_groups_id
+          WHERE u.id = ? AND ${EXPIRING_SQL}
+            AND (u.expiry_notice_for IS NULL OR u.expiry_notice_for <> u.next_payment_at)`,
+        [userId, now, new Date(now.getTime() + withinMs)]
+      )
+      const r = rows[0]
+      return r ? { at: r.next_payment_at, planName: String(r.group_name) } : null
+    },
+    async ackPlanExpiryNotice(userId) {
+      await pool.execute('UPDATE users SET expiry_notice_for = next_payment_at WHERE id = ?', [userId])
+    },
+    async claimPlanExpiryEmails(now, withinMs) {
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `SELECT u.id, u.email, u.name, u.locale, u.next_payment_at, g.name AS group_name
+           FROM users u JOIN users_groups g ON g.id = u.users_groups_id
+          WHERE ${EXPIRING_SQL} AND (u.expiry_email_for IS NULL OR u.expiry_email_for <> u.next_payment_at)`,
+        [now, new Date(now.getTime() + withinMs)]
+      )
+      const out: PlanExpiryEmail[] = []
+      for (const r of rows) {
+        // Reserva condicional: duas instâncias da API nunca mandam o mesmo e-mail.
+        const [res] = await pool.execute<ResultSetHeader>(
+          `UPDATE users SET expiry_email_for = next_payment_at
+            WHERE id = ? AND next_payment_at = ? AND (expiry_email_for IS NULL OR expiry_email_for <> next_payment_at)`,
+          [r.id, r.next_payment_at]
+        )
+        if (res.affectedRows === 0) continue
+        const locale = (APP_LOCALES as readonly string[]).includes(r.locale) ? (r.locale as AppLocale) : null
+        out.push({ userId: r.id, email: r.email, name: r.name, locale, at: r.next_payment_at, planName: String(r.group_name) })
+      }
+      return out
+    },
+    async releasePlanExpiryEmail(userId) {
+      await pool.execute('UPDATE users SET expiry_email_for = NULL WHERE id = ?', [userId])
+    },
+    async consumeManageToken(tokenHash) {
+      const now = new Date()
+      const [res] = await pool.execute<ResultSetHeader>(
+        'UPDATE manage_tokens SET used_at = ? WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?',
+        [now, tokenHash, now]
+      )
+      if (res.affectedRows === 0) return null
+      const [rows] = await pool.execute<RowDataPacket[]>('SELECT user_id FROM manage_tokens WHERE token_hash = ?', [tokenHash])
+      return rows[0]?.user_id ?? null
     },
     async purgeExpired(now) {
       await pool.execute('DELETE FROM sessions WHERE expires_at < ?', [now])
       await pool.execute('DELETE FROM password_resets WHERE expires_at < ? OR used_at IS NOT NULL', [now])
+      await pool.execute('DELETE FROM manage_tokens WHERE expires_at < ? OR used_at IS NOT NULL', [now])
     },
     async close() {
       await pool.end()
@@ -348,7 +458,13 @@ const SUBSCRIPTION_DDL: [string, string][] = [
   ['last_payment_at', "DATETIME(3) NULL COMMENT 'Data do último pagamento'"],
   ['next_payment_at', "DATETIME(3) NULL COMMENT 'Data do próximo pagamento (fim do período pago)'"],
   ['stripe_customer_id', 'VARCHAR(255) NULL'],
-  ['stripe_subscription_id', 'VARCHAR(255) NULL']
+  ['stripe_subscription_id', 'VARCHAR(255) NULL'],
+  ['previous_users_groups_id', "INT UNSIGNED NULL COMMENT 'Plano antes de voltar ao Gratuito (prazo da limpeza)'"],
+  ['cloud_purged_at', "DATETIME(3) NULL COMMENT 'Arquivos apagados por inatividade (aviso pendente no aplicativo)'"],
+  ['cloud_purge_days', "SMALLINT UNSIGNED NULL COMMENT 'Dias sem acesso que levaram à limpeza'"],
+  ['locale', "VARCHAR(8) NULL COMMENT 'Idioma do aplicativo (e-mails da API)'"],
+  ['expiry_notice_for', "DATETIME(3) NULL COMMENT 'Fim do período cujo aviso de vencimento o aplicativo já mostrou'"],
+  ['expiry_email_for', "DATETIME(3) NULL COMMENT 'Fim do período cujo e-mail de vencimento já foi enviado'"]
 ]
 
 async function columnExists(conn: mysql.Connection, table: string, column: string): Promise<boolean> {

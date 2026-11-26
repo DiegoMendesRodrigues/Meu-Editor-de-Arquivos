@@ -324,7 +324,7 @@ Las **macros** repiten una secuencia que hiciste. Pulsa **Ctrl+Shift+R** para em
 Con una cuenta guardas archivos en la nube y los abres en otros equipos. Abre el menú **{{menu.account}}**.
 
 1. **Dirección del servidor:** la primera vez, escribe la dirección que te dio tu empresa o el administrador. Empieza por `https://`.
-2. **Crear cuenta:** haz clic en **{{account.link.register}}** y rellena el correo, el nombre y una contraseña de al menos 10 caracteres.
+2. **Crear cuenta:** haz clic en **{{account.link.register}}**. La aplicación abre la página de planes de la nube en el sitio web, en el mismo idioma; elige el plan (Gratuito o de pago) y registra el correo, el nombre y una contraseña de al menos 10 caracteres. La cuenta no se crea dentro de la aplicación.
 
 ![Pantalla de inicio de sesión](img/s16-account-login.png)
 

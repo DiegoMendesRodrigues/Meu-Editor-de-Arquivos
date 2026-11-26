@@ -324,7 +324,7 @@ Les **macros** répètent une séquence que vous avez effectuée. Appuyez sur **
 Avec un compte, vous conservez des fichiers dans le cloud et les ouvrez sur d'autres ordinateurs. Ouvrez le menu **{{menu.account}}**.
 
 1. **Adresse du serveur :** la première fois, saisissez l'adresse que votre entreprise ou votre administrateur vous a communiquée. Elle commence par `https://`.
-2. **Créer un compte :** cliquez sur **{{account.link.register}}** et renseignez votre e-mail, votre nom et un mot de passe d'au moins 10 caractères.
+2. **Créer un compte :** cliquez sur **{{account.link.register}}**. L'application ouvre la page des offres cloud du site, dans la même langue ; choisissez l'offre (Gratuito ou payante) et renseignez votre e-mail, votre nom et un mot de passe d'au moins 10 caractères. Le compte n'est pas créé dans l'application.
 
 ![Écran de connexion](img/s16-account-login.png)
 
