@@ -22,7 +22,7 @@ Quand vous fermez l’application, rien n’est perdu : vos documents reviennent
 
 ## Nouveautés de cette version
 
-Version 1.1.0 : conversion des fins de ligne (Windows, Unix et Mac), majuscules, minuscules et casse de phrase, nettoyage des espaces, plein écran (F11), mode sombre, terminal intégré, mise en forme automatique selon le standard de chaque langage, encodage d'URL et empreintes MD5, SHA-1, SHA-256 et SHA-512.
+Version 1.1.0 : conversion des fins de ligne (Windows, Unix et Mac), majuscules, minuscules et casse de phrase, nettoyage des espaces, plein écran (F11), mode sombre, terminal intégré, mise en forme automatique selon le standard de chaque langage, encodage d'URL et empreintes MD5, SHA-1, SHA-256 et SHA-512. Elle apporte aussi l'Assistant IA local (Ollama), qui discute, explique et écrit du code sans rien envoyer sur internet, et le Client d'API, pour tester des requêtes REST, GraphQL, SOAP, WebSocket et gRPC avec environnements, collections et tests.
 
 ## Fonctionnalités du produit
 
@@ -37,6 +37,8 @@ Version 1.1.0 : conversion des fins de ligne (Windows, Unix et Mac), majuscules,
 - Session restaurée à la réouverture, texte non enregistré compris
 - Conversion de l’encodage et des fins de ligne (Windows, Unix et Mac)
 - Interface en six langues et fonctionnement hors ligne
+- Assistant IA local (Ollama), sans envoyer vos textes sur internet
+- Client d'API : REST, GraphQL, SOAP, WebSocket et gRPC, avec collections et tests
 
 ## Termes de recherche
 
@@ -52,6 +54,8 @@ Version 1.1.0 : conversion des fins de ligne (Windows, Unix et Mac), majuscules,
 6. Correcteur orthographique hors ligne dans six langues.
 7. Snippets pour réutiliser textes et codes.
 8. Raccourcis clavier pour travailler plus vite.
+9. Assistant IA local (Ollama) : conversation, actions rapides et insertion au curseur.
+10. Client d'API : requêtes, environnements, collections et tests.
 
 ## Informations complémentaires
 

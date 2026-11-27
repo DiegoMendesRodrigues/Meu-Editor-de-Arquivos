@@ -22,7 +22,7 @@ Beim Schließen der Anwendung geht nichts verloren: Die Dokumente sind beim näc
 
 ## Neuerungen in dieser Version
 
-Version 1.1.0: Umwandlung der Zeilenenden (Windows, Unix und Mac), Groß-/Kleinschreibung und Satzanfang, Leerzeichen-Bereinigung, Vollbildmodus (F11), dunkler Modus, integriertes Terminal, automatische Formatierung im Stil jeder Sprache, URL-Kodierung sowie MD5-, SHA-1-, SHA-256- und SHA-512-Hashes.
+Version 1.1.0: Umwandlung der Zeilenenden (Windows, Unix und Mac), Groß-/Kleinschreibung und Satzanfang, Leerzeichen-Bereinigung, Vollbildmodus (F11), dunkler Modus, integriertes Terminal, automatische Formatierung im Stil jeder Sprache, URL-Kodierung sowie MD5-, SHA-1-, SHA-256- und SHA-512-Hashes. Neu sind außerdem der lokale KI-Assistent (Ollama), der chattet, erklärt und Code schreibt, ohne etwas ins Internet zu senden, und der API-Client zum Testen von REST-, GraphQL-, SOAP-, WebSocket- und gRPC-Anfragen mit Umgebungen, Sammlungen und Tests.
 
 ## Produktfunktionen
 
@@ -37,6 +37,8 @@ Version 1.1.0: Umwandlung der Zeilenenden (Windows, Unix und Mac), Groß-/Kleins
 - Sitzung wird beim Öffnen wiederhergestellt, auch nicht gespeicherter Text
 - Umwandlung von Codierung und Zeilenumbrüchen (Windows, Unix und Mac)
 - Oberfläche in sechs Sprachen und Offline-Betrieb
+- Lokaler KI-Assistent (Ollama), der Ihre Texte nicht ins Internet sendet
+- API-Client: REST, GraphQL, SOAP, WebSocket und gRPC, mit Sammlungen und Tests
 
 ## Suchbegriffe
 
@@ -52,6 +54,8 @@ Texteditor; Code-Editor; Markdown; JSON; Notepad; Log-Editor; Programmierung
 6. Rechtschreibprüfung offline in sechs Sprachen.
 7. Snippets zur Wiederverwendung von Texten und Code.
 8. Tastenkombinationen für schnelleres Arbeiten.
+9. Lokaler KI-Assistent (Ollama): Chat, Schnellaktionen und Einfügen am Cursor.
+10. API-Client: Anfragen, Umgebungen, Sammlungen und Tests.
 
 ## Zusätzliche Informationen
 

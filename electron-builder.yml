@@ -34,6 +34,9 @@ portable:
   artifactName: ${name}-portable-${version}-${arch}.${ext}
 # Pacote para a Microsoft Store (npm run dist:store). Os valores de identidade vêm do Partner Center:
 # Produtos → Meu Editor de Arquivos → Identidade do produto. ID da Store: 9P9LZ413B1XL.
+# Windows Kits 10.0.26100 (o pacote antigo winCodeSign-2.6.0 falha ao gerar o .appx).
+toolsets:
+  winCodeSign: 1.1.0
 appx:
   applicationId: MeuEditorDeArquivos
   identityName: DiegoMendesRodrigues.MeuEditordeArquivos  # Package/Identity/Name

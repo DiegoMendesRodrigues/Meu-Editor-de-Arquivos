@@ -22,6 +22,9 @@ LOCALES = ['pt-BR', 'pt-PT', 'en', 'es', 'fr', 'de']
 FULL = ['s01-main', 's03-markdown-edit', 's04-json-tree', 's05-json-error', 's06-search']
 # Telas parciais: vão centralizadas sobre um fundo, no tamanho exigido pela loja.
 PARTIAL = ['s11a-spelling', 's12-snippets', 's14-shortcuts']
+# Telas do site (janela inteira, 1583x954): Assistente de IA e Cliente de API.
+# Rode `npx tsx scripts/capture-site.mts --api` antes, para estarem atualizadas.
+SITE = ['ai-01-chat', 'api-02-request']
 
 STORE_SIZE = (1920, 1080)  # 16:9, acima do mínimo de 1366x768
 PURPLE_TOP = (139, 92, 246)
@@ -97,6 +100,14 @@ def screenshots() -> None:
             shot = Image.open(file)
             img = framed(shot) if name in PARTIAL else shot.convert('RGB')
             img.save(out / f'{n:02d}-{name}.png', optimize=True)
+        site = ROOT / 'website' / 'assets' / 'img' / 'screens' / loc
+        for name in SITE:
+            file = site / f'{name}.png'
+            if not file.exists():
+                print(f'  falta {file}')
+                continue
+            n += 1
+            Image.open(file).convert('RGB').save(out / f'{n:02d}-{name}.png', optimize=True)
         print(f'docs/store/{loc}/screenshots: {n} telas')
 
 

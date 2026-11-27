@@ -24,6 +24,7 @@ Cada `listing.md` traz os campos da página da loja: descrição, novidades, rec
 3. **Atualize as telas e os logotipos** (opcional, se a interface mudou):
    ```
    npm run manual
+   npx tsx scripts/capture-site.mts --api
    npm run store:assets
    ```
    `store:assets` precisa do Python com Pillow (`pip install pillow`). Ele gera `build/appx/` (logotipos do pacote), `docs/store/images/` e `docs/store/<idioma>/screenshots/`.
@@ -32,6 +33,11 @@ Cada `listing.md` traz os campos da página da loja: descrição, novidades, rec
    npm run dist:store
    ```
    Saem em `dist/` os arquivos `.appx` para x64 e ARM64. A loja assina o pacote; não é preciso certificado próprio.
+   Num computador x64, o `.appx` de ARM64 pode falhar com `spawn UNKNOWN` (o electron-builder tenta rodar o `makeappx` de ARM64). Gere o de ARM64 à parte com o kit x64, no PowerShell:
+   ```
+   $env:ELECTRON_BUILDER_WINDOWS_KITS_PATH = "$env:LOCALAPPDATA\electron-builder\Cache\win-codesign@1.1.0\<pasta windows-kits-bundle>\x64"
+   npx electron-builder --win appx --arm64
+   ```
 5. **Crie o envio** no Partner Center:
    - Preços e disponibilidade: gratuito, todos os mercados.
    - Propriedades: categoria Ferramentas de desenvolvimento; marque que o aplicativo acessa a internet (conta e nuvem) e informe a política de privacidade.

@@ -22,7 +22,7 @@ Al cerrar la aplicación no se pierde nada: los documentos vuelven tal como esta
 
 ## Novedades de esta versión
 
-Versión 1.1.0: conversión de finales de línea (Windows, Unix y Mac), mayúsculas, minúsculas y tipo oración, limpieza de espacios, pantalla completa (F11), modo oscuro, terminal integrado, formato automático según el estándar de cada lenguaje, codificación de URL y hashes MD5, SHA-1, SHA-256 y SHA-512.
+Versión 1.1.0: conversión de finales de línea (Windows, Unix y Mac), mayúsculas, minúsculas y tipo oración, limpieza de espacios, pantalla completa (F11), modo oscuro, terminal integrado, formato automático según el estándar de cada lenguaje, codificación de URL y hashes MD5, SHA-1, SHA-256 y SHA-512. También llegan el Asistente de IA local (Ollama), que conversa, explica y genera código sin enviar nada a internet, y el Cliente de API, para probar solicitudes REST, GraphQL, SOAP, WebSocket y gRPC con entornos, colecciones y pruebas.
 
 ## Características del producto
 
@@ -37,6 +37,8 @@ Versión 1.1.0: conversión de finales de línea (Windows, Unix y Mac), mayúscu
 - Sesión recuperada al reabrir, incluido el texto sin guardar
 - Conversión de codificación y de saltos de línea (Windows, Unix y Mac)
 - Interfaz en seis idiomas y funcionamiento sin conexión
+- Asistente de IA local (Ollama), sin enviar sus textos a internet
+- Cliente de API: REST, GraphQL, SOAP, WebSocket y gRPC, con colecciones y pruebas
 
 ## Términos de búsqueda
 
@@ -52,6 +54,8 @@ editor de texto; editor de código; markdown; json; bloc de notas; editor de log
 6. Corrector ortográfico sin conexión en seis idiomas.
 7. Fragmentos para reutilizar textos y código.
 8. Atajos de teclado para trabajar más rápido.
+9. Asistente de IA local (Ollama): conversación, acciones rápidas e inserción en el cursor.
+10. Cliente de API: solicitudes, entornos, colecciones y pruebas.
 
 ## Información adicional
 

@@ -22,7 +22,7 @@ When you close the app, nothing is lost: your documents come back just as you le
 
 ## What's new in this version
 
-Version 1.1.0: line ending conversion (Windows, Unix and Mac), uppercase, lowercase and sentence case, whitespace cleanup, full screen mode (F11), dark mode, an integrated terminal, auto format in each language's standard style, URL encoding, and MD5, SHA-1, SHA-256 and SHA-512 hashes.
+Version 1.1.0: line ending conversion (Windows, Unix and Mac), uppercase, lowercase and sentence case, whitespace cleanup, full screen mode (F11), dark mode, an integrated terminal, auto format in each language's standard style, URL encoding, and MD5, SHA-1, SHA-256 and SHA-512 hashes. It also brings the local AI Assistant (Ollama), which chats, explains and writes code without sending anything to the internet, and the API Client, to test REST, GraphQL, SOAP, WebSocket and gRPC requests with environments, collections and tests.
 
 ## Product features
 
@@ -37,6 +37,8 @@ Version 1.1.0: line ending conversion (Windows, Unix and Mac), uppercase, lowerc
 - Session restored on reopening, including unsaved text
 - Encoding and line ending conversion (Windows, Unix and Mac)
 - Interface in six languages and offline operation
+- Local AI Assistant (Ollama) that never sends your text to the internet
+- API Client: REST, GraphQL, SOAP, WebSocket and gRPC, with collections and tests
 
 ## Search terms
 
@@ -52,6 +54,8 @@ text editor; code editor; markdown; json; notepad; log viewer; programming
 6. Offline spell checker in six languages.
 7. Snippets to reuse text and code.
 8. Keyboard shortcuts to work faster.
+9. Local AI Assistant (Ollama): chat, quick actions and insert at cursor.
+10. API Client: requests, environments, collections and tests.
 
 ## Additional information
 
